@@ -35,11 +35,12 @@ export default function Teams() {
 
   // Classify players based on French translations in playersDB.ts
   const goalkeepers = roster.filter(p => p.pos.includes('Gardien'));
-  const defenders = roster.filter(p => p.pos.includes('Défenseur') || p.pos.includes('Arrière'));
+  const defenders = roster.filter(p => p.pos.includes('Défenseur') || p.pos.includes('Arrière') || p.pos.includes('Défenseure'));
   const midfielders = roster.filter(p => p.pos.includes('Milieu'));
-  const forwards = roster.filter(p => p.pos.includes('Ailier') || p.pos.includes('Avant'));
+  const forwards = roster.filter(p => p.pos.includes('Ailier') || p.pos.includes('Avant') || p.pos.includes('Attaquant'));
+  const unassigned = roster.filter(p => p.pos === 'N/A');
 
-  const categories = ['Équipe Première', 'U17', 'U15', 'U13'];
+  const categories = ['Équipe Première', 'U17', 'U15', 'U13', 'U9'];
 
   const renderSection = (title: string, players: typeof roster) => {
     if (players.length === 0) return null;
@@ -105,7 +106,7 @@ export default function Teams() {
                   fontWeight: 'bold',
                   textTransform: 'uppercase',
                   border: '2px solid',
-                  borderColor: selectedCategory === cat ? 'var(--clr-primary)' : 'white',
+                  borderColor: selectedCategory === cat ? 'var(--clr-primary)' : 'rgba(255,255,255,0.3)',
                   background: selectedCategory === cat ? 'var(--clr-primary)' : 'transparent',
                   color: 'white',
                   borderRadius: '4px',
@@ -133,6 +134,7 @@ export default function Teams() {
               {renderSection("Défenseurs", defenders)}
               {renderSection("Milieux de terrain", midfielders)}
               {renderSection("Attaquants", forwards)}
+              {renderSection("Joueurs", unassigned)}
             </>
           )}
         </div>
