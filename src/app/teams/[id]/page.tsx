@@ -67,7 +67,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                 <img 
                   src={player.img} 
                   alt={player.name} 
-                  style={{ width: '100%', height: '480px', objectFit: 'cover', objectPosition: 'top', filter: player.filter }} 
+                  style={{ width: '100%', height: '480px', objectFit: 'cover', objectPosition: 'center 15%', filter: player.filter }} 
                 />
                 <div style={{ position: 'absolute', bottom: '20px', left: '20px', background: 'var(--clr-primary)', color: 'white', fontFamily: 'var(--font-heading)', fontSize: '3rem', fontWeight: 'bold', padding: '5px 20px', borderRadius: '8px', lineHeight: 1 }}>
                   #{player.num}
