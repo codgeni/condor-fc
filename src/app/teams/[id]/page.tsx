@@ -13,13 +13,24 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
   const [player, setPlayer] = useState<any>(null);
 
   useEffect(() => {
-    supabase.from('players').select('*').eq('id', unwrappedParams.id).single().then(({ data }) => {
-      if (data) {
-        setPlayer(data);
-      } else {
-        setPlayer(playersDB[unwrappedParams.id]);
+    const fetchPlayer = async () => {
+      try {
+        const { data } = await supabase
+          .from('players')
+          .select('*')
+          .eq('id', unwrappedParams.id)
+          .single();
+        if (data) {
+          setPlayer(data);
+        } else {
+          setPlayer(playersDB[unwrappedParams.id] || null);
+        }
+      } catch (err) {
+        console.warn("Supabase fetch failed, falling back to local DB", err);
+        setPlayer(playersDB[unwrappedParams.id] || null);
       }
-    });
+    };
+    fetchPlayer();
   }, [unwrappedParams.id]);
 
   if (!player) {

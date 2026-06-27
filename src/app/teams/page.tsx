@@ -11,17 +11,24 @@ export default function Teams() {
   const [db, setDb] = useState<Record<string, any>>(playersDB);
 
   useEffect(() => {
-    supabase.from('players').select('*').then(({ data }) => {
-      if (data && data.length > 0) {
-        const dbObj = data.reduce((acc: any, player: any) => {
-          acc[player.id] = player;
-          return acc;
-        }, {});
-        setDb(dbObj);
-      } else {
+    const fetchPlayers = async () => {
+      try {
+        const { data } = await supabase.from('players').select('*');
+        if (data && data.length > 0) {
+          const dbObj = data.reduce((acc: any, player: any) => {
+            acc[player.id] = player;
+            return acc;
+          }, {});
+          setDb(dbObj);
+        } else {
+          setDb(playersDB);
+        }
+      } catch (err) {
+        console.warn("Supabase fetch failed, falling back to local DB", err);
         setDb(playersDB);
       }
-    });
+    };
+    fetchPlayers();
   }, []);
   
   const roster = Object.values(db).filter(p => p.category === selectedCategory);

@@ -20,14 +20,23 @@ export default function HeroSlider() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    // Load slides from Supabase database
-    supabase.from('slides').select('url').order('created_at', { ascending: true }).then(({ data }) => {
-      if (data && data.length > 0) {
-        setSlides(data.map(s => s.url));
-      } else {
+    const fetchSlides = async () => {
+      try {
+        const { data } = await supabase
+          .from('slides')
+          .select('url')
+          .order('created_at', { ascending: true });
+        if (data && data.length > 0) {
+          setSlides(data.map(s => s.url));
+        } else {
+          setSlides(DEFAULT_SLIDES);
+        }
+      } catch (err) {
+        console.warn("Supabase fetch failed, falling back to default slides", err);
         setSlides(DEFAULT_SLIDES);
       }
-    });
+    };
+    fetchSlides();
   }, []);
 
   useEffect(() => {

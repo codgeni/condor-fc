@@ -112,13 +112,23 @@ export default function News() {
   const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    supabase.from('news').select('*').order('created_at', { ascending: false }).then(({ data }) => {
-      if (data && data.length > 0) {
-        setAllNews(data);
-      } else {
+    const fetchNews = async () => {
+      try {
+        const { data } = await supabase
+          .from('news')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (data && data.length > 0) {
+          setAllNews(data);
+        } else {
+          setAllNews(INITIAL_NEWS);
+        }
+      } catch (err) {
+        console.warn("Supabase fetch failed, falling back to local news list", err);
         setAllNews(INITIAL_NEWS);
       }
-    });
+    };
+    fetchNews();
   }, []);
 
   const handleLoadMore = () => {
