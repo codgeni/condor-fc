@@ -10,7 +10,8 @@ import { supabase } from '@/lib/supabaseClient';
 
 export default function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
-  const [player, setPlayer] = useState<any>(null);
+  const [player, setPlayer] = useState<any>(playersDB[unwrappedParams.id] || null);
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
 
   useEffect(() => {
     const fetchPlayer = async () => {
@@ -28,14 +29,23 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
       } catch (err) {
         console.warn("Supabase fetch failed, falling back to local DB", err);
         setPlayer(playersDB[unwrappedParams.id] || null);
+      } finally {
+        setHasAttemptedFetch(true);
       }
     };
     fetchPlayer();
   }, [unwrappedParams.id]);
 
   if (!player) {
+    if (!hasAttemptedFetch) {
+      return (
+        <div style={{ flex: 1, marginTop: '80px', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 80px)', background: '#f5f7fa', color: 'black' }}>
+          <h3>Chargement de la fiche joueur...</h3>
+        </div>
+      );
+    }
     return (
-      <div style={{ marginTop: '100px', textAlign: 'center', padding: '50px' }}>
+      <div style={{ marginTop: '120px', textAlign: 'center', padding: '50px' }}>
         <h1>Joueur Introuvable</h1>
         <Link href="/teams" className="btn btn-primary" style={{ marginTop: '20px', display: 'inline-block' }}>Retour aux Équipes</Link>
       </div>
