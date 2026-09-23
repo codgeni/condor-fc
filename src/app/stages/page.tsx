@@ -1,30 +1,14 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Phone, Mail, MapPin, CheckCircle, Clock, User, PhoneCall } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
-
-const UPCOMING_CAMPS = [
-  {
-    title: "Stage d'Été Condor - Session 1",
-    dates: "15 Juillet - 25 Juillet 2026",
-    categories: "U11 à U13",
-    price: "1,500 HTG",
-    time: "08:00 AM - 12:00 PM",
-    desc: "Stage intensif de perfectionnement technique individuel, coordination motrice et initiation aux phases tactiques de base."
-  },
-  {
-    title: "Stage d'Été Condor - Session 2",
-    dates: "01 Août - 10 Août 2026",
-    categories: "U15 à U17",
-    price: "2,000 HTG",
-    time: "08:00 AM - 12:00 PM",
-    desc: "Stage axé sur le développement physique, la tactique collective, l'analyse vidéo simple et des matchs d'application."
-  }
-];
+import { fetchStages, StageSession } from '@/lib/dataService';
+import { sanitizeFormRecord, checkRateLimit } from '@/lib/security';
 
 export default function Stages() {
+  const [stages, setStages] = useState<StageSession[]>([]);
   const [stageFormData, setStageFormData] = useState({
     nom: '', prenom: '', dob: '', tel: '', photo: '', stage: '', note: ''
   });
@@ -34,6 +18,12 @@ export default function Stages() {
   
   const [stageSubmitted, setStageSubmitted] = useState(false);
   const [rdvSubmitted, setRdvSubmitted] = useState(false);
+
+  useEffect(() => {
+    fetchStages().then(data => {
+      if (data) setStages(data);
+    });
+  }, []);
 
   const handleStageChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setStageFormData({ ...stageFormData, [e.target.name]: e.target.value });
@@ -46,15 +36,24 @@ export default function Stages() {
   const handleStageSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Protection anti-flood
+    const rateCheck = checkRateLimit('stage_registration', 3000);
+    if (!rateCheck.allowed) {
+      alert(`Veuillez patienter ${rateCheck.remainingSeconds} seconde(s) avant de soumettre à nouveau.`);
+      return;
+    }
+
+    const sanitized = sanitizeFormRecord(stageFormData);
+
     // Save to Supabase Table 'stages_inscriptions'
     const { error } = await supabase.from('stages_inscriptions').insert({
-      nom: stageFormData.nom,
-      prenom: stageFormData.prenom,
-      dob: stageFormData.dob,
-      tel: stageFormData.tel,
-      stage: stageFormData.stage,
-      note: stageFormData.note,
-      photo: stageFormData.photo
+      nom: sanitized.nom,
+      prenom: sanitized.prenom,
+      dob: sanitized.dob,
+      tel: sanitized.tel,
+      stage: sanitized.stage,
+      note: sanitized.note,
+      photo: sanitized.photo
     });
 
     if (error) {
@@ -73,14 +72,23 @@ export default function Stages() {
   const handleRdvSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Protection anti-flood
+    const rateCheck = checkRateLimit('rdv_booking', 3000);
+    if (!rateCheck.allowed) {
+      alert(`Veuillez patienter ${rateCheck.remainingSeconds} seconde(s) avant de réserver à nouveau.`);
+      return;
+    }
+
+    const sanitized = sanitizeFormRecord(rdvFormData);
+
     // Save to Supabase Table 'appointments'
     const { error } = await supabase.from('appointments').insert({
-      parent_nom: rdvFormData.parentNom,
-      enfant_nom: rdvFormData.enfantNom,
-      tel: rdvFormData.tel,
-      date: rdvFormData.date,
-      heure: rdvFormData.heure,
-      raison: rdvFormData.raison
+      parent_nom: sanitized.parentNom,
+      enfant_nom: sanitized.enfantNom,
+      tel: sanitized.tel,
+      date: sanitized.date,
+      heure: sanitized.heure,
+      raison: sanitized.raison
     });
 
     if (error) {
@@ -136,29 +144,39 @@ export default function Stages() {
           {/* Left Column: Stage Info & Pre-inscription */}
           <div>
             
-            {/* 1. Informations sur les Stages */}
+            {/* 1. Informations sur les Stages (Dynamiques) */}
             <section style={{ marginBottom: '4rem' }}>
               <h2 style={sectionTitleStyle}>Prochains Stages de Vacances</h2>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                {UPCOMING_CAMPS.map((camp, i) => (
-                  <motion.div 
-                    key={i} 
-                    style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 5px 15px rgba(0,0,0,0.02)', border: '1px solid #eee', borderLeft: '5px solid var(--clr-primary)' }}
-                    whileHover={{ y: -3 }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '10px' }}>
-                      <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{camp.title}</h3>
-                      <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', fontSize: '1.2rem' }}>{camp.price}</span>
-                    </div>
-                    <p style={{ color: '#555', lineHeight: 1.6, marginBottom: '1.5rem' }}>{camp.desc}</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', fontSize: '0.9rem', color: 'var(--clr-gray)' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Calendar size={16} /> {camp.dates}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Clock size={16} /> {camp.time}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><User size={16} /> Catégorie: {camp.categories}</span>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              {stages.length === 0 ? (
+                <div style={{ background: 'white', padding: '2.5rem', borderRadius: '12px', border: '1px solid #eee', textAlign: 'center' }}>
+                  <Calendar size={48} color="var(--clr-primary)" style={{ margin: '0 auto 1rem' }} />
+                  <h3 style={{ fontSize: '1.4rem', marginBottom: '8px' }}>Aucune session de stage ouverte pour le moment</h3>
+                  <p style={{ color: '#666', maxWidth: '500px', margin: '0 auto' }}>
+                    Les prochaines sessions de stages de vacances (Pâques, Été) seront publiées ici dès leur ouverture officielle.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                  {stages.map((camp, i) => (
+                    <motion.div 
+                      key={camp.id || i} 
+                      style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 5px 15px rgba(0,0,0,0.02)', border: '1px solid #eee', borderLeft: '5px solid var(--clr-primary)' }}
+                      whileHover={{ y: -3 }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '10px' }}>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{camp.title}</h3>
+                        <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', fontSize: '1.2rem' }}>{camp.price}</span>
+                      </div>
+                      <p style={{ color: '#555', lineHeight: 1.6, marginBottom: '1.5rem' }}>{camp.description}</p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', fontSize: '0.9rem', color: 'var(--clr-gray)' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Calendar size={16} /> {camp.dates}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Clock size={16} /> {camp.time_schedule}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><User size={16} /> Catégorie : {camp.categories}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </section>
 
             {/* 2. Formulaire de Pré-inscription */}
@@ -196,74 +214,44 @@ export default function Stages() {
                     <label style={labelStyle}>Choisir la session de Stage</label>
                     <select name="stage" required value={stageFormData.stage} onChange={handleStageChange} style={inputStyle}>
                       <option value="">-- Sélectionner une session --</option>
-                      {UPCOMING_CAMPS.map((camp, idx) => (
-                        <option key={idx} value={camp.title}>{camp.title} ({camp.categories})</option>
-                      ))}
+                      {stages.length > 0 ? (
+                        stages.map((camp, idx) => (
+                          <option key={camp.id || idx} value={camp.title}>{camp.title} ({camp.categories})</option>
+                        ))
+                      ) : (
+                        <option value="Pré-inscription Session Prochaine">Session Prochaine (Générale)</option>
+                      )}
                     </select>
                   </div>
 
                   <div style={{ marginBottom: '1.5rem' }}>
-                    <label style={labelStyle}>Photo de l'enfant (Lien URL ou descriptif)</label>
-                    <input type="text" name="photo" value={stageFormData.photo} onChange={handleStageChange} style={inputStyle} placeholder="Ex: photo_enfant.jpg" />
+                    <label style={labelStyle}>Remarques ou Besoins Particuliers (Optionnel)</label>
+                    <textarea name="note" value={stageFormData.note} onChange={handleStageChange} style={{ ...inputStyle, minHeight: '100px' }} placeholder="Allergies, niveau de pratique, attentes..." />
                   </div>
 
-                  <div style={{ marginBottom: '1.5rem' }}>
-                    <label style={labelStyle}>Remarques ou antécédents médicaux</label>
-                    <textarea name="note" value={stageFormData.note} onChange={handleStageChange} style={{ ...inputStyle, minHeight: '80px' }} placeholder="Allergies, asthme ou remarques particulières..." />
-                  </div>
-
-                  <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '15px' }}>Soumettre la Pré-inscription</button>
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }}>Envoyer la Pré-inscription</button>
                 </form>
               )}
             </section>
 
           </div>
 
-          {/* Right Column: Contact, Rendez-vous & Localisation */}
-          <div>
-            
-            {/* 1. Coordonnées du Club */}
-            <section style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #eee', boxShadow: '0 8px 30px rgba(0,0,0,0.03)', marginBottom: '3rem' }}>
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', borderBottom: '2px solid var(--clr-primary)', paddingBottom: '8px', marginBottom: '1.5rem', textTransform: 'uppercase' }}>
-                Secrétariat du Club
-              </h3>
-              <ul style={{ listStyleType: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <li style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
-                  <MapPin color="var(--clr-primary)" style={{ flexShrink: 0, marginTop: '3px' }} />
-                  <div>
-                    <strong style={{ display: 'block', fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--clr-gray)' }}>Localisation</strong>
-                    <span style={{ fontSize: '0.95rem' }}>1, entrée de Delmas 77 (à côté de BIWI), Delmas, Haïti</span>
-                  </div>
-                </li>
-                <li style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
-                  <Phone color="var(--clr-primary)" style={{ flexShrink: 0, marginTop: '3px' }} />
-                  <div>
-                    <strong style={{ display: 'block', fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--clr-gray)' }}>Téléphones</strong>
-                    <span style={{ fontSize: '0.95rem' }}>+509 4877 7143<br />+509 5684 1605</span>
-                  </div>
-                </li>
-                <li style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
-                  <Mail color="var(--clr-primary)" style={{ flexShrink: 0, marginTop: '3px' }} />
-                  <div>
-                    <strong style={{ display: 'block', fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--clr-gray)' }}>Courriel</strong>
-                    <span style={{ fontSize: '0.95rem' }}>condorecoledefootball@gmail.com</span>
-                  </div>
-                </li>
-              </ul>
-            </section>
+          {/* Right Column: Book Appointment Widget */}
+          <aside>
+            <div style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #eee', boxShadow: '0 8px 30px rgba(0,0,0,0.03)', position: 'sticky', top: '100px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem', color: 'var(--clr-primary)' }}>
+                <PhoneCall size={24} />
+                <h3 style={{ margin: 0, textTransform: 'uppercase', fontFamily: 'var(--font-heading)' }}>Rendez-vous Administratif</h3>
+              </div>
+              <p style={{ color: '#666', fontSize: '0.95rem', lineHeight: 1.5, marginBottom: '2rem' }}>
+                Vous souhaitez inscrire votre enfant, visiter nos installations au Parc Delmas ou rencontrer le directeur sportif ? Réservez votre créneau directement.
+              </p>
 
-            {/* 2. Prise de Rendez-vous Administratif */}
-            <section style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #eee', boxShadow: '0 8px 30px rgba(0,0,0,0.03)' }}>
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', borderBottom: '2px solid var(--clr-primary)', paddingBottom: '8px', marginBottom: '1.5rem', textTransform: 'uppercase' }}>
-                Prendre Rendez-vous
-              </h3>
-              <p style={{ color: 'var(--clr-gray)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>Planifiez un entretien au secrétariat administratif pour l'inscription officielle, le paiement ou le retrait d'équipements.</p>
-              
               {rdvSubmitted ? (
                 <div style={{ textAlign: 'center', padding: '2rem 0', color: '#155724' }}>
                   <CheckCircle size={48} color="green" style={{ margin: '0 auto 1rem' }} />
-                  <h4>Rendez-vous Demandé !</h4>
-                  <p style={{ fontSize: '0.85rem', color: '#555', marginTop: '5px' }}>Le secrétariat validera la plage horaire par SMS ou téléphone sous peu.</p>
+                  <h4>Rendez-vous Confirmé !</h4>
+                  <p style={{ color: '#555', fontSize: '0.9rem', marginTop: '5px' }}>Nous avons bien enregistré votre demande de rendez-vous.</p>
                 </div>
               ) : (
                 <form onSubmit={handleRdvSubmit}>
@@ -272,40 +260,46 @@ export default function Stages() {
                     <input type="text" name="parentNom" required value={rdvFormData.parentNom} onChange={handleRdvChange} style={inputStyle} />
                   </div>
                   <div>
-                    <label style={labelStyle}>Nom de l'enfant</label>
+                    <label style={labelStyle}>Nom & Prénom de l'Enfant</label>
                     <input type="text" name="enfantNom" required value={rdvFormData.enfantNom} onChange={handleRdvChange} style={inputStyle} />
                   </div>
                   <div>
-                    <label style={labelStyle}>Téléphone</label>
-                    <input type="tel" name="tel" required value={rdvFormData.tel} onChange={handleRdvChange} style={inputStyle} />
+                    <label style={labelStyle}>Numéro de Téléphone</label>
+                    <input type="tel" name="tel" required value={rdvFormData.tel} onChange={handleRdvChange} style={inputStyle} placeholder="+509..." />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '0.8rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div>
                       <label style={labelStyle}>Date souhaitée</label>
                       <input type="date" name="date" required value={rdvFormData.date} onChange={handleRdvChange} style={inputStyle} />
                     </div>
                     <div>
-                      <label style={labelStyle}>Heure</label>
+                      <label style={labelStyle}>Heure souhaitée</label>
                       <input type="time" name="heure" required value={rdvFormData.heure} onChange={handleRdvChange} style={inputStyle} />
                     </div>
                   </div>
                   <div style={{ marginBottom: '1.5rem' }}>
-                    <label style={labelStyle}>Raison du rendez-vous</label>
+                    <label style={labelStyle}>Motif du RDV</label>
                     <select name="raison" value={rdvFormData.raison} onChange={handleRdvChange} style={inputStyle}>
-                      <option value="Inscription académique">Inscription académique</option>
-                      <option value="Achat / Retrait uniformes">Achat / Retrait uniformes</option>
-                      <option value="Entretien technique">Entretien technique</option>
+                      <option value="Inscription académique">Inscription académique annuelle</option>
+                      <option value="Information stages">Renseignements sur les stages</option>
+                      <option value="Entretien staff">Entretien avec l'équipe technique</option>
+                      <option value="Autre">Autre demande</option>
                     </select>
                   </div>
-
-                  <button type="submit" className="btn btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                    <PhoneCall size={16} /> Confirmer la demande
-                  </button>
+                  <button type="submit" className="btn btn-outline" style={{ width: '100%', borderColor: 'var(--clr-primary)', color: 'var(--clr-primary)', background: 'transparent' }}>Confirmer le Rendez-vous</button>
                 </form>
               )}
-            </section>
 
-          </div>
+              <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid #eee', fontSize: '0.9rem', color: '#777' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <MapPin size={16} /> Entrée Delmas 77 (côté BIWI)
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Phone size={16} /> +509 3737 4004 / +509 4676 0404
+                </div>
+              </div>
+            </div>
+          </aside>
 
         </div>
 

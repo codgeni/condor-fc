@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShoppingBag, 
@@ -8,6 +8,7 @@ import {
   X, 
   MessageCircle 
 } from 'lucide-react';
+import { fetchProducts } from '@/lib/dataService';
 
 interface Product {
   id: string;
@@ -259,6 +260,7 @@ const PRODUCTS: Product[] = [
 ];
 
 export default function Shop() {
+  const [productList, setProductList] = useState<Product[]>(PRODUCTS);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -269,9 +271,29 @@ export default function Shop() {
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');
 
+  useEffect(() => {
+    fetchProducts().then(data => {
+      if (data && data.length > 0) {
+        // Merge or replace
+        const customMap = new Map();
+        PRODUCTS.forEach(p => customMap.set(p.id, p));
+        data.forEach((p: any) => {
+          customMap.set(p.id, {
+            ...p,
+            categoryLabel: p.category_label || p.categoryLabel || 'Boutique Condor',
+            formattedPrice: p.formatted_price || p.formattedPrice || `${p.price}.00 $`,
+            badgeText: p.badge_text || p.badgeText || '',
+            sizes: Array.isArray(p.sizes) ? p.sizes : ['S', 'M', 'L', 'XL']
+          });
+        });
+        setProductList(Array.from(customMap.values()));
+      }
+    });
+  }, []);
+
   const filteredProducts = selectedCategory === 'all'
-    ? PRODUCTS
-    : PRODUCTS.filter(p => p.category === selectedCategory);
+    ? productList
+    : productList.filter(p => p.category === selectedCategory);
 
   const openOrderModal = (product: Product) => {
     setActiveProduct(product);

@@ -3,10 +3,11 @@
 import { motion } from 'framer-motion';
 import { use } from 'react';
 import { playersDB } from '@/lib/playersDB';
-import { Trophy, Activity, Medal, User } from 'lucide-react';
+import { Trophy, Activity, Medal, User, Award, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { RealMadridGoldCup, RealMadridSilverCup, RealMadridStarShield } from '@/components/Trophies';
 
 export default function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
@@ -200,28 +201,152 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
           </div>
         </section>
 
-        {/* 4. Palmarès */}
-        <section style={{ paddingBottom: '2rem' }}>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '2px solid #ddd', paddingBottom: '10px' }}>
-            <Trophy color="var(--clr-primary)" /> Palmarès & Récompenses
-          </h2>
-          <div className="player-palmares-grid">
-            <motion.div 
-              whileHover={{ scale: 1.03 }}
-              style={{ background: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center', border: '1px solid #eee', boxShadow: '0 5px 15px rgba(0,0,0,0.02)' }}
+        {/* 4. Palmarès & Salle des Trophées Officielle (Design Club : Blanc, Rouge, Noir, Gris) */}
+        <section style={{ paddingBottom: '3rem' }}>
+          <div 
+            style={{ 
+              background: '#0B0B0E',
+              borderRadius: '24px',
+              padding: 'clamp(2rem, 4vw, 3.5rem)',
+              border: '1px solid #22222b',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.5)',
+              color: 'white',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            {/* En-tête sobre et officiel */}
+            <div style={{ textAlign: 'center', marginBottom: '2.5rem', position: 'relative', zIndex: 1 }}>
+              <h2 
+                style={{ 
+                  fontFamily: 'var(--font-heading)', 
+                  fontSize: 'clamp(2rem, 3.5vw, 2.8rem)', 
+                  margin: '4px 0 10px', 
+                  letterSpacing: '1px',
+                  textTransform: 'uppercase',
+                  color: '#ffffff'
+                }}
+              >
+                Palmarès de {player.name}
+              </h2>
+
+              <p style={{ color: '#94a3b8', fontSize: '0.95rem', maxWidth: '600px', margin: '0 auto', lineHeight: 1.5 }}>
+                Distinctions, titres et trophées majeurs remportés sous les couleurs du Condor FC.
+              </p>
+            </div>
+
+            {/* Vitrine des 3 Trophées sur Socles du Club */}
+            <div 
+              style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', 
+                gap: '2rem',
+                position: 'relative',
+                zIndex: 1
+              }}
             >
-              <Medal size={48} color="#ffd700" style={{ margin: '0 auto 1rem' }} />
-              <h3 style={{ fontSize: '2rem', fontFamily: 'var(--font-heading)', margin: 0, color: 'var(--clr-black)' }}>x {player.honours1 || 1}</h3>
-              <p style={{ color: 'var(--clr-gray)', textTransform: 'uppercase', fontSize: '0.9rem', fontWeight: 'bold' }}>Titres de Champion</p>
-            </motion.div>
-            <motion.div 
-              whileHover={{ scale: 1.03 }}
-              style={{ background: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center', border: '1px solid #eee', boxShadow: '0 5px 15px rgba(0,0,0,0.02)' }}
-            >
-              <Trophy size={48} color="#c0c0c0" style={{ margin: '0 auto 1rem' }} />
-              <h3 style={{ fontSize: '2rem', fontFamily: 'var(--font-heading)', margin: 0, color: 'var(--clr-black)' }}>x {player.honours2 || 1}</h3>
-              <p style={{ color: 'var(--clr-gray)', textTransform: 'uppercase', fontSize: '0.9rem', fontWeight: 'bold' }}>Tournois Majeurs</p>
-            </motion.div>
+              {/* 1. Trophée Or : Titres de Champion */}
+              <motion.div 
+                whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                style={{
+                  background: '#121217',
+                  borderRadius: '18px',
+                  border: '1px solid #22222b',
+                  padding: '2.5rem 1.5rem 2rem',
+                  textAlign: 'center',
+                  boxShadow: '0 15px 35px rgba(0,0,0,0.6)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                {/* Liseré supérieur Rouge Condor */}
+                <div style={{ position: 'absolute', top: 0, left: '25%', right: '25%', height: '3px', background: 'linear-gradient(90deg, transparent, var(--clr-primary), transparent)' }} />
+
+                <div style={{ margin: '0 auto 1.2rem', height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <RealMadridGoldCup size={110} glow={false} withReflection={true} />
+                </div>
+
+                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.4rem', fontWeight: '900', color: '#ffffff', lineHeight: 1, margin: '10px 0 4px' }}>
+                  x {player.honours1 || 1}
+                </div>
+
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', color: '#ffffff', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Titres de Champion
+                </h3>
+
+                <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0, lineHeight: 1.4 }}>
+                  Sacre suprême en tournois officiels avec les équipes du Condor FC.
+                </p>
+              </motion.div>
+
+              {/* 2. Trophée Argent : Tournois Majeurs & Podiums */}
+              <motion.div 
+                whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                style={{
+                  background: '#121217',
+                  borderRadius: '18px',
+                  border: '1px solid #22222b',
+                  padding: '2.5rem 1.5rem 2rem',
+                  textAlign: 'center',
+                  boxShadow: '0 15px 35px rgba(0,0,0,0.6)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                {/* Liseré supérieur Blanc */}
+                <div style={{ position: 'absolute', top: 0, left: '25%', right: '25%', height: '3px', background: 'linear-gradient(90deg, transparent, #ffffff, transparent)' }} />
+
+                <div style={{ margin: '0 auto 1.2rem', height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <RealMadridSilverCup size={110} glow={false} withReflection={true} />
+                </div>
+
+                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.4rem', fontWeight: '900', color: '#ffffff', lineHeight: 1, margin: '10px 0 4px' }}>
+                  x {player.honours2 || 1}
+                </div>
+
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', color: '#ffffff', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Finales & Podiums Majeurs
+                </h3>
+
+                <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0, lineHeight: 1.4 }}>
+                  Parcours de haut niveau et médailles d'argent en compétitions nationales.
+                </p>
+              </motion.div>
+
+              {/* 3. Écusson d'Excellence : Promotion Roster Élite */}
+              <motion.div 
+                whileHover={{ y: -6, transition: { duration: 0.25 } }}
+                style={{
+                  background: '#121217',
+                  borderRadius: '18px',
+                  border: '1px solid #22222b',
+                  padding: '2.5rem 1.5rem 2rem',
+                  textAlign: 'center',
+                  boxShadow: '0 15px 35px rgba(0,0,0,0.6)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                {/* Liseré supérieur Rouge Condor */}
+                <div style={{ position: 'absolute', top: 0, left: '25%', right: '25%', height: '3px', background: 'linear-gradient(90deg, transparent, var(--clr-primary), transparent)' }} />
+
+                <div style={{ margin: '0 auto 1.2rem', height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <RealMadridStarShield size={105} glow={false} />
+                </div>
+
+                <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.9rem', fontWeight: '900', color: 'var(--clr-primary)', lineHeight: 1, margin: '14px 0 4px' }}>
+                  CERTIFIÉ
+                </div>
+
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', color: '#ffffff', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Roster Officiel Condor FC
+                </h3>
+
+                <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0, lineHeight: 1.4 }}>
+                  Homologation officielle de la direction technique pour l'excellence et l'esprit d'équipe.
+                </p>
+              </motion.div>
+            </div>
           </div>
         </section>
 

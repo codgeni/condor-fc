@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { Award, Send, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { sanitizeFormRecord, checkRateLimit } from '@/lib/security';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -48,99 +49,34 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Enregistrement dans Supabase
+    // Protection anti-flood / rate limiting
+    const rateCheck = checkRateLimit('inscription_submission', 4000);
+    if (!rateCheck.allowed) {
+      alert(`Veuillez patienter ${rateCheck.remainingSeconds} seconde(s) avant de renvoyer le formulaire.`);
+      return;
+    }
+
+    // Assainissement strict de toutes les données du formulaire (Anti-XSS)
+    const sanitizedData = sanitizeFormRecord(formData);
+
+    // Enregistrement unique et sécurisé dans Supabase
     const { error } = await supabase.from('inscriptions').insert({
-      enfant_nom: formData.enfantNom,
-      enfant_prenom: formData.enfantPrenom,
-      enfant_dob: formData.enfantDateNaissance,
-      parent_nom: formData.parentNom,
-      parent_prenom: formData.parentPrenom,
-      parent_tel: formData.parentTelephones,
-      parent_email: formData.parentCourriel,
-      form_data: formData
+      enfant_nom: sanitizedData.enfantNom,
+      enfant_prenom: sanitizedData.enfantPrenom,
+      enfant_dob: sanitizedData.enfantDateNaissance,
+      parent_nom: sanitizedData.parentNom,
+      parent_prenom: sanitizedData.parentPrenom,
+      parent_tel: sanitizedData.parentTelephones,
+      parent_email: sanitizedData.parentCourriel,
+      form_data: sanitizedData
     });
 
     if (error) {
       console.error("Erreur lors de l'enregistrement de l'inscription:", error);
-      alert("Une erreur est survenue lors de l'enregistrement de votre inscription en base de données. Veuillez réessayer.");
+      alert("Une erreur est survenue lors de l'enregistrement de votre inscription. Veuillez vérifier vos données et réessayer.");
       return;
     }
     
-    const body = `NOUVELLE INSCRIPTION - CONDOR ECOLE DE FOOTBALL
-
-=== COMMENT VOUS NOUS AVEZ CONNU ? ===
-${formData.connuPar} ${formData.connuAutre ? `(${formData.connuAutre})` : ''}
-
-=== 1. ENFANT ===
-Nom: ${formData.enfantNom} | Prénom: ${formData.enfantPrenom}
-Date de naissance: ${formData.enfantDateNaissance} | Sexe: ${formData.enfantSexe}
-Téléphones: ${formData.enfantTelephones}
-Adresse: ${formData.enfantAdresse}
-
-=== 2. PARENT / PERSONNE RESPONSABLE ===
-Nom: ${formData.parentNom} | Prénom: ${formData.parentPrenom}
-WhatsApp: ${formData.parentWhatsapp} | Téléphones: ${formData.parentTelephones}
-NIF/NINU: ${formData.parentNIF}
-Courriel: ${formData.parentCourriel}
-Adresse: ${formData.parentAdresse}
-
-=== 3. CONTACT EN CAS D'URGENCE ===
-Nom: ${formData.urgenceNom} | Prénom: ${formData.urgencePrenom}
-Lien de parenté: ${formData.urgenceLien}
-WhatsApp: ${formData.urgenceWhatsapp} | Téléphones: ${formData.urgenceTelephones}
-Courriel: ${formData.urgenceCourriel}
-Adresse: ${formData.urgenceAdresse}
-
-=== 4. INFORMATIONS ADDITIONNELLES & RAPPORT ===
-École classique: ${formData.ecoleClassique} | Niveau/Classe: ${formData.niveauClasse}
-École/Club: ${formData.ecoleClub} | Position occupée: ${formData.position}
-Durée: ${formData.duree} | Âge début pratique: ${formData.ageDebut}
-
-=== 5. DIMENSION DES UNIFORMES ===
-Maillot: ${formData.tailleMaillot} | Short: ${formData.tailleShort}
-Poitrine: ${formData.taillePoitrine} | Épaule: ${formData.tailleEpaule} | Longueur: ${formData.tailleLongueur}
-Hauteur: ${formData.tailleHauteur} | Hanche: ${formData.tailleHanche} | Taille: ${formData.taille}
-Pointure: ${formData.pointure}
-# Uniforme: Désiré: ${formData.uniformeDesire} / Trouvé: ${formData.uniformeTrouve}
-
-=== 6. PLAN D'ADHÉSION CHOISI ===
-Plan: ${formData.planAdhesion}
-
-=== 7. RENSEIGNEMENTS MEDICAUX ===
-Allergies: ${formData.allergies}
-Asthme: ${formData.asthme} | Médicaments: ${formData.medicaments}
-Médecin: ${formData.medecinNom} | Préoccupation: ${formData.preoccupation}
-Tel: ${formData.medecinTel} | WA: ${formData.medecinWhatsapp}
-Cause allergie / conduite: ${formData.causeAllergie}
-En cas d'urgence/accident : ${formData.autorisationUrgence}
-
-=== 8. CONSENTEMENT PARENTAL ===
-Lu et approuvé conditions : ${formData.consentementLuApprouve ? 'OUI' : 'NON'}
-Pris connaissance tarifs : ${formData.consentementTarifs ? 'OUI' : 'NON'}
-Fournira certificat (1 mois) : ${formData.consentementCertificat ? 'OUI' : 'NON'}
-Autorisé à récupérer l'enfant : ${formData.autoriseRecuperer} (NIF: ${formData.nifRecuperer})
-Enfant rentre seul : ${formData.rentrerSeul ? 'OUI' : 'NON'}
-
-SIGNATURE (Tapée) : ${formData.signatureParent}
-DATE : ${formData.dateSignature}
-`;
-
-    // Sauvegarder dans la base de données Supabase
-    supabase.from('inscriptions').insert({
-      enfant_nom: formData.enfantNom,
-      enfant_prenom: formData.enfantPrenom,
-      enfant_dob: formData.enfantDateNaissance,
-      parent_nom: formData.parentNom,
-      parent_prenom: formData.parentPrenom,
-      parent_tel: formData.parentTelephones,
-      parent_email: formData.parentCourriel,
-      form_data: formData
-    }).then(({ error }) => {
-      if (error) {
-        console.error("Erreur lors de la sauvegarde dans Supabase :", error);
-      }
-    });
-
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);
