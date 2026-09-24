@@ -563,8 +563,8 @@ export default function Home() {
                           zIndex: 1
                         }}
                       >
-                        <div style={{ fontSize: '0.7rem', letterSpacing: '2px', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                          CONDOR FOOTBALL CLUB
+                        <div style={{ fontSize: '0.75rem', letterSpacing: '2.5px', color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                          CONDOR FC
                         </div>
                         <div style={{ fontSize: '0.95rem', color: '#ffffff', fontWeight: 'bold', fontFamily: 'var(--font-heading)', letterSpacing: '1px', marginTop: '2px' }}>
                           {currentTrophy.rank}

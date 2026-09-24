@@ -81,9 +81,9 @@ export function ChaleChaleTripleCup({ size = 120, className = '', glow = false, 
           </linearGradient>
 
           <linearGradient id={`specular-${uniqueId}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.75" />
-            <stop offset="60%" stopColor="#FFFFFF" stopOpacity="0.05" />
-            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            <stop offset="0%" stopColor="#FFFBEB" stopOpacity="0.25" />
+            <stop offset="60%" stopColor="#FFFBEB" stopOpacity="0.05" />
+            <stop offset="100%" stopColor="#FFFBEB" stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -95,13 +95,6 @@ export function ChaleChaleTripleCup({ size = 120, className = '', glow = false, 
           stroke="#92400E"
           strokeWidth="1.5"
         />
-        <path
-          d="M 60 52 C 22 45 16 118 52 146"
-          stroke="#FFFDF0"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          opacity="0.85"
-        />
 
         {/* Poignée Droite */}
         <path
@@ -110,24 +103,17 @@ export function ChaleChaleTripleCup({ size = 120, className = '', glow = false, 
           stroke="#92400E"
           strokeWidth="1.5"
         />
-        <path
-          d="M 160 52 C 198 45 204 118 168 146"
-          stroke="#FFFDF0"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          opacity="0.85"
-        />
 
         {/* 2. Couvercle Supérieur & Finial Noble */}
         <ellipse cx="110" cy="48" rx="26" ry="7" fill={`url(#goldMain-${uniqueId})`} />
         <ellipse cx="110" cy="46" rx="18" ry="4" fill="#FEF08A" opacity="0.8" />
         <circle cx="110" cy="41" r="5" fill={`url(#goldHandle-${uniqueId})`} stroke="#B45309" strokeWidth="1.2" />
-        <circle cx="110" cy="39.5" r="1.5" fill="#FFFDF0" />
+        <circle cx="110" cy="39.5" r="1.5" fill="#FEF08A" />
 
         {/* 3. Col & Lèvres Supérieures */}
         <path d="M 80 48 C 80 54 90 58 110 58 C 130 58 140 54 140 48 L 146 62 L 74 62 Z" fill={`url(#goldMain-${uniqueId})`} />
         <path d="M 74 62 L 146 62 L 150 74 L 70 74 Z" fill={`url(#goldMain-${uniqueId})`} stroke="#92400E" strokeWidth="1" />
-        <line x1="75" y1="68" x2="145" y2="68" stroke="#FFFDF0" strokeWidth="1.5" opacity="0.7" />
+        <line x1="75" y1="68" x2="145" y2="68" stroke="#FDE68A" strokeWidth="1.2" opacity="0.4" />
 
         {/* 4. Corps Principal de la Coupe (Grand Vase Flûté) */}
         <path
@@ -140,12 +126,12 @@ export function ChaleChaleTripleCup({ size = 120, className = '', glow = false, 
         {/* Rayures cannelées royales */}
         <path d="M 90 76 Q 86 122 98 166" stroke="#92400E" strokeWidth="1.2" opacity="0.6" fill="none" />
         <path d="M 130 76 Q 134 122 122 166" stroke="#78350F" strokeWidth="1.2" opacity="0.6" fill="none" />
-        <path d="M 110 76 L 110 168" stroke="#FFFDF0" strokeWidth="1.8" opacity="0.45" fill="none" />
+        <path d="M 110 76 L 110 168" stroke="#FDE68A" strokeWidth="1.2" opacity="0.35" fill="none" />
 
         {/* Médaillon Central Armoiries Condor FC */}
-        <circle cx="110" cy="112" r="17" fill="#141418" stroke="#FFFDF0" strokeWidth="1.6" />
+        <circle cx="110" cy="112" r="17" fill="#141418" stroke="#FDE68A" strokeWidth="1.6" />
         <path d="M 102 116 L 110 102 L 118 116 L 114 114 L 110 122 L 106 114 Z" fill="#F59E0B" />
-        <circle cx="110" cy="108" r="2.2" fill="#FFFDF0" />
+        <circle cx="110" cy="108" r="2.2" fill="#FEF08A" />
 
         {/* Spécularité miroir vertical */}
         <path d="M 76 76 C 76 76 82 120 94 152 C 90 152 80 110 80 76 Z" fill={`url(#specular-${uniqueId})`} />
@@ -153,7 +139,7 @@ export function ChaleChaleTripleCup({ size = 120, className = '', glow = false, 
         {/* 5. Nœud & Tige Ciselée */}
         <ellipse cx="110" cy="172" rx="20" ry="6" fill={`url(#goldMain-${uniqueId})`} />
         <path d="M 100 173 L 120 173 L 116 195 L 104 195 Z" fill={`url(#goldHandle-${uniqueId})`} />
-        <line x1="107" y1="175" x2="107" y2="193" stroke="#FFFDF0" strokeWidth="1.5" opacity="0.75" />
+        <line x1="107" y1="175" x2="107" y2="193" stroke="#FDE68A" strokeWidth="1.2" opacity="0.45" />
         <ellipse cx="110" cy="195" rx="24" ry="6" fill={`url(#goldMain-${uniqueId})`} stroke="#B45309" strokeWidth="1" />
 
         {/* 6. Socle en Marbre Noir d'Obsidienne */}
@@ -163,8 +149,8 @@ export function ChaleChaleTripleCup({ size = 120, className = '', glow = false, 
 
         {/* 7. Plaque Laiton Gravée */}
         <rect x="72" y="220" width="76" height="14" rx="2" fill={`url(#brassPlate-${uniqueId})`} stroke="#78350F" strokeWidth="1" />
-        <text x="110" y="230.5" textAnchor="middle" fontSize="6.5" fontWeight="900" fontFamily="system-ui, sans-serif" fill="#381E08" letterSpacing="1">
-          CHALE CHALE · TRIPLÉ
+        <text x="110" y="230" textAnchor="middle" fontSize="7.5" fontWeight="900" fontFamily="system-ui, sans-serif" fill="#381E08" letterSpacing="2">
+          CONDOR FC
         </text>
       </svg>
 
@@ -279,7 +265,6 @@ export function BackToSchoolNationalCup({ size = 120, className = '', glow = fal
           stroke="#713F12"
           strokeWidth="1.5"
         />
-        <path d="M 32 72 Q 24 104 54 136" stroke="#FFFDF0" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
 
         {/* Aile Droite */}
         <path
@@ -288,7 +273,6 @@ export function BackToSchoolNationalCup({ size = 120, className = '', glow = fal
           stroke="#713F12"
           strokeWidth="1.5"
         />
-        <path d="M 188 72 Q 196 104 166 136" stroke="#FFFDF0" strokeWidth="2" strokeLinecap="round" opacity="0.8" />
 
         {/* 2. Couronne Royale Supérieure (Créneaux Festonnés) */}
         {/* Créneaux festonnés à 7 pointes nobles */}
@@ -298,9 +282,9 @@ export function BackToSchoolNationalCup({ size = 120, className = '', glow = fal
           stroke="#A16207"
           strokeWidth="1.2"
         />
-        <circle cx="100" cy="42" r="2.5" fill="#FFFDF0" />
+        <circle cx="100" cy="42" r="2.5" fill="#FEF08A" />
         <circle cx="110" cy="40" r="3" fill="#FEF08A" />
-        <circle cx="120" cy="42" r="2.5" fill="#FFFDF0" />
+        <circle cx="120" cy="42" r="2.5" fill="#FEF08A" />
 
         {/* Lèvre et Col Festonné */}
         <ellipse cx="110" cy="60" rx="34" ry="7" fill={`url(#btsGold-${uniqueId})`} stroke="#713F12" strokeWidth="1" />
@@ -314,20 +298,18 @@ export function BackToSchoolNationalCup({ size = 120, className = '', glow = fal
           strokeWidth="1.5"
         />
 
-        {/* Éclat spéculaire doré central */}
-        <path d="M 98 62 L 102 164 L 108 164 L 104 62 Z" fill="#FFFDF0" opacity="0.5" />
-        <circle cx="110" cy="106" r="14" fill="#1C1917" stroke="#FFFDF0" strokeWidth="1.5" />
+        <circle cx="110" cy="106" r="14" fill="#1C1917" stroke="#FEF08A" strokeWidth="1.5" />
         {/* Aigle souverain Condor */}
         <path d="M 104 108 L 110 98 L 116 108 L 110 114 Z" fill="#FEF08A" />
 
         {/* 4. Ceinture de Perles & Tige Royale */}
         <ellipse cx="110" cy="168" rx="22" ry="5" fill={`url(#btsGold-${uniqueId})`} />
         {/* 5 perles royales */}
-        <circle cx="96" cy="168" r="2" fill="#FFFDF0" />
-        <circle cx="103" cy="169" r="2" fill="#FFFDF0" />
-        <circle cx="110" cy="170" r="2.5" fill="#FFFDF0" />
-        <circle cx="117" cy="169" r="2" fill="#FFFDF0" />
-        <circle cx="124" cy="168" r="2" fill="#FFFDF0" />
+        <circle cx="96" cy="168" r="2" fill="#FEF08A" />
+        <circle cx="103" cy="169" r="2" fill="#FEF08A" />
+        <circle cx="110" cy="170" r="2.5" fill="#FEF08A" />
+        <circle cx="117" cy="169" r="2" fill="#FEF08A" />
+        <circle cx="124" cy="168" r="2" fill="#FEF08A" />
 
         {/* Colonne Cannelée Tapered */}
         <path d="M 102 172 L 118 172 L 115 194 L 105 194 Z" fill={`url(#btsWing-${uniqueId})`} stroke="#713F12" strokeWidth="1" />
@@ -340,8 +322,8 @@ export function BackToSchoolNationalCup({ size = 120, className = '', glow = fal
 
         {/* 6. Plaque Laiton Gravée */}
         <rect x="70" y="219" width="80" height="14" rx="2" fill={`url(#btsPlate-${uniqueId})`} stroke="#713F12" strokeWidth="1" />
-        <text x="110" y="229.5" textAnchor="middle" fontSize="6.2" fontWeight="900" fontFamily="system-ui, sans-serif" fill="#422006" letterSpacing="0.8">
-          BACK TO SCHOOL · U17
+        <text x="110" y="229.5" textAnchor="middle" fontSize="7.5" fontWeight="900" fontFamily="system-ui, sans-serif" fill="#422006" letterSpacing="2">
+          CONDOR FC
         </text>
       </svg>
 
@@ -495,8 +477,8 @@ export function CopaUndecimaWinterCup({ size = 120, className = '', glow = false
 
         {/* 7. Plaque Laiton Gravée */}
         <rect x="68" y="220" width="84" height="14" rx="2" fill={`url(#undecimaGold-${uniqueId})`} stroke="#78350F" strokeWidth="1" />
-        <text x="110" y="230.5" textAnchor="middle" fontSize="6.5" fontWeight="900" fontFamily="system-ui, sans-serif" fill="#290E02" letterSpacing="0.8">
-          COPA UNDECIMA · U15
+        <text x="110" y="230" textAnchor="middle" fontSize="7.5" fontWeight="900" fontFamily="system-ui, sans-serif" fill="#290E02" letterSpacing="2">
+          CONDOR FC
         </text>
       </svg>
 
@@ -609,7 +591,6 @@ export function FlagDaySilverCup({ size = 120, className = '', glow = false, wit
           stroke="#475569"
           strokeWidth="1.2"
         />
-        <line x1="28" y1="96" x2="40" y2="136" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" opacity="0.9" />
 
         {/* Poignée Droite Cantilever */}
         <polygon
@@ -618,7 +599,6 @@ export function FlagDaySilverCup({ size = 120, className = '', glow = false, wit
           stroke="#475569"
           strokeWidth="1.2"
         />
-        <line x1="192" y1="96" x2="180" y2="136" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" opacity="0.9" />
 
         {/* 2. Lèvres et Dôme Chromé Biseauté */}
         <ellipse cx="110" cy="50" rx="30" ry="7" fill={`url(#flagSilver-${uniqueId})`} />
@@ -656,8 +636,8 @@ export function FlagDaySilverCup({ size = 120, className = '', glow = false, wit
 
         {/* 6. Plaque Argentée Gravée */}
         <rect x="66" y="220" width="88" height="14" rx="2" fill={`url(#flagPlate-${uniqueId})`} stroke="#334155" strokeWidth="1" />
-        <text x="110" y="230.5" textAnchor="middle" fontSize="6.2" fontWeight="900" fontFamily="system-ui, sans-serif" fill="#0F172A" letterSpacing="0.8">
-          FLAG DAY 13e · VICE-CHAMPION
+        <text x="110" y="230" textAnchor="middle" fontSize="7.5" fontWeight="900" fontFamily="system-ui, sans-serif" fill="#0F172A" letterSpacing="2">
+          CONDOR FC
         </text>
       </svg>
 
@@ -800,8 +780,8 @@ export function FlagDayHistoricalSilverCup({ size = 120, className = '', glow = 
 
         {/* 6. Plaque Sterling Gravée */}
         <rect x="68" y="219" width="84" height="14" rx="2" fill={`url(#histSilver-${uniqueId})`} stroke="#334155" strokeWidth="1" />
-        <text x="110" y="229.5" textAnchor="middle" fontSize="6.2" fontWeight="900" fontFamily="system-ui, sans-serif" fill="#0F172A" letterSpacing="0.8">
-          FLAG DAY 12e · PODIUM 2025
+        <text x="110" y="229.5" textAnchor="middle" fontSize="7.5" fontWeight="900" fontFamily="system-ui, sans-serif" fill="#0F172A" letterSpacing="2">
+          CONDOR FC
         </text>
       </svg>
 
