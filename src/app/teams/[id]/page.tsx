@@ -106,7 +106,6 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
             >
               <div className="player-header-top">
                 <span className="player-badge-id">Fiche d'identité</span>
-                <span className="player-badge-cat">{categoriesDisplay}</span>
               </div>
               
               <h1 className="player-profile-name">{player.name}</h1>
