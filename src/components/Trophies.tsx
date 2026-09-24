@@ -25,7 +25,7 @@ export function RealMadridGoldCup({ size = 120, className = '', glow = false, wi
         <div
           style={{
             position: 'absolute',
-            top: '30%',
+            top: '40%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
             width: size * 1.2,
@@ -43,7 +43,7 @@ export function RealMadridGoldCup({ size = 120, className = '', glow = false, wi
       <svg
         width={size}
         height={height}
-        viewBox="0 0 200 250"
+        viewBox="0 -22 200 272"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         style={{ position: 'relative', zIndex: 1, filter: 'drop-shadow(0 15px 25px rgba(0,0,0,0.6))' }}
@@ -200,15 +200,21 @@ export function RealMadridGoldCup({ size = 120, className = '', glow = false, wi
       {withReflection && (
         <div
           style={{
-            marginTop: '-6px',
+            position: 'absolute',
+            top: '96%',
+            left: 0,
+            right: 0,
             transform: 'scaleY(-0.35)',
-            transformOrigin: 'top',
+            transformOrigin: 'top center',
             filter: 'blur(2px)',
             opacity: 0.25,
             maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%)',
             WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%)',
             pointerEvents: 'none',
-            userSelect: 'none'
+            userSelect: 'none',
+            display: 'flex',
+            justifyContent: 'center',
+            zIndex: 0
           }}
         >
           <svg width={size} height={height * 0.7} viewBox="0 0 200 250" fill="none">
@@ -236,7 +242,7 @@ export function RealMadridSilverCup({ size = 120, className = '', glow = false, 
         <div
           style={{
             position: 'absolute',
-            top: '30%',
+            top: '40%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
             width: size * 1.2,
@@ -254,7 +260,7 @@ export function RealMadridSilverCup({ size = 120, className = '', glow = false, 
       <svg
         width={size}
         height={height}
-        viewBox="0 0 200 250"
+        viewBox="0 -22 200 272"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         style={{ position: 'relative', zIndex: 1, filter: 'drop-shadow(0 15px 25px rgba(0,0,0,0.5))' }}
@@ -386,15 +392,21 @@ export function RealMadridSilverCup({ size = 120, className = '', glow = false, 
       {withReflection && (
         <div
           style={{
-            marginTop: '-6px',
+            position: 'absolute',
+            top: '96%',
+            left: 0,
+            right: 0,
             transform: 'scaleY(-0.35)',
-            transformOrigin: 'top',
+            transformOrigin: 'top center',
             filter: 'blur(2px)',
             opacity: 0.2,
             maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%)',
             WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 70%)',
             pointerEvents: 'none',
-            userSelect: 'none'
+            userSelect: 'none',
+            display: 'flex',
+            justifyContent: 'center',
+            zIndex: 0
           }}
         >
           <svg width={size} height={height * 0.7} viewBox="0 0 200 250" fill="none">
@@ -439,7 +451,7 @@ export function RealMadridStarShield({ size = 110, className = '', glow = false 
         viewBox="0 0 160 160"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ position: 'relative', zIndex: 1, filter: 'drop-shadow(0 12px 20px rgba(0,0,0,0.5))' }}
+        style={{ position: 'relative', zIndex: 1, filter: 'drop-shadow(0 12px 20px rgba(0,0,0,0.5))', transform: 'translateY(8px)' }}
       >
         <defs>
           <linearGradient id={`goldShield-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -610,7 +622,7 @@ export function RealMadridPedestal({
       )}
 
       {/* Trophée Posé */}
-      <div style={{ position: 'relative', zIndex: 2, margin: '0.5rem 0' }}>
+      <div style={{ position: 'relative', zIndex: 2, margin: '0.9rem 0 0.8rem', minHeight: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {children}
       </div>
 

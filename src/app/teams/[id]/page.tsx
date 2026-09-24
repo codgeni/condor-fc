@@ -252,18 +252,22 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                   background: '#121217',
                   borderRadius: '18px',
                   border: '1px solid #22222b',
-                  padding: '2.5rem 1.5rem 2rem',
+                  padding: '3.2rem 1.5rem 2.4rem',
                   textAlign: 'center',
                   boxShadow: '0 15px 35px rgba(0,0,0,0.6)',
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
                 {/* Liseré supérieur Rouge Condor */}
                 <div style={{ position: 'absolute', top: 0, left: '25%', right: '25%', height: '3px', background: 'linear-gradient(90deg, transparent, var(--clr-primary), transparent)' }} />
 
-                <div style={{ margin: '0 auto 1.2rem', height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <RealMadridGoldCup size={110} glow={false} withReflection={true} />
+                <div style={{ margin: '1.2rem auto 1.4rem', minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'translateY(14px)' }}>
+                  <RealMadridGoldCup size={105} glow={false} withReflection={true} />
                 </div>
 
                 <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.4rem', fontWeight: '900', color: '#ffffff', lineHeight: 1, margin: '10px 0 4px' }}>
@@ -286,18 +290,22 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                   background: '#121217',
                   borderRadius: '18px',
                   border: '1px solid #22222b',
-                  padding: '2.5rem 1.5rem 2rem',
+                  padding: '3.2rem 1.5rem 2.4rem',
                   textAlign: 'center',
                   boxShadow: '0 15px 35px rgba(0,0,0,0.6)',
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
                 {/* Liseré supérieur Blanc */}
                 <div style={{ position: 'absolute', top: 0, left: '25%', right: '25%', height: '3px', background: 'linear-gradient(90deg, transparent, #ffffff, transparent)' }} />
 
-                <div style={{ margin: '0 auto 1.2rem', height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <RealMadridSilverCup size={110} glow={false} withReflection={true} />
+                <div style={{ margin: '1.2rem auto 1.4rem', minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'translateY(14px)' }}>
+                  <RealMadridSilverCup size={105} glow={false} withReflection={true} />
                 </div>
 
                 <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.4rem', fontWeight: '900', color: '#ffffff', lineHeight: 1, margin: '10px 0 4px' }}>
@@ -320,17 +328,21 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                   background: '#121217',
                   borderRadius: '18px',
                   border: '1px solid #22222b',
-                  padding: '2.5rem 1.5rem 2rem',
+                  padding: '3.2rem 1.5rem 2.4rem',
                   textAlign: 'center',
                   boxShadow: '0 15px 35px rgba(0,0,0,0.6)',
                   position: 'relative',
-                  overflow: 'hidden'
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}
               >
                 {/* Liseré supérieur Rouge Condor */}
                 <div style={{ position: 'absolute', top: 0, left: '25%', right: '25%', height: '3px', background: 'linear-gradient(90deg, transparent, var(--clr-primary), transparent)' }} />
 
-                <div style={{ margin: '0 auto 1.2rem', height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ margin: '1.2rem auto 1.4rem', minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'translateY(14px)' }}>
                   <RealMadridStarShield size={105} glow={false} />
                 </div>
 

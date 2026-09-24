@@ -514,18 +514,18 @@ export default function Home() {
                     className="trophy-stage-grid"
                   >
                     {/* Colonne Gauche : Trophée */}
-                    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', minHeight: '340px', paddingTop: '2.5rem' }}>
                       <motion.div
                         key={currentTrophy.id}
                         initial={{ opacity: 0, scale: 0.88, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ duration: 0.4, ease: 'easeOut' }}
-                        style={{ height: '230px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, transform: 'translateY(22px)', marginBottom: '25px' }}
                       >
                         {currentTrophy.isGold ? (
-                          <RealMadridGoldCup size={160} glow={false} withReflection={true} />
+                          <RealMadridGoldCup size={150} glow={false} withReflection={true} />
                         ) : (
-                          <RealMadridSilverCup size={160} glow={false} withReflection={true} />
+                          <RealMadridSilverCup size={150} glow={false} withReflection={true} />
                         )}
                       </motion.div>
 
@@ -533,6 +533,7 @@ export default function Home() {
                       <div 
                         style={{
                           marginTop: '1.2rem',
+                          transform: 'translateY(18px)',
                           background: '#16161f',
                           border: '1px solid #2a2a38',
                           borderRadius: '8px',
@@ -720,7 +721,7 @@ export default function Home() {
                             flex: '0 0 190px',
                             scrollSnapAlign: 'start',
                             borderRadius: '16px',
-                            padding: '1.2rem 0.8rem 1rem',
+                            padding: '1.8rem 0.8rem 1.2rem',
                             textAlign: 'center',
                             background: isActive ? '#171720' : '#111116',
                             border: '1px solid #22222b',
@@ -728,15 +729,19 @@ export default function Home() {
                             transform: isActive ? 'translateY(-4px)' : 'none',
                             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                             position: 'relative',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center'
                           }}
                         >
                           {/* Mini Trophée 3D */}
-                          <div style={{ height: '75px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px auto 8px' }}>
+                          <div style={{ height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px auto 12px', transform: 'translateY(8px)' }}>
                             {t.isGold ? (
-                              <RealMadridGoldCup size={60} glow={false} />
+                              <RealMadridGoldCup size={54} glow={false} />
                             ) : (
-                              <RealMadridSilverCup size={60} glow={false} />
+                              <RealMadridSilverCup size={54} glow={false} />
                             )}
                           </div>
 
