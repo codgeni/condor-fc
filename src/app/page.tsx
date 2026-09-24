@@ -514,18 +514,18 @@ export default function Home() {
                     className="trophy-stage-grid"
                   >
                     {/* Colonne Gauche : Trophée */}
-                    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', minHeight: '340px', paddingTop: '2.5rem' }}>
+                    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center' }}>
                       <motion.div
                         key={currentTrophy.id}
                         initial={{ opacity: 0, scale: 0.88, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ duration: 0.4, ease: 'easeOut' }}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, transform: 'translateY(22px)', marginBottom: '25px' }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, minHeight: '230px' }}
                       >
                         {currentTrophy.isGold ? (
-                          <RealMadridGoldCup size={150} glow={false} withReflection={true} />
+                          <RealMadridGoldCup size={155} glow={false} withReflection={true} />
                         ) : (
-                          <RealMadridSilverCup size={150} glow={false} withReflection={true} />
+                          <RealMadridSilverCup size={155} glow={false} withReflection={true} />
                         )}
                       </motion.div>
 
@@ -533,7 +533,6 @@ export default function Home() {
                       <div 
                         style={{
                           marginTop: '1.2rem',
-                          transform: 'translateY(18px)',
                           background: '#16161f',
                           border: '1px solid #2a2a38',
                           borderRadius: '8px',
@@ -560,33 +559,13 @@ export default function Home() {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.4, delay: 0.1 }}
+                      style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
                     >
-                      {/* Badge Supérieur en Rouge Condor */}
-                      <div style={{ marginBottom: '0.8rem' }}>
-                        <span 
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            background: 'rgba(202, 2, 79, 0.15)',
-                            border: '1px solid var(--clr-primary)',
-                            color: '#ffffff',
-                            padding: '4px 14px',
-                            borderRadius: '20px',
-                            fontSize: '0.72rem',
-                            fontWeight: '800',
-                            letterSpacing: '1.5px',
-                            textTransform: 'uppercase'
-                          }}
-                        >
-                          {currentTrophy.badge}
-                        </span>
-                      </div>
-
                       {/* Titre Majeur en Blanc Net */}
                       <h3 
                         style={{
                           fontFamily: 'var(--font-heading)',
-                          fontSize: 'clamp(2rem, 3.5vw, 2.8rem)',
+                          fontSize: 'clamp(2.1rem, 3.8vw, 3rem)',
                           margin: '0 0 6px',
                           color: '#ffffff',
                           textTransform: 'uppercase',

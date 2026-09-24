@@ -16,7 +16,7 @@ interface TrophyProps {
  */
 export function RealMadridGoldCup({ size = 120, className = '', glow = false, withReflection = false }: TrophyProps) {
   const uniqueId = useId().replace(/:/g, '_');
-  const height = Math.round(size * 1.25);
+  const height = Math.round(size * 1.15);
 
   return (
     <div style={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }} className={className}>
@@ -25,7 +25,7 @@ export function RealMadridGoldCup({ size = 120, className = '', glow = false, wi
         <div
           style={{
             position: 'absolute',
-            top: '40%',
+            top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
             width: size * 1.2,
@@ -43,7 +43,7 @@ export function RealMadridGoldCup({ size = 120, className = '', glow = false, wi
       <svg
         width={size}
         height={height}
-        viewBox="0 -22 200 272"
+        viewBox="0 20 200 230"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         style={{ position: 'relative', zIndex: 1, filter: 'drop-shadow(0 15px 25px rgba(0,0,0,0.6))' }}
@@ -122,15 +122,9 @@ export function RealMadridGoldCup({ size = 120, className = '', glow = false, wi
           opacity="0.8"
         />
 
-        {/* 2. Étoile Triomphale Sommet (Finial) */}
-        <polygon
-          points="100,10 105,24 120,25 109,35 113,50 100,41 87,50 91,35 80,25 95,24"
-          fill="#FFFBEB"
-          stroke="#F59E0B"
-          strokeWidth="1.5"
-          filter="drop-shadow(0 2px 4px rgba(0,0,0,0.4))"
-        />
-        <circle cx="100" cy="30" r="3" fill="#FFFBEB" />
+        {/* 2. Finial Classique du Couvercle (Sans étoile) */}
+        <circle cx="100" cy="43" r="4.5" fill={`url(#goldBody-${uniqueId})`} stroke="#B45309" strokeWidth="1.2" />
+        <circle cx="100" cy="41.5" r="1.5" fill="#FFFBEB" opacity="0.9" />
 
         {/* 3. Couvercle Supérieur Ciselé */}
         <ellipse cx="100" cy="48" rx="22" ry="6" fill={`url(#goldBody-${uniqueId})`} />
@@ -233,7 +227,7 @@ export function RealMadridGoldCup({ size = 120, className = '', glow = false, wi
  */
 export function RealMadridSilverCup({ size = 120, className = '', glow = false, withReflection = false }: TrophyProps) {
   const uniqueId = useId().replace(/:/g, '_');
-  const height = Math.round(size * 1.25);
+  const height = Math.round(size * 1.15);
 
   return (
     <div style={{ position: 'relative', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }} className={className}>
@@ -242,7 +236,7 @@ export function RealMadridSilverCup({ size = 120, className = '', glow = false, 
         <div
           style={{
             position: 'absolute',
-            top: '40%',
+            top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
             width: size * 1.2,
@@ -260,7 +254,7 @@ export function RealMadridSilverCup({ size = 120, className = '', glow = false, 
       <svg
         width={size}
         height={height}
-        viewBox="0 -22 200 272"
+        viewBox="0 20 200 230"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         style={{ position: 'relative', zIndex: 1, filter: 'drop-shadow(0 15px 25px rgba(0,0,0,0.5))' }}
@@ -318,13 +312,9 @@ export function RealMadridSilverCup({ size = 120, className = '', glow = false, 
         />
         <path d="M 148 72 C 176 78 180 115 152 138" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" opacity="0.9" />
 
-        {/* Étoile Supérieure */}
-        <polygon
-          points="100,10 105,24 120,25 109,35 113,50 100,41 87,50 91,35 80,25 95,24"
-          fill="#FFFFFF"
-          stroke="#94A3B8"
-          strokeWidth="1.5"
-        />
+        {/* Finial Classique du Couvercle (Sans étoile) */}
+        <circle cx="100" cy="43" r="4.5" fill={`url(#silverBody-${uniqueId})`} stroke="#475569" strokeWidth="1.2" />
+        <circle cx="100" cy="41.5" r="1.5" fill="#FFFFFF" opacity="0.9" />
 
         {/* Couvercle */}
         <ellipse cx="100" cy="48" rx="22" ry="6" fill={`url(#silverBody-${uniqueId})`} />
