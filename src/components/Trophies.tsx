@@ -458,12 +458,13 @@ export function CopaUndecimaWinterCup({ size = 120, className = '', glow = false
           strokeWidth="1.5"
         />
 
-        {/* 4. Bandeau Central Horizontal Gravé de Lauriers */}
-        <path d="M 64 104 C 64 104 84 112 110 112 C 136 112 156 104 156 104 L 154 122 C 154 122 134 130 110 130 C 86 130 66 122 66 122 Z" fill="#451A03" stroke="#FDE68A" strokeWidth="1" />
-        {/* Motifs de lauriers stylisés dorés */}
-        <text x="110" y="120.5" textAnchor="middle" fontSize="7.5" fontWeight="900" fontFamily="system-ui, sans-serif" fill="#FEF3C7" letterSpacing="2">
-          COPA UNDECIMA
-        </text>
+        {/* 4. Bandeau Central Horizontal Gravé de Lauriers (Zéro Texte) */}
+        <path d="M 64 104 C 64 104 84 112 110 112 C 136 112 156 104 156 104 L 154 122 C 154 122 134 130 110 130 C 86 130 66 122 66 122 Z" fill="#3D1A04" stroke="#FDE68A" strokeWidth="1" />
+        {/* Motifs de lauriers stylisés dorés ciselés */}
+        <path d="M 88 116 Q 94 112 100 116 Q 105 111 110 116 Q 115 111 120 116 Q 126 112 132 116" stroke="#FEF3C7" strokeWidth="1.5" fill="none" opacity="0.85" />
+        <circle cx="110" cy="116" r="3" fill="#FEF08A" stroke="#92400E" strokeWidth="0.8" />
+        <circle cx="100" cy="114" r="2" fill="#FEF08A" />
+        <circle cx="120" cy="114" r="2" fill="#FEF08A" />
 
         {/* 5. Base Acanthe Ciselée */}
         <ellipse cx="110" cy="174" rx="24" ry="6" fill={`url(#undecimaGold-${uniqueId})`} />
