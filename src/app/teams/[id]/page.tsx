@@ -7,7 +7,7 @@ import { Trophy, Activity, Medal, User, Award, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { RealMadridGoldCup, RealMadridSilverCup, RealMadridStarShield } from '@/components/Trophies';
+import { ChaleChaleTripleCup, FlagDaySilverCup, RealMadridStarShield } from '@/components/Trophies';
 
 export default function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
@@ -266,7 +266,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                 <div style={{ position: 'absolute', top: 0, left: '25%', right: '25%', height: '3px', background: 'linear-gradient(90deg, transparent, var(--clr-primary), transparent)' }} />
 
                 <div style={{ margin: '1.2rem auto 1.4rem', minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'translateY(14px)' }}>
-                  <RealMadridGoldCup size={105} glow={false} withReflection={true} />
+                  <ChaleChaleTripleCup size={105} glow={false} withReflection={true} />
                 </div>
 
                 <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.4rem', fontWeight: '900', color: '#ffffff', lineHeight: 1, margin: '10px 0 4px' }}>
@@ -304,7 +304,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                 <div style={{ position: 'absolute', top: 0, left: '25%', right: '25%', height: '3px', background: 'linear-gradient(90deg, transparent, #ffffff, transparent)' }} />
 
                 <div style={{ margin: '1.2rem auto 1.4rem', minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'translateY(14px)' }}>
-                  <RealMadridSilverCup size={105} glow={false} withReflection={true} />
+                  <FlagDaySilverCup size={105} glow={false} withReflection={true} />
                 </div>
 
                 <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.4rem', fontWeight: '900', color: '#ffffff', lineHeight: 1, margin: '10px 0 4px' }}>

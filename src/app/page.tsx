@@ -8,7 +8,30 @@ import { useEffect, useState } from 'react';
 import { playersDB } from '@/lib/playersDB';
 import { fetchCurrentMatch, MatchConfig, fetchVideos, VideoItem } from '@/lib/dataService';
 import { supabase } from '@/lib/supabaseClient';
-import { RealMadridGoldCup, RealMadridSilverCup } from '@/components/Trophies';
+import { 
+  ChaleChaleTripleCup, 
+  BackToSchoolNationalCup, 
+  CopaUndecimaWinterCup, 
+  FlagDaySilverCup, 
+  FlagDayHistoricalSilverCup 
+} from '@/components/Trophies';
+
+function renderTrophy(id: string, size = 155, withReflection = false) {
+  switch (id) {
+    case 'chale-chale':
+      return <ChaleChaleTripleCup size={size} glow={false} withReflection={withReflection} />;
+    case 'back-to-school':
+      return <BackToSchoolNationalCup size={size} glow={false} withReflection={withReflection} />;
+    case 'copa-undecima':
+      return <CopaUndecimaWinterCup size={size} glow={false} withReflection={withReflection} />;
+    case 'flag-day-13':
+      return <FlagDaySilverCup size={size} glow={false} withReflection={withReflection} />;
+    case 'flag-day-12':
+      return <FlagDayHistoricalSilverCup size={size} glow={false} withReflection={withReflection} />;
+    default:
+      return <ChaleChaleTripleCup size={size} glow={false} withReflection={withReflection} />;
+  }
+}
 
 export default function Home() {
   const [activeTrophyIndex, setActiveTrophyIndex] = useState(0);
@@ -480,11 +503,11 @@ export default function Home() {
             };
 
             const allTrophiesList = [
-              { name: 'Triplé Chale Chale', year: '2026', rank: 'Champion U11/15/16', isGold: true },
-              { name: 'Back To School', year: '2025', rank: 'Champion U17', isGold: true },
-              { name: 'Copa Undecima', year: '2025', rank: 'Champion U15', isGold: true },
-              { name: 'Flag Day 13e', year: '2026', rank: 'Vice-Champion U15', isGold: false },
-              { name: 'Flag Day 12e', year: '2025', rank: 'Vice-Champion U13', isGold: false }
+              { id: 'chale-chale', name: 'Triplé Chale Chale', year: '2026', rank: 'Champion U11/15/16', isGold: true },
+              { id: 'back-to-school', name: 'Back To School', year: '2025', rank: 'Champion U17', isGold: true },
+              { id: 'copa-undecima', name: 'Copa Undecima', year: '2025', rank: 'Champion U15', isGold: true },
+              { id: 'flag-day-13', name: 'Flag Day 13e', year: '2026', rank: 'Vice-Champion U15', isGold: false },
+              { id: 'flag-day-12', name: 'Flag Day 12e', year: '2025', rank: 'Vice-Champion U13', isGold: false }
             ];
 
             return (
@@ -522,11 +545,7 @@ export default function Home() {
                         transition={{ duration: 0.4, ease: 'easeOut' }}
                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, minHeight: '230px' }}
                       >
-                        {currentTrophy.isGold ? (
-                          <RealMadridGoldCup size={155} glow={false} withReflection={true} />
-                        ) : (
-                          <RealMadridSilverCup size={155} glow={false} withReflection={true} />
-                        )}
+                        {renderTrophy(currentTrophy.id, 155, true)}
                       </motion.div>
 
                       {/* Plaque Socle du Trophée */}
@@ -717,11 +736,7 @@ export default function Home() {
                         >
                           {/* Mini Trophée 3D */}
                           <div style={{ height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px auto 12px', transform: 'translateY(8px)' }}>
-                            {t.isGold ? (
-                              <RealMadridGoldCup size={54} glow={false} />
-                            ) : (
-                              <RealMadridSilverCup size={54} glow={false} />
-                            )}
+                            {renderTrophy(t.id, 54, false)}
                           </div>
 
                           {/* Titre & Année */}
