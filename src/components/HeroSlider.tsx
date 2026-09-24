@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 const DEFAULT_SLIDES = [
@@ -51,10 +50,6 @@ export default function HeroSlider() {
     setCurrentIndex(prev => (prev + 1) % slides.length);
   };
 
-  const handlePrev = () => {
-    setCurrentIndex(prev => (prev - 1 + slides.length) % slides.length);
-  };
-
   if (slides.length === 0) return null;
 
   return (
@@ -78,62 +73,6 @@ export default function HeroSlider() {
           alt={`Equipe slide ${currentIndex + 1}`}
         />
       </AnimatePresence>
-
-      {/* Navigation Arrows */}
-      {slides.length > 1 && (
-        <>
-          <button
-            onClick={handlePrev}
-            style={{
-              position: 'absolute',
-              left: '20px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'rgba(0,0,0,0.5)',
-              border: 'none',
-              borderRadius: '50%',
-              width: '50px',
-              height: '50px',
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10,
-              transition: 'background 0.3s',
-            }}
-            onMouseOver={e => e.currentTarget.style.background = 'var(--clr-primary)'}
-            onMouseOut={e => e.currentTarget.style.background = 'rgba(0,0,0,0.5)'}
-          >
-            <ChevronLeft size={24} />
-          </button>
-          <button
-            onClick={handleNext}
-            style={{
-              position: 'absolute',
-              right: '20px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'rgba(0,0,0,0.5)',
-              border: 'none',
-              borderRadius: '50%',
-              width: '50px',
-              height: '50px',
-              color: 'white',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 10,
-              transition: 'background 0.3s',
-            }}
-            onMouseOver={e => e.currentTarget.style.background = 'var(--clr-primary)'}
-            onMouseOut={e => e.currentTarget.style.background = 'rgba(0,0,0,0.5)'}
-          >
-            <ChevronRight size={24} />
-          </button>
-        </>
-      )}
 
       {/* Slide Indicators */}
       {slides.length > 1 && (

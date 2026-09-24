@@ -79,24 +79,47 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
           <div className="player-hero-grid">
             
             {/* Grande photo officielle (Photo 2 / Célébration) */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6 }}
-              style={{ display: 'flex', justifyContent: 'center' }}
-            >
-              <div className="player-photo-card">
-                <img 
-                  src={playerPhoto} 
-                  alt={player.name} 
-                  className="player-photo-img"
-                  style={{ filter: player.filter }} 
-                />
-                <div className="player-photo-number">
-                  #{player.num}
-                </div>
-              </div>
-            </motion.div>
+            {(() => {
+              const isLogoPlaceholder = !playerPhoto || playerPhoto.includes('condor_logo');
+              return (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6 }}
+                  style={{ display: 'flex', justifyContent: 'center' }}
+                >
+                  <div 
+                    className="player-photo-card"
+                    style={isLogoPlaceholder ? { 
+                      background: 'radial-gradient(circle at center, #23232c 0%, #0e0e13 100%)', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      padding: '40px' 
+                    } : undefined}
+                  >
+                    <img 
+                      src={playerPhoto || '/condor_logo_transparent.png'} 
+                      alt={player.name} 
+                      className="player-photo-img"
+                      style={{ 
+                        filter: player.filter,
+                        ...(isLogoPlaceholder ? { 
+                          objectFit: 'contain', 
+                          maxHeight: '360px', 
+                          maxWidth: '85%', 
+                          opacity: 0.85, 
+                          filter: 'drop-shadow(0 15px 35px rgba(0,0,0,0.6))' 
+                        } : {})
+                      }} 
+                    />
+                    <div className="player-photo-number">
+                      #{player.num}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })()}
 
             {/* Fiche d'identité à proximité */}
             <motion.div

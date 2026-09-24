@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
+import { playersDB } from '@/lib/playersDB';
 import { 
   fetchCurrentMatch, saveMatchConfig, MatchConfig,
   fetchVideos, saveVideo, deleteVideo, VideoItem, parseVideoUrl,
@@ -139,13 +140,16 @@ export default function AdminPanel() {
 
     // 6. Fetch Players
     const { data: playersData } = await supabase.from('players').select('*');
-    if (playersData) {
-      const dbObj = playersData.reduce((acc: any, player: any) => {
-        acc[player.id] = player;
-        return acc;
-      }, {});
-      setPlayers(dbObj);
+    const mergedPlayers: Record<string, any> = { ...playersDB };
+    if (playersData && playersData.length > 0) {
+      playersData.forEach((player: any) => {
+        mergedPlayers[player.id] = {
+          ...(mergedPlayers[player.id] || {}),
+          ...player
+        };
+      });
     }
+    setPlayers(mergedPlayers);
 
     // 7. Fetch Inscriptions & Supporters
     const { data: inscriptionsData } = await supabase.from('inscriptions').select('*').order('created_at', { ascending: false });

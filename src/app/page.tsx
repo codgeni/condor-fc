@@ -297,7 +297,13 @@ export default function Home() {
                   transition={{ duration: 0.3, delay: i * 0.05 }}
                   whileHover={{ y: -10, boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}
                 >
-                  <img src={player.img} className="player-img" style={{ filter: player.filter, height: '320px' }} alt={player.name} />
+                  {player.img && !player.img.includes('condor_logo') ? (
+                    <img src={player.img} className="player-img" style={{ filter: player.filter, height: '320px' }} alt={player.name} />
+                  ) : (
+                    <div style={{ height: '320px', background: 'radial-gradient(circle at center, #23232c 0%, #0e0e13 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '30px' }}>
+                      <img src={player.img || '/condor_logo_transparent.png'} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', opacity: 0.85, filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.6))' }} alt={player.name} />
+                    </div>
+                  )}
                   <span className="player-number">{player.num}</span>
                   <div className="player-info">
                     <h3 className="player-name" style={{ fontSize: '1.3rem' }}>{player.name}</h3>

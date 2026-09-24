@@ -15,11 +15,15 @@ export default function Teams() {
       try {
         const { data } = await supabase.from('players').select('*');
         if (data && data.length > 0) {
-          const dbObj = data.reduce((acc: any, player: any) => {
-            acc[player.id] = player;
-            return acc;
-          }, {});
-          setDb(dbObj);
+          const merged: Record<string, any> = { ...playersDB };
+          data.forEach((player: any) => {
+            merged[player.id] = {
+              ...(merged[player.id] || {}),
+              ...player,
+              categories: merged[player.id]?.categories || (player.category ? [player.category] : ['U17'])
+            };
+          });
+          setDb(merged);
         } else {
           setDb(playersDB);
         }
@@ -42,11 +46,11 @@ export default function Teams() {
   });
 
   // Classify players based on French translations in playersDB.ts
-  const goalkeepers = roster.filter(p => p.pos.includes('Gardien'));
-  const defenders = roster.filter(p => p.pos.includes('Défenseur') || p.pos.includes('Arrière') || p.pos.includes('Défenseure'));
-  const midfielders = roster.filter(p => p.pos.includes('Milieu'));
-  const forwards = roster.filter(p => p.pos.includes('Ailier') || p.pos.includes('Avant') || p.pos.includes('Attaquant'));
-  const unassigned = roster.filter(p => p.pos === 'N/A');
+  const goalkeepers = roster.filter(p => p.pos?.includes('Gardien'));
+  const defenders = roster.filter(p => !goalkeepers.includes(p) && (p.pos?.includes('Défenseur') || p.pos?.includes('Arrière') || p.pos?.includes('Défenseure')));
+  const midfielders = roster.filter(p => !goalkeepers.includes(p) && !defenders.includes(p) && p.pos?.includes('Milieu'));
+  const forwards = roster.filter(p => !goalkeepers.includes(p) && !defenders.includes(p) && !midfielders.includes(p) && (p.pos?.includes('Ailier') || p.pos?.includes('Avant') || p.pos?.includes('Attaquant') || p.pos?.includes('Attaquante')));
+  const unassigned = roster.filter(p => !goalkeepers.includes(p) && !defenders.includes(p) && !midfielders.includes(p) && !forwards.includes(p));
 
   const categories = ['Équipe Première', 'U17', 'U15', 'U13', 'U9'];
 
@@ -67,26 +71,39 @@ export default function Teams() {
           {title} ({sortedPlayers.length})
         </h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '2rem' }}>
-          {sortedPlayers.map((player, i) => (
-            <Link href={`/teams/${player.id}`} key={player.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <motion.div 
-                className="player-card"
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: (i % 6) * 0.1 }}
-                whileHover={{ y: -10, boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}
-              >
-                {/* Exclusively first picture for team display card */}
-                <img src={player.img} className="player-img" style={{ filter: player.filter, height: '350px' }} alt={player.name} />
-                <span className="player-number">{player.num}</span>
-                <div className="player-info">
-                  <h3 className="player-name">{player.name}</h3>
-                  <span className="player-position">{player.pos}</span>
-                </div>
-              </motion.div>
-            </Link>
-          ))}
+          {sortedPlayers.map((player, i) => {
+            const isLogoPlaceholder = !player.img || player.img.includes('condor_logo');
+            return (
+              <Link href={`/teams/${player.id}`} key={player.id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <motion.div 
+                  className="player-card"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.4, delay: (i % 6) * 0.1 }}
+                  whileHover={{ y: -10, boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}
+                  style={{ background: '#121217', border: '1px solid rgba(255,255,255,0.06)' }}
+                >
+                  {isLogoPlaceholder ? (
+                    <div style={{ height: '350px', background: 'radial-gradient(circle at center, #252530 0%, #0d0d12 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                      <img 
+                        src={player.img || '/condor_logo_transparent.png'} 
+                        alt={player.name}
+                        style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', opacity: 0.85, filter: 'drop-shadow(0 10px 25px rgba(0,0,0,0.6))' }} 
+                      />
+                    </div>
+                  ) : (
+                    <img src={player.img} className="player-img" style={{ filter: player.filter, height: '350px' }} alt={player.name} />
+                  )}
+                  <span className="player-number">{player.num}</span>
+                  <div className="player-info">
+                    <h3 className="player-name">{player.name}</h3>
+                    <span className="player-position">{player.pos}</span>
+                  </div>
+                </motion.div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     );
@@ -157,7 +174,7 @@ export default function Teams() {
               {renderSection("Défenseurs", defenders)}
               {renderSection("Milieux de terrain", midfielders)}
               {renderSection("Attaquants", forwards)}
-              {renderSection("Joueurs", unassigned)}
+              {renderSection(selectedCategory === 'U9' ? "Effectif & Jeunes Talents" : "Joueurs", unassigned)}
             </>
           )}
         </div>
