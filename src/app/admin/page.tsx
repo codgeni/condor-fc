@@ -6,7 +6,7 @@ import {
   Settings, Users, Calendar, BookOpen, Image, 
   Trash2, Plus, Edit2, CheckCircle, LogOut, Award, Upload,
   Tv, ShoppingBag, Trophy, CheckSquare, Square, Eye, EyeOff,
-  Radio, Shield, Clock, MapPin, Save
+  Radio, Shield, Clock, MapPin, Save, X, Menu
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
@@ -39,7 +39,10 @@ const convertToBase64 = (file: File): Promise<string> => {
 
 const translateAuthError = (message: string): string => {
   const msg = message.toLowerCase();
-  if (msg.includes('invalid login credentials') || msg.includes('email not confirmed') || msg.includes('invalid email')) {
+  if (msg.includes('email not confirmed')) {
+    return "L'adresse e-mail de l'administrateur n'est pas encore confirmée. Rendez-vous dans Supabase > Authentication > Users et validez le compte ('Auto Confirm User'), ou confirmez via le lien d'activation reçu.";
+  }
+  if (msg.includes('invalid login credentials') || msg.includes('invalid email')) {
     return "Adresse e-mail ou mot de passe incorrect.";
   }
   if (msg.includes('rate limit')) {
@@ -56,6 +59,7 @@ const translateAuthError = (message: string): string => {
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('matches');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -434,13 +438,85 @@ export default function AdminPanel() {
   }
 
   return (
-    <div style={{ flex: 1, marginTop: '80px', display: 'flex', minHeight: 'calc(100vh - 80px)', background: '#f5f7fa', color: 'var(--clr-black)' }}>
+    <div className="admin-container" style={{ flex: 1, marginTop: '80px', display: 'flex', minHeight: 'calc(100vh - 80px)', background: '#f5f7fa', color: 'var(--clr-black)', position: 'relative' }}>
       
+      {/* Mobile Top Header */}
+      <div className="admin-mobile-header">
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'var(--clr-primary)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '9px 16px',
+            fontWeight: 'bold',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(202, 2, 79, 0.3)'
+          }}
+        >
+          <Menu size={18} />
+          <span>Menu Admin</span>
+        </button>
+        <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          {activeTab}
+        </span>
+      </div>
+
+      {/* Backdrop on mobile */}
+      {isSidebarOpen && (
+        <div
+          className="admin-backdrop"
+          onClick={() => setIsSidebarOpen(false)}
+          title="Fermer le menu"
+        />
+      )}
+
       {/* Sidebar de navigation Admin */}
-      <aside style={{ width: '270px', background: 'var(--clr-black)', color: 'white', padding: '2rem 1rem', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
-        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', color: 'var(--clr-primary)', margin: 0 }}>CONDOR ADMIN</h2>
-          <span style={{ fontSize: '0.75rem', color: '#888', letterSpacing: '1px' }}>PANNEAU DE CONTRÔLE CRUD</span>
+      <aside 
+        className={`admin-sidebar ${isSidebarOpen ? 'admin-sidebar-open' : 'admin-sidebar-closed'}`}
+        style={{ 
+          width: '270px', 
+          background: 'var(--clr-black)', 
+          color: 'white', 
+          padding: '2rem 1rem', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '8px', 
+          flexShrink: 0 
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', padding: '0 4px' }}>
+          <div style={{ textAlign: 'left' }}>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', color: 'var(--clr-primary)', margin: 0, lineHeight: 1.1 }}>CONDOR ADMIN</h2>
+            <span style={{ fontSize: '0.72rem', color: '#888', letterSpacing: '1px' }}>PANNEAU DE CONTRÔLE CRUD</span>
+          </div>
+
+          {/* Bouton Fermer Sidebar pour Mobile & Petits Écrans */}
+          <button
+            onClick={() => setIsSidebarOpen(false)}
+            className="admin-close-btn"
+            title="Fermer le menu"
+            style={{
+              background: 'rgba(255, 255, 255, 0.12)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              color: 'white',
+              borderRadius: '8px',
+              width: '36px',
+              height: '36px',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'background 0.2s'
+            }}
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {[
@@ -457,6 +533,7 @@ export default function AdminPanel() {
             key={tab.id}
             onClick={() => { 
               setActiveTab(tab.id); 
+              setIsSidebarOpen(false);
               setEditingPlayer(null); 
               setCreatingPlayer(false);
               setEditingNews(null); 
@@ -498,7 +575,7 @@ export default function AdminPanel() {
       </aside>
 
       {/* Main Content Area */}
-      <main style={{ flex: 1, padding: '2.5rem 3rem', overflowY: 'auto' }}>
+      <main className="admin-main-content" style={{ flex: 1, padding: '2.5rem 3rem', overflowY: 'auto' }}>
         
         {message && (
           <div style={{ background: '#d4edda', color: '#155724', padding: '14px 20px', borderRadius: '8px', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>

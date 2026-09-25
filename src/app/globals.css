@@ -922,4 +922,79 @@ body {
   }
 }
 
+/* ==============================================================
+   ADMIN RESPONSIVE SIDEBAR & MOBILE DRAWER
+============================================================== */
+.admin-mobile-header {
+  display: none;
+}
+
+.admin-close-btn {
+  display: none;
+}
+
+@media (max-width: 960px) {
+  .admin-container {
+    flex-direction: column !important;
+  }
+
+  .admin-mobile-header {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    background: #111111;
+    color: white;
+    padding: 12px 20px;
+    border-bottom: 1px solid #262626;
+    position: sticky;
+    top: 80px;
+    z-index: 80;
+    width: 100%;
+  }
+
+  .admin-close-btn {
+    display: flex !important;
+  }
+
+  .admin-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+    width: 290px !important;
+    max-width: 85vw !important;
+    z-index: 10001 !important;
+    box-shadow: 6px 0 35px rgba(0, 0, 0, 0.6) !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    overflow-y: auto !important;
+  }
+
+  .admin-sidebar-closed {
+    transform: translateX(-100%) !important;
+    pointer-events: none !important;
+  }
+
+  .admin-sidebar-open {
+    transform: translateX(0) !important;
+    pointer-events: auto !important;
+  }
+
+  .admin-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+  }
+
+  .admin-main-content {
+    padding: 1.5rem 1rem !important;
+  }
+}
+
+
 

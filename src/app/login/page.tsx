@@ -8,7 +8,10 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 
 const translateAuthError = (message: string): string => {
   const msg = message.toLowerCase();
-  if (msg.includes('invalid login credentials') || msg.includes('email not confirmed') || msg.includes('invalid email')) {
+  if (msg.includes('email not confirmed')) {
+    return "Votre compte a été créé mais votre adresse e-mail n'a pas encore été confirmée. Veuillez vérifier votre boîte de réception pour valider votre compte, ou désactivez la confirmation d'email dans Supabase (Authentication > Providers > Email).";
+  }
+  if (msg.includes('invalid login credentials') || msg.includes('invalid email')) {
     return "Adresse e-mail ou mot de passe incorrect.";
   }
   if (msg.includes('rate limit')) {
@@ -38,6 +41,7 @@ export default function SupporterPortal() {
   const [registeredUser, setRegisteredUser] = useState<any>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'error' | 'success'>('error');
 
   useEffect(() => {
     // Check if there is an active session
@@ -79,11 +83,13 @@ export default function SupporterPortal() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.password) {
+      setMessageType('error');
       setMessage('Veuillez remplir tous les champs.');
       return;
     }
 
     if (!isSupabaseConfigured) {
+      setMessageType('error');
       setMessage("Configuration Supabase manquante : Veuillez renseigner NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans votre fichier .env.local.");
       return;
     }
@@ -100,36 +106,47 @@ export default function SupporterPortal() {
       });
 
       if (authError) {
+        setMessageType('error');
         setMessage(translateAuthError(authError.message));
         return;
       }
 
       if (authData?.user) {
         // Save supporter preferences in Database
-        const { error: dbError } = await supabase.from('supporters').insert({
-          id: authData.user.id,
-          name: formData.name,
-          email: formData.email,
-          notify_news: formData.notifyNews,
-          notify_match_start: formData.notifyMatchStart,
-          notify_goals: formData.notifyGoals,
-          notify_half_time: formData.notifyHalfTime,
-          notify_final_score: formData.notifyFinalScore
-        });
-
-        if (dbError) {
-          console.error('Error inserting supporter profile:', dbError);
+        try {
+          await supabase.from('supporters').insert({
+            id: authData.user.id,
+            name: formData.name,
+            email: formData.email,
+            notify_news: formData.notifyNews,
+            notify_match_start: formData.notifyMatchStart,
+            notify_goals: formData.notifyGoals,
+            notify_half_time: formData.notifyHalfTime,
+            notify_final_score: formData.notifyFinalScore
+          });
+        } catch (dbError) {
+          console.warn('Error inserting supporter profile:', dbError);
         }
 
-        setRegisteredUser({
-          name: formData.name,
-          email: formData.email
-        });
-        setIsLoggedIn(true);
-        setMessage('Compte Supporter créé avec succès !');
+        if (authData.session) {
+          setRegisteredUser({
+            name: formData.name,
+            email: formData.email
+          });
+          setIsLoggedIn(true);
+          setMessageType('success');
+          setMessage('Compte Supporter créé et connecté avec succès !');
+        } else {
+          // Email confirmation is required by Supabase project settings
+          setIsLoggedIn(false);
+          setIsLogin(true);
+          setMessageType('success');
+          setMessage("Compte créé avec succès ! Un e-mail de confirmation vous a été envoyé. Veuillez cliquer sur le lien reçu pour activer votre compte avant de vous connecter. (Vous pouvez aussi désactiver la confirmation d'email dans votre console Supabase : Authentication > Providers > Email).");
+        }
       }
     } catch (err: any) {
       console.warn('Registration attempt failed:', err);
+      setMessageType('error');
       setMessage(
         err.message?.includes('fetch')
           ? "Impossible de joindre le serveur Supabase. Vérifiez que votre projet Supabase est actif et que vos clés dans .env.local sont valides."
@@ -141,11 +158,13 @@ export default function SupporterPortal() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email || !formData.password) {
+      setMessageType('error');
       setMessage('Veuillez remplir tous les champs.');
       return;
     }
 
     if (!isSupabaseConfigured) {
+      setMessageType('error');
       setMessage("Configuration requise : Veuillez renseigner votre vraie URL Supabase et votre clé API dans le fichier .env.local.");
       return;
     }
@@ -157,6 +176,7 @@ export default function SupporterPortal() {
       });
 
       if (error) {
+        setMessageType('error');
         setMessage(translateAuthError(error.message));
         return;
       }
@@ -175,10 +195,12 @@ export default function SupporterPortal() {
 
         setRegisteredUser(userProfile);
         setIsLoggedIn(true);
+        setMessageType('success');
         setMessage('Connexion réussie !');
       }
     } catch (err: any) {
       console.warn('Login attempt failed:', err);
+      setMessageType('error');
       setMessage(
         err.message?.includes('fetch')
           ? "Impossible de joindre le serveur Supabase. Vérifiez que votre projet Supabase est actif et que vos clés dans .env.local sont valides."
@@ -191,6 +213,7 @@ export default function SupporterPortal() {
     await supabase.auth.signOut();
     setIsLoggedIn(false);
     setRegisteredUser(null);
+    setMessageType('success');
     setMessage('Déconnexion réussie.');
   };
 
@@ -281,7 +304,19 @@ export default function SupporterPortal() {
           </div>
 
           {message && (
-            <div style={{ background: '#f8d7da', color: '#721c24', padding: '12px', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.9rem', textAlign: 'center' }}>
+            <div
+              style={{
+                background: messageType === 'success' ? '#d4edda' : '#f8d7da',
+                color: messageType === 'success' ? '#155724' : '#721c24',
+                border: `1px solid ${messageType === 'success' ? '#c3e6cb' : '#f5c6cb'}`,
+                padding: '14px 18px',
+                borderRadius: '8px',
+                marginBottom: '1.5rem',
+                fontSize: '0.9rem',
+                textAlign: 'center',
+                lineHeight: 1.5
+              }}
+            >
               {message}
             </div>
           )}
