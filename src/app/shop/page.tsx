@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ShoppingBag, 
   Check, 
   X, 
-  MessageCircle 
+  AlertCircle 
 } from 'lucide-react';
 import { fetchProducts } from '@/lib/dataService';
 
@@ -263,13 +262,6 @@ export default function Shop() {
   const [productList, setProductList] = useState<Product[]>(PRODUCTS);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string>('');
-  const [customName, setCustomName] = useState<string>('');
-  const [customNumber, setCustomNumber] = useState<string>('');
-  const [isPersonalized, setIsPersonalized] = useState<boolean>(false);
-  const [orderSent, setOrderSent] = useState<boolean>(false);
-  const [customerName, setCustomerName] = useState<string>('');
-  const [customerPhone, setCustomerPhone] = useState<string>('');
 
   useEffect(() => {
     fetchProducts().then(data => {
@@ -297,33 +289,10 @@ export default function Shop() {
 
   const openOrderModal = (product: Product) => {
     setActiveProduct(product);
-    setSelectedSize(product.sizes[0] || 'M');
-    setIsPersonalized(false);
-    setCustomName('');
-    setCustomNumber('');
-    setOrderSent(false);
   };
 
   const closeModal = () => {
     setActiveProduct(null);
-    setOrderSent(false);
-  };
-
-  const calculateTotal = () => {
-    if (!activeProduct) return 0;
-    return activeProduct.price + (isPersonalized ? 5 : 0);
-  };
-
-  const generateWhatsAppUrl = () => {
-    if (!activeProduct) return '#';
-    const productName = activeProduct.title || activeProduct.categoryLabel || 'Équipement Officiel';
-    const text = `Bonjour Condor FC ! 🦅\nJe souhaite commander un équipement officiel :\n- Produit : ${productName}\n- Taille : ${selectedSize}\n${isPersonalized ? `- Flocage personnalisé : Nom: "${customName || 'NON PRÉCISÉ'}", N°: "${customNumber || '10'}" (+5 $)\n` : ''}- Prix total estimé : ${calculateTotal()}.00 $\n\nMerci de m'indiquer la disponibilité et les modalités de paiement / retrait à Delmas !`;
-    return `https://wa.me/50937000000?text=${encodeURIComponent(text)}`;
-  };
-
-  const handleReservationSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setOrderSent(true);
   };
 
   return (
@@ -478,30 +447,35 @@ export default function Shop() {
                     </ul>
                   </div>
 
-                  {/* Price & Action */}
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                    <div>
-                      <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase', fontWeight: 'bold' }}>Prix Officiel</span>
-                      <span style={{ fontFamily: 'var(--font-heading)', fontSize: '1.7rem', fontWeight: 'bold', color: 'var(--clr-primary)' }}>
-                        {product.formattedPrice}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => openOrderModal(product)}
-                      className="btn btn-primary"
+                  {/* Statut Disponibilité */}
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1.2rem', marginTop: 'auto' }}>
+                    <div
                       style={{
-                        padding: '10px 18px',
-                        fontSize: '0.9rem',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        borderRadius: '8px',
-                        cursor: 'pointer'
+                        justifyContent: 'center',
+                        gap: '8px',
+                        padding: '11px 16px',
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '10px',
+                        color: '#64748b',
+                        fontSize: '0.88rem',
+                        fontWeight: '600'
                       }}
                     >
-                      <ShoppingBag size={16} />
-                      <span>Commander</span>
-                    </button>
+                      <span
+                        style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: '#f59e0b',
+                          display: 'inline-block',
+                          boxShadow: '0 0 0 3px rgba(245, 158, 11, 0.2)'
+                        }}
+                      />
+                      <span>Temporairement indisponible</span>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -569,210 +543,119 @@ export default function Shop() {
                 <X size={20} color="#475569" />
               </button>
 
-              {orderSent ? (
-                <div style={{ padding: '3.5rem 2rem', textAlign: 'center' }}>
-                  <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
-                    <Check size={36} color="#16a34a" />
-                  </div>
-                  <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', marginBottom: '0.8rem', color: '#0f172a' }}>
-                    Demande de Réservation Transmise !
-                  </h3>
-                  <p style={{ color: '#475569', fontSize: '1rem', maxWidth: '480px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>
-                    Merci {customerName ? customerName : 'cher supporter'} ! Votre demande pour <strong>{activeProduct.title || activeProduct.categoryLabel || 'Équipement Officiel'}</strong> (Taille : {selectedSize}) a été enregistrée avec succès. Notre équipe à Delmas vous contactera par téléphone ({customerPhone}) pour confirmer le retrait ou la livraison.
-                  </p>
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
-                    <a
-                      href={generateWhatsAppUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn"
-                      style={{ background: '#25d366', color: 'white', padding: '12px 24px', display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none', fontWeight: 'bold', borderRadius: '8px' }}
-                    >
-                      <MessageCircle size={18} />
-                      <span>Accélérer sur WhatsApp</span>
-                    </a>
-                    <button
-                      onClick={closeModal}
-                      className="btn btn-outline"
-                      style={{ padding: '12px 24px', borderRadius: '8px' }}
-                    >
-                      Fermer
-                    </button>
-                  </div>
-                </div>
-              ) : (
                 <div style={{ padding: '2rem' }}>
                   
                   {/* Top Preview */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '2rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1.8rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1.5rem' }}>
                     <div style={{ width: '150px', height: '180px', background: '#f8fafc', borderRadius: '12px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0' }}>
                       <img src={activeProduct.img} alt={activeProduct.title} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
                     </div>
 
                     <div style={{ flex: 1, minWidth: '240px' }}>
+                      <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--clr-primary)', fontWeight: 'bold', letterSpacing: '1px', display: 'block', marginBottom: '4px' }}>
+                        {activeProduct.categoryLabel}
+                      </span>
                       {activeProduct.title ? (
-                        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', margin: '0 0 6px', color: '#0f172a' }}>
+                        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', margin: '0 0 8px', color: '#0f172a' }}>
                           {activeProduct.title}
                         </h3>
                       ) : null}
-                      <p style={{ color: '#64748b', fontSize: '0.85rem', margin: '0 0 10px', lineHeight: 1.4 }}>
+                      <p style={{ color: '#64748b', fontSize: '0.88rem', margin: '0 0 12px', lineHeight: 1.5 }}>
                         {activeProduct.description}
                       </p>
-                      <div style={{ fontSize: '1.6rem', fontWeight: 'bold', color: 'var(--clr-primary)', fontFamily: 'var(--font-heading)' }}>
-                        {activeProduct.formattedPrice}
+                      
+                      {/* Disponibilité Badge */}
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          background: '#fffbeb',
+                          border: '1px solid #fef3c7',
+                          color: '#b45309',
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: '600'
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: '#f59e0b',
+                            display: 'inline-block'
+                          }}
+                        />
+                        <span>Temporairement indisponible</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Size Selector */}
-                  <div style={{ marginBottom: '1.5rem' }}>
+                  {/* Highlights */}
+                  {activeProduct.highlights && activeProduct.highlights.length > 0 && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', color: '#1e293b' }}>
+                        Caractéristiques techniques :
+                      </label>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {activeProduct.highlights.map((hl, i) => (
+                          <li key={i} style={{ fontSize: '0.85rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Check size={14} color="#16a34a" style={{ flexShrink: 0 }} />
+                            <span>{hl}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Size Selector (Consultation) */}
+                  <div style={{ marginBottom: '1.8rem' }}>
                     <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', color: '#1e293b' }}>
-                      1. Choisir la taille :
+                      Tailles de la collection :
                     </label>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {activeProduct.sizes.map((sz) => (
-                        <button
+                        <span
                           key={sz}
-                          type="button"
-                          onClick={() => setSelectedSize(sz)}
                           style={{
-                            padding: '8px 14px',
+                            padding: '6px 14px',
                             borderRadius: '8px',
-                            border: selectedSize === sz ? '2px solid var(--clr-primary)' : '1px solid #cbd5e1',
-                            background: selectedSize === sz ? 'rgba(230, 0, 0, 0.08)' : 'white',
-                            color: selectedSize === sz ? 'var(--clr-primary)' : '#334155',
-                            fontWeight: selectedSize === sz ? 'bold' : 'normal',
-                            fontSize: '0.85rem',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease'
+                            border: '1px solid #cbd5e1',
+                            background: '#f8fafc',
+                            color: '#334155',
+                            fontWeight: '600',
+                            fontSize: '0.85rem'
                           }}
                         >
                           {sz}
-                        </button>
+                        </span>
                       ))}
                     </div>
                   </div>
 
-                  {/* Flocage Personnalisé */}
-                  <div style={{ background: '#f8f9fa', padding: '1.2rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: '600', color: '#1e293b', fontSize: '0.92rem' }}>
-                      <input
-                        type="checkbox"
-                        checked={isPersonalized}
-                        onChange={(e) => setIsPersonalized(e.target.checked)}
-                        style={{ width: '18px', height: '18px', accentColor: 'var(--clr-primary)' }}
-                      />
-                      <span>Ajouter un flocage officiel personnalisé (+5.00 $)</span>
-                    </label>
-                    
-                    {isPersonalized && (
-                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px', marginTop: '12px' }}>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                            Nom au dos (ex: NOM)
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="VOTRE NOM"
-                            value={customName}
-                            onChange={(e) => setCustomName(e.target.value.toUpperCase())}
-                            style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', textTransform: 'uppercase' }}
-                          />
-                        </div>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 'bold' }}>
-                            Numéro (ex: 10)
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="10"
-                            maxLength={2}
-                            value={customNumber}
-                            onChange={(e) => setCustomNumber(e.target.value)}
-                            style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', textAlign: 'center' }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Total summary */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', background: '#f1f5f9', padding: '12px 18px', borderRadius: '10px' }}>
-                    <span style={{ fontWeight: 'bold', color: '#334155' }}>Total à régler :</span>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--clr-primary)', fontFamily: 'var(--font-heading)' }}>
-                      {calculateTotal()}.00 $ USD
-                    </span>
-                  </div>
-
-                  {/* Quick WhatsApp Order or Form */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <a
-                      href={generateWhatsAppUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn"
-                      style={{
-                        background: '#25d366',
-                        color: 'white',
-                        padding: '14px',
-                        borderRadius: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '10px',
-                        fontWeight: 'bold',
-                        fontSize: '1rem',
-                        textDecoration: 'none',
-                        boxShadow: '0 4px 12px rgba(37, 211, 102, 0.3)'
-                      }}
-                    >
-                      <MessageCircle size={20} />
-                      <span>Commander directement sur WhatsApp</span>
-                    </a>
-
-                    <div style={{ textAlign: 'center', margin: '8px 0', position: 'relative' }}>
-                      <span style={{ background: 'white', padding: '0 10px', color: '#94a3b8', fontSize: '0.8rem', position: 'relative', zIndex: 2 }}>
-                        OU RÉSERVER EN LIGNE
-                      </span>
-                      <div style={{ position: 'absolute', top: '50%', left: 0, width: '100%', height: '1px', background: '#e2e8f0', zIndex: 1 }} />
+                  {/* Notice Réapprovisionnement */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem', textAlign: 'center' }}>
+                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#fffbeb', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
+                      <AlertCircle size={22} />
                     </div>
-
-                    {/* Direct Contact Form */}
-                    <form onSubmit={handleReservationSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                        <input
-                          type="text"
-                          required
-                          placeholder="Votre Nom Complet"
-                          value={customerName}
-                          onChange={(e) => setCustomerName(e.target.value)}
-                          style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
-                        />
-                        <input
-                          type="tel"
-                          required
-                          placeholder="Téléphone / WhatsApp (+509)"
-                          value={customerPhone}
-                          onChange={(e) => setCustomerPhone(e.target.value)}
-                          style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        className="btn btn-primary"
-                        style={{ padding: '12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.95rem' }}
-                      >
-                        Confirmer la Réservation (Paiement au Retrait)
-                      </button>
-                    </form>
+                    <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', margin: '0 0 6px', color: '#0f172a' }}>
+                      Réapprovisionnement en cours
+                    </h4>
+                    <p style={{ margin: '0 0 1.2rem', color: '#64748b', fontSize: '0.9rem', lineHeight: 1.6, maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto' }}>
+                      Les commandes pour cet équipement officiel sont momentanément fermées. Suivez les réseaux officiels du Condor FC pour être informé dès la réouverture des ventes.
+                    </p>
+                    <button
+                      onClick={closeModal}
+                      className="btn btn-outline"
+                      style={{ padding: '10px 28px', borderRadius: '8px', fontSize: '0.9rem', color: '#1e293b', borderColor: '#cbd5e1' }}
+                    >
+                      Fermer l'aperçu
+                    </button>
                   </div>
-
-                  <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#94a3b8', marginTop: '1rem', marginBottom: 0 }}>
-                    Retrait direct disponible à l'Académie Condor à Delmas ou expédition selon accord.
-                  </p>
 
                 </div>
-              )}
             </motion.div>
           </div>
         )}
