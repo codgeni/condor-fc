@@ -120,7 +120,30 @@ const PRODUCTS: Product[] = [
     sizes: ['S', 'M', 'L', 'XL', 'XXL']
   },
 
-  // 5. Kit Polo Édition Manches
+  // 5. Short & Chaussettes Pro Marbré (Assorti au Maillot Match Pro)
+  {
+    id: 'short-chaussettes-pro-marbre',
+    title: 'Short & Chaussettes Match Pro - Marbré',
+    category: 'match',
+    categoryLabel: 'Ensemble Bas Match Pro',
+    subtitle: 'Ensemble Bas Officiel Marbré Assorti',
+    price: 30,
+    formattedPrice: '30.00 $',
+    tag: 'BAS ASSORTI',
+    tagBg: '#334155',
+    badgeText: 'Complément Pro',
+    img: '/shop/short_chaussettes_pro_marbre.png',
+    description: 'Le complément parfait du maillot Match Pro marbré. Short noir orné de la texture marbrée rouge et du blason Condor FC, accompagné de la paire de chaussettes hautes de compression coordonnées avec l\'écusson du club.',
+    highlights: [
+      'Design texturé assorti au Maillot Match Pro 26/27',
+      'Ceinture élastique ultra-confortable avec cordon de serrage',
+      'Chaussettes montantes anatomiques avec maintien voûte plantaire',
+      'Renforts amortissants au talon et aux orteils'
+    ],
+    sizes: ['Taille Unique Adulte', 'Taille Junior']
+  },
+
+  // 6. Kit Polo Édition Manches
   {
     id: 'kit-officiel-polo-sleeves',
     title: 'Kit Officiel Polo - Édition Manches',
@@ -233,29 +256,6 @@ const PRODUCTS: Product[] = [
       'Tissu léger et aéré adapté aux entraînements'
     ],
     sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL']
-  },
-
-  // 10. Short & Chaussettes Pro Marbré
-  {
-    id: 'short-chaussettes-pro-marbre',
-    title: 'Short & Chaussettes Match Pro - Marbré',
-    category: 'accessories',
-    categoryLabel: 'Accessoires & Shorts',
-    subtitle: 'Ensemble Bas Officiel Marbré Assorti',
-    price: 30,
-    formattedPrice: '30.00 $',
-    tag: 'ACCESSOIRE',
-    tagBg: '#334155',
-    badgeText: 'Complément Pro',
-    img: '/shop/short_chaussettes_pro_marbre.png',
-    description: 'Le complément parfait du maillot Match Pro marbré. Short noir orné de la texture marbrée rouge et du blason Condor FC, accompagné de la paire de chaussettes hautes de compression coordonnées avec l\'écusson du club.',
-    highlights: [
-      'Design texturé assorti au Maillot Match Pro 26/27',
-      'Ceinture élastique ultra-confortable avec cordon de serrage',
-      'Chaussettes montantes anatomiques avec maintien voûte plantaire',
-      'Renforts amortissants au talon et aux orteils'
-    ],
-    sizes: ['Taille Unique Adulte', 'Taille Junior']
   }
 ];
 
@@ -293,7 +293,7 @@ export default function Shop() {
 
   const filteredProducts = selectedCategory === 'all'
     ? productList
-    : productList.filter(p => p.category === selectedCategory);
+    : productList.filter(p => p.category === selectedCategory || (selectedCategory === 'accessories' && p.id === 'short-chaussettes-pro-marbre'));
 
   const openOrderModal = (product: Product) => {
     setActiveProduct(product);
@@ -370,7 +370,7 @@ export default function Shop() {
                 { id: 'all', label: `Tous (${PRODUCTS.length})` },
                 { id: 'match', label: `Tenues de Match (${PRODUCTS.filter(p => p.category === 'match').length})` },
                 { id: 'training', label: `Entraînement (${PRODUCTS.filter(p => p.category === 'training').length})` },
-                { id: 'accessories', label: `Accessoires (${PRODUCTS.filter(p => p.category === 'accessories').length})` }
+                { id: 'accessories', label: `Accessoires (${PRODUCTS.filter(p => p.category === 'accessories' || p.id === 'short-chaussettes-pro-marbre').length})` }
               ].map(cat => (
                 <button
                   key={cat.id}
