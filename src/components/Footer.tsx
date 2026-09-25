@@ -87,6 +87,23 @@ export default function Footer() {
         </div>
         <div className="footer-bottom">
           <p>&copy; 2026 Condor Ecole de Football. Tous droits réservés.</p>
+          <p style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--clr-gray)' }}>
+            Développé par{' '}
+            <a
+              href="https://codgeni.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: 'var(--clr-primary)',
+                fontWeight: '600',
+                textDecoration: 'none',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+            >
+              CodGeni
+            </a>
+          </p>
         </div>
       </div>
     </footer>
