@@ -3,9 +3,62 @@
 import { useState } from 'react';
 import { 
   Type, Save, RotateCcw, Plus, Trash2, Shield, Heart, 
-  FileText, Home, Award, Music, AlertTriangle, CheckCircle 
+  FileText, Home, Award, Music, AlertTriangle, CheckCircle,
+  Image as ImageIcon, Upload
 } from 'lucide-react';
 import { SiteContent, DEFAULT_SITE_CONTENT, DEFAULT_PILLARS, PillarItem, saveSiteContent } from '@/lib/dataService';
+
+const BANNER_CONFIGS = [
+  {
+    key: 'news_hero_bg' as const,
+    title: 'Actualités Officielles',
+    route: '/news',
+    defaultImg: '/news_hero.png',
+    description: "Bandeau officiel de la page Actualités et communiqués du club."
+  },
+  {
+    key: 'club_hero_bg' as const,
+    title: 'Le Club',
+    route: '/club',
+    defaultImg: '/club_hero.png',
+    description: "Bandeau de présentation du club (Histoire, philosophie et valeurs)."
+  },
+  {
+    key: 'teams_hero_bg' as const,
+    title: 'Équipes & Joueurs',
+    route: '/teams',
+    defaultImg: '/kick_hero.png',
+    description: "Bandeau d'en-tête des effectifs et catégories de joueurs."
+  },
+  {
+    key: 'stages_hero_bg' as const,
+    title: 'Stages & Pré-inscriptions',
+    route: '/stages',
+    defaultImg: '/stadium_hero_1780681869623.png',
+    description: "Bandeau d'en-tête des sessions de stages et prises de rendez-vous."
+  },
+  {
+    key: 'shop_hero_bg' as const,
+    title: 'Boutique Officielle',
+    route: '/shop',
+    defaultImg: '/shop_hero.png',
+    description: "Bandeau d'en-tête de la boutique d'équipements officiels."
+  },
+  {
+    key: 'tv_hero_bg' as const,
+    title: 'Condor TV',
+    route: '/tv',
+    defaultImg: '/stadium_hero_1780681869623.png',
+    description: "Bandeau d'en-tête de la vidéothèque et reportages vidéo."
+  },
+  {
+    key: 'inscr_hero_bg' as const,
+    title: 'Formulaire d\'Inscription',
+    route: '/contact',
+    defaultImg: '/stadium_hero_1780681869623.png',
+    description: "Bandeau d'en-tête du grand formulaire d'inscription annuelle."
+  }
+];
 
 interface SiteTextsManagerProps {
   content: SiteContent;
@@ -14,7 +67,7 @@ interface SiteTextsManagerProps {
 }
 
 export default function SiteTextsManager({ content, onRefresh, showToast }: SiteTextsManagerProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'home' | 'club' | 'inscription'>('inscription');
+  const [activeSubTab, setActiveSubTab] = useState<'banners' | 'inscription' | 'club' | 'home'>('banners');
   const [form, setForm] = useState<SiteContent>({
     ...DEFAULT_SITE_CONTENT,
     ...content,
@@ -42,9 +95,43 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
     }
   };
 
-  const handleResetSection = (section: 'home' | 'club' | 'inscription') => {
-    if (confirm(`Rétablir tous les textes par défaut pour cette section ?`)) {
-      if (section === 'home') {
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleBannerUpload = async (key: keyof SiteContent, file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      showToast("L'image dépasse la taille maximale autorisée de 10 Mo.");
+      return;
+    }
+    try {
+      const base64 = await convertFileToBase64(file);
+      setForm(prev => ({ ...prev, [key]: base64 }));
+      showToast("Bannière chargée avec succès ! Cliquez sur 'Enregistrer' pour valider.");
+    } catch (err) {
+      showToast("Erreur lors du chargement de l'image.");
+    }
+  };
+
+  const handleResetSection = (section: 'banners' | 'home' | 'club' | 'inscription') => {
+    if (confirm(`Rétablir tous les paramètres par défaut pour cette section ?`)) {
+      if (section === 'banners') {
+        setForm(prev => ({
+          ...prev,
+          news_hero_bg: DEFAULT_SITE_CONTENT.news_hero_bg,
+          club_hero_bg: DEFAULT_SITE_CONTENT.club_hero_bg,
+          teams_hero_bg: DEFAULT_SITE_CONTENT.teams_hero_bg,
+          stages_hero_bg: DEFAULT_SITE_CONTENT.stages_hero_bg,
+          shop_hero_bg: DEFAULT_SITE_CONTENT.shop_hero_bg,
+          tv_hero_bg: DEFAULT_SITE_CONTENT.tv_hero_bg,
+          inscr_hero_bg: DEFAULT_SITE_CONTENT.inscr_hero_bg
+        }));
+      } else if (section === 'home') {
         setForm(prev => ({
           ...prev,
           hero_tag: DEFAULT_SITE_CONTENT.hero_tag,
@@ -140,6 +227,29 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
       <div style={{ display: 'flex', gap: '10px', marginBottom: '2rem', flexWrap: 'wrap', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px' }}>
         <button
           type="button"
+          onClick={() => setActiveSubTab('banners')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 22px',
+            borderRadius: '10px',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: '0.95rem',
+            fontWeight: 'bold',
+            background: activeSubTab === 'banners' ? 'var(--clr-primary)' : '#e2e8f0',
+            color: activeSubTab === 'banners' ? 'white' : '#475569',
+            boxShadow: activeSubTab === 'banners' ? '0 4px 15px rgba(202, 2, 79, 0.25)' : 'none',
+            transition: 'all 0.2s'
+          }}
+        >
+          <ImageIcon size={18} />
+          <span>Bannières des Rubriques (Navbar & Hero)</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveSubTab('inscription')}
           style={{
             display: 'flex',
@@ -158,7 +268,7 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
           }}
         >
           <FileText size={18} />
-          <span>Page « Nous Rejoindre / Inscriptions » (Clauses & Conditions)</span>
+          <span>Page « Nous Rejoindre / Inscriptions »</span>
         </button>
 
         <button
@@ -181,7 +291,7 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
           }}
         >
           <Shield size={18} />
-          <span>Page « Le Club » (Philosophie, Valeurs & Hymne)</span>
+          <span>Page « Le Club »</span>
         </button>
 
         <button
@@ -210,6 +320,145 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
 
       <form onSubmit={handleSubmit} style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #e5e7eb', maxWidth: '1050px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
         
+        {/* ==============================================================
+            SOUS-ONGLET 0 : BANNIÈRES DES RUBRIQUES (NAVBAR & HERO)
+        ============================================================== */}
+        {activeSubTab === 'banners' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.4rem', color: 'var(--clr-black)', margin: 0, fontWeight: 'bold' }}>
+                  Images d'Arrière-plan des Rubriques de la Navbar
+                </h3>
+                <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: '0.9rem' }}>
+                  Modifiez l'image de fond du bandeau supérieur (Hero Banner) de chaque page du site (Actualité Officielle, Club, Équipes, Stages, Boutique, TV...).
+                </p>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => handleResetSection('banners')}
+                className="btn btn-outline"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', padding: '7px 14px', borderColor: '#cbd5e1', color: '#475569' }}
+              >
+                <RotateCcw size={14} /> Restaurer toutes les bannières
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+              {BANNER_CONFIGS.map(banner => {
+                const currentImg = (form as any)[banner.key] || banner.defaultImg;
+                return (
+                  <div key={banner.key} style={cardStyle}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div>
+                        <div style={cardHeaderStyle}>
+                          <ImageIcon size={18} /> {banner.title}
+                        </div>
+                        <p style={{ margin: '-4px 0 0', color: '#64748b', fontSize: '0.85rem' }}>
+                          {banner.description}
+                        </p>
+                      </div>
+                      <span style={{ background: '#e2e8f0', color: '#475569', fontSize: '0.78rem', fontWeight: 'bold', padding: '3px 8px', borderRadius: '4px' }}>
+                        {banner.route}
+                      </span>
+                    </div>
+
+                    {/* Aperçu Visuel du Bandeau */}
+                    <div 
+                      style={{ 
+                        position: 'relative', 
+                        height: '140px', 
+                        borderRadius: '10px', 
+                        overflow: 'hidden', 
+                        marginBottom: '1rem',
+                        border: '1px solid #cbd5e1',
+                        background: `linear-gradient(rgba(17,17,17,0.65), rgba(17,17,17,0.85)), url(${currentImg}) center/cover no-repeat`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        textAlign: 'center',
+                        padding: '10px'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '2px', color: 'var(--clr-primary)', fontWeight: 'bold' }}>
+                        Aperçu En Direct
+                      </span>
+                      <h4 style={{ margin: '4px 0 0', fontSize: '1.3rem', fontFamily: 'var(--font-heading)', color: 'white' }}>
+                        {banner.title}
+                      </h4>
+                    </div>
+
+                    {/* Contrôles & Téléversement */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div>
+                        <label style={labelStyle}>URL ou chemin de l'image</label>
+                        <input 
+                          type="text" 
+                          value={(form as any)[banner.key] || ''} 
+                          placeholder={banner.defaultImg}
+                          onChange={e => setForm({ ...form, [banner.key]: e.target.value })} 
+                          style={inputStyle} 
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <label 
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: '#f1f5f9',
+                            border: '1px solid #cbd5e1',
+                            padding: '8px 14px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            color: '#334155',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <Upload size={15} />
+                          <span>Téléverser une image (Max 10 Mo)</span>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            style={{ display: 'none' }}
+                            onChange={e => {
+                              const file = e.target.files?.[0];
+                              if (file) handleBannerUpload(banner.key, file);
+                            }}
+                          />
+                        </label>
+
+                        {(form as any)[banner.key] && (form as any)[banner.key] !== banner.defaultImg && (
+                          <button
+                            type="button"
+                            onClick={() => setForm({ ...form, [banner.key]: banner.defaultImg })}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--clr-primary)',
+                              fontSize: '0.82rem',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              textDecoration: 'underline'
+                            }}
+                          >
+                            Rétablir par défaut
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ==============================================================
             SOUS-ONGLET 1 : PAGE NOUS REJOINDRE / S'INSCRIRE (CLAUSES & TEXTES)
         ============================================================== */}

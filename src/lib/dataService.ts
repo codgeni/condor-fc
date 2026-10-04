@@ -214,6 +214,15 @@ export interface SiteContent {
   inscr_success_title?: string;
   inscr_success_desc?: string;
 
+  // 4. Arrière-plans des bannières de sections (Navbar)
+  news_hero_bg?: string;
+  club_hero_bg?: string;
+  teams_hero_bg?: string;
+  stages_hero_bg?: string;
+  shop_hero_bg?: string;
+  tv_hero_bg?: string;
+  inscr_hero_bg?: string;
+
   created_at?: string;
 }
 
@@ -383,7 +392,16 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   // 3. Boutons & Succès
   inscr_submit_btn: "Envoyer l'inscription complète",
   inscr_success_title: "Inscription Enregistrée !",
-  inscr_success_desc: "Votre dossier a été transmis avec succès. Notre équipe administrative traitera votre demande dans les plus brefs délais."
+  inscr_success_desc: "Votre dossier a été transmis avec succès. Notre équipe administrative traitera votre demande dans les plus brefs délais.",
+
+  // 4. Arrière-plans des bannières de sections (Navbar)
+  news_hero_bg: '/news_hero.png',
+  club_hero_bg: '/club_hero.png',
+  teams_hero_bg: '/kick_hero.png',
+  stages_hero_bg: '/stadium_hero_1780681869623.png',
+  shop_hero_bg: '/shop_hero.png',
+  tv_hero_bg: '/stadium_hero_1780681869623.png',
+  inscr_hero_bg: ''
 };
 
 export const DEFAULT_PRODUCTS: ShopProduct[] = [

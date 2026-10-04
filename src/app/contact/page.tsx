@@ -271,7 +271,16 @@ export default function Contact() {
     <div style={{ flex: 1, marginTop: '80px', minHeight: 'calc(100vh - 80px)', background: 'linear-gradient(180deg, #111 0%, #1a020b 100%)', color: 'white', overflowX: 'hidden' }}>
       
       {/* Header Section */}
-      <section className="section-padding" style={{ textAlign: 'center', padding: '80px 0 40px' }}>
+      <section 
+        className="section-padding" 
+        style={{ 
+          textAlign: 'center', 
+          padding: '80px 0 40px',
+          background: siteContent.inscr_hero_bg 
+            ? `linear-gradient(rgba(17,17,17,0.75), rgba(17,17,17,0.95)), url(${siteContent.inscr_hero_bg}) center/cover no-repeat`
+            : 'transparent'
+        }}
+      >
         <div className="container">
           <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }}>
             <span style={{ color: 'var(--clr-primary)', letterSpacing: '4px', textTransform: 'uppercase', fontWeight: 'bold' }}>

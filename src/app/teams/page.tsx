@@ -6,7 +6,8 @@ import { useState, useEffect } from 'react';
 import { 
   fetchUnits, UnitItem, DEFAULT_UNITS,
   fetchRoles, RoleItem, DEFAULT_ROLES, matchPlayerToRole,
-  fetchMergedPlayers
+  fetchMergedPlayers,
+  fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT
 } from '@/lib/dataService';
 
 export default function Teams() {
@@ -14,16 +15,22 @@ export default function Teams() {
   const [roles, setRoles] = useState<RoleItem[]>(DEFAULT_ROLES);
   const [selectedCategory, setSelectedCategory] = useState('U17');
   const [db, setDb] = useState<Record<string, any>>({});
+  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [loadedUnits, loadedRoles, loadedPlayers] = await Promise.all([
+        const [loadedUnits, loadedRoles, loadedPlayers, loadedContent] = await Promise.all([
           fetchUnits(),
           fetchRoles(),
-          fetchMergedPlayers()
+          fetchMergedPlayers(),
+          fetchSiteContent()
         ]);
+
+        if (loadedContent) {
+          setSiteContent(loadedContent);
+        }
 
         if (loadedUnits && loadedUnits.length > 0) {
           setUnits(loadedUnits);
@@ -144,7 +151,7 @@ export default function Teams() {
           position: 'relative', 
           overflow: 'hidden', 
           padding: '120px 0 80px',
-          background: 'linear-gradient(rgba(17,17,17,0.7), rgba(17,17,17,1)), url(/kick_hero.png) center/cover no-repeat'
+          background: `linear-gradient(rgba(17,17,17,0.7), rgba(17,17,17,1)), url(${siteContent.teams_hero_bg || '/kick_hero.png'}) center/cover no-repeat`
         }}
       >
         <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8 }} style={{ position: 'relative', zIndex: 10 }}>

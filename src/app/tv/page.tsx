@@ -3,16 +3,20 @@
 import { motion } from 'framer-motion';
 import { Play, Tv, X, Video } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { fetchVideos, VideoItem, parseVideoUrl } from '@/lib/dataService';
+import { fetchVideos, VideoItem, parseVideoUrl, fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
 
 export default function CondorTV() {
   const [videos, setVideos] = useState<VideoItem[]>([]);
+  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('Tous');
 
   useEffect(() => {
     fetchVideos().then(data => {
       if (data) setVideos(data);
+    });
+    fetchSiteContent().then(content => {
+      if (content) setSiteContent(content);
     });
   }, []);
 
@@ -32,7 +36,7 @@ export default function CondorTV() {
         className="section-padding" 
         style={{ 
           padding: '80px 0 50px',
-          background: 'linear-gradient(rgba(17,17,17,0.8), rgba(17,17,17,0.98)), url(/stadium_hero_1780681869623.png) center/cover no-repeat',
+          background: `linear-gradient(rgba(17,17,17,0.8), rgba(17,17,17,0.98)), url(${siteContent.tv_hero_bg || '/stadium_hero_1780681869623.png'}) center/cover no-repeat`,
           borderBottom: '2px solid rgba(202, 2, 79, 0.4)'
         }}
       >

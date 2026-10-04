@@ -37,7 +37,7 @@ export default function Club() {
           padding: '100px 0', 
           position: 'relative', 
           overflow: 'hidden',
-          background: 'linear-gradient(rgba(17,17,17,0.7), rgba(17,17,17,0.9)), url(/club_hero.png) center/cover no-repeat'
+          background: `linear-gradient(rgba(17,17,17,0.7), rgba(17,17,17,0.9)), url(${siteContent.club_hero_bg || '/club_hero.png'}) center/cover no-repeat`
         }}
       >
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }} style={{ position: 'relative', zIndex: 10 }}>

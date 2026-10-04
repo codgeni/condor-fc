@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Calendar, Phone, Mail, MapPin, CheckCircle, Clock, User, PhoneCall, AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
-import { fetchStages, StageSession } from '@/lib/dataService';
+import { fetchStages, StageSession, fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
 import { 
   sanitizeFormRecord, 
   checkRateLimit, 
@@ -18,6 +18,7 @@ import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 export default function Stages() {
   const { showConfirmed } = useConfirmPoster();
   const [stages, setStages] = useState<StageSession[]>([]);
+  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [stageFormData, setStageFormData] = useState({
     nom: '', prenom: '', dob: '', tel: '', photo: '', stage: '', note: ''
   });
@@ -35,6 +36,9 @@ export default function Stages() {
   useEffect(() => {
     fetchStages().then(data => {
       if (data) setStages(data);
+    });
+    fetchSiteContent().then(content => {
+      if (content) setSiteContent(content);
     });
   }, []);
 
@@ -209,7 +213,7 @@ export default function Stages() {
         style={{ 
           textAlign: 'center', 
           padding: '120px 0 80px',
-          background: 'linear-gradient(rgba(17,17,17,0.7), rgba(17,17,17,0.9)), url(/stadium_hero_1780681869623.png) center/cover no-repeat'
+          background: `linear-gradient(rgba(17,17,17,0.7), rgba(17,17,17,0.9)), url(${siteContent.stages_hero_bg || '/stadium_hero_1780681869623.png'}) center/cover no-repeat`
         }}
       >
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }} style={{ position: 'relative', zIndex: 10 }}>

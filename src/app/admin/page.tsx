@@ -23,7 +23,7 @@ import {
   fetchRoles, RoleItem,
   fetchStaff, StaffMember,
   fetchTimeline, TimelineItem,
-  fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
+  fetchSiteContent, saveSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
   fetchMergedPlayers
 } from '@/lib/dataService';
 import { validateUploadFile, sanitizeFormRecord } from '@/lib/security';
@@ -1416,7 +1416,7 @@ export default function AdminPanel() {
         )}
 
         {/* ==============================================================
-            TAB 5: ACTUALITÉS (NEWS CRUD)
+            TAB 5: ACTUALITÉS (NEWS CRUD & BANNIÈRE)
         ============================================================== */}
         {activeTab === 'news' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -1429,6 +1429,99 @@ export default function AdminPanel() {
               >
                 <Plus size={18} /> Créer un Article
               </button>
+            </div>
+
+            {/* Bannière d'en-tête de la page Actualités */}
+            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', border: '1px solid #eee', marginBottom: '2rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Image size={18} color="var(--clr-primary)" />
+                    Arrière-plan du bandeau « Actualités Officielles » (/news)
+                  </h3>
+                  <p style={{ color: '#666', fontSize: '0.85rem', margin: '4px 0 0' }}>
+                    Modifiez l'image d'arrière-plan du hero banner affiché en haut de la page Actualités.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <label 
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: 'var(--clr-primary)',
+                      color: 'white',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    <Upload size={14} />
+                    <span>Téléverser une image (Max 10 Mo)</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      style={{ display: 'none' }}
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > 10 * 1024 * 1024) {
+                            showToast("L'image dépasse la limite autorisée de 10 Mo.");
+                            return;
+                          }
+                          const base64 = await convertToBase64(file);
+                          const updated = { ...siteContent, news_hero_bg: base64 };
+                          setSiteContent(updated);
+                          await saveSiteContent(updated);
+                          showToast("Arrière-plan des Actualités mis à jour avec succès !");
+                        }
+                      }}
+                    />
+                  </label>
+                  {siteContent.news_hero_bg && siteContent.news_hero_bg !== '/news_hero.png' && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const updated = { ...siteContent, news_hero_bg: '/news_hero.png' };
+                        setSiteContent(updated);
+                        await saveSiteContent(updated);
+                        showToast("Arrière-plan par défaut restauré !");
+                      }}
+                      className="btn btn-outline"
+                      style={{ fontSize: '0.82rem', padding: '7px 12px', borderColor: '#ddd', color: '#666' }}
+                    >
+                      Rétablir par défaut
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Aperçu Miniature du bandeau */}
+              <div 
+                style={{ 
+                  height: '110px', 
+                  borderRadius: '8px', 
+                  overflow: 'hidden', 
+                  background: `linear-gradient(rgba(17,17,17,0.7), rgba(17,17,17,0.88)), url(${siteContent.news_hero_bg || '/news_hero.png'}) center/cover no-repeat`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  textAlign: 'center',
+                  border: '1px solid #ddd'
+                }}
+              >
+                <div>
+                  <span style={{ color: 'var(--clr-primary)', letterSpacing: '3px', textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                    Aperçu Bandeau Actualités
+                  </span>
+                  <h4 style={{ margin: '4px 0 0', fontSize: '1.4rem', fontFamily: 'var(--font-heading)' }}>
+                    Actualités Officielles
+                  </h4>
+                </div>
+              </div>
             </div>
 
             {editingNews ? (
@@ -1450,6 +1543,7 @@ export default function AdminPanel() {
                       <option value="Récompense">Récompense</option>
                       <option value="Académie">Académie</option>
                       <option value="Club">Club</option>
+                      <option value="Stages">Stages</option>
                     </select>
                   </div>
                   <div>
@@ -1464,6 +1558,10 @@ export default function AdminPanel() {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
+                            if (file.size > 10 * 1024 * 1024) {
+                              showToast("L'image de l'article dépasse la limite de 10 Mo.");
+                              return;
+                            }
                             const base64 = await convertToBase64(file);
                             setEditingNews({...editingNews, img: base64});
                           }
