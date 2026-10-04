@@ -45,22 +45,37 @@ export default function RolesManager({ roles, players, onRefresh, showToast }: R
       return;
     }
 
-    setSaving(true);
-    try {
-      const res = await saveRole(editingRole);
-      if (res.success) {
-        showToast(`Rôle "${editingRole.name}" ${isCreating ? 'créé' : 'mis à jour'} avec succès !`);
-        setEditingRole(null);
-        setIsCreating(false);
-        onRefresh();
-      } else {
-        showToast("Erreur lors de l'enregistrement du rôle.");
+    askConfirm({
+      title: isCreating ? "AJOUTER LE RÔLE" : "MODIFIER LE RÔLE",
+      message: isCreating 
+        ? `Confirmez-vous l'ajout du rôle "${editingRole.name}" ?` 
+        : `Confirmez-vous la modification du rôle "${editingRole.name}" ?`,
+      confirmLabel: isCreating ? "OUI, CRÉER" : "OUI, ENREGISTRER",
+      itemDetails: {
+        type: isCreating ? 'Ajout' : 'Modification',
+        title: editingRole.name,
+        subtitle: editingRole.keywords || `Ordre d'affichage: ${editingRole.order}`,
+        badge: 'Poste & Rôle'
+      },
+      onConfirm: async () => {
+        setSaving(true);
+        try {
+          const res = await saveRole(editingRole);
+          if (res.success) {
+            showToast(`Rôle "${editingRole.name}" ${isCreating ? 'créé' : 'mis à jour'} avec succès !`);
+            setEditingRole(null);
+            setIsCreating(false);
+            onRefresh();
+          } else {
+            showToast("Erreur lors de l'enregistrement du rôle.");
+          }
+        } catch (err) {
+          showToast("Erreur lors de la sauvegarde.");
+        } finally {
+          setSaving(false);
+        }
       }
-    } catch (err) {
-      showToast("Erreur lors de la sauvegarde.");
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   const handleDelete = (role: RoleItem) => {
@@ -68,6 +83,12 @@ export default function RolesManager({ roles, players, onRefresh, showToast }: R
       title: "SUPPRIMER LE RÔLE",
       message: `Confirmez-vous la suppression du rôle "${role.name}" ?`,
       confirmLabel: "OUI, SUPPRIMER",
+      itemDetails: {
+        type: 'Suppression',
+        title: role.name,
+        subtitle: role.keywords || `Ordre: ${role.order}`,
+        badge: 'Poste & Rôle'
+      },
       onConfirm: async () => {
         try {
           const res = await deleteRole(role.id);

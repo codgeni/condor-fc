@@ -151,42 +151,66 @@ export default function PlayersManager({
       return;
     }
 
-    setSaving(true);
-    try {
-      const payload: PlayerData = {
-        ...editingPlayer,
-        id: String(editingPlayer.id || Date.now()),
-        num: parseInt(editingPlayer.num) || 0,
-        name: editingPlayer.name.trim(),
-        pos: editingPlayer.pos || 'Joueur',
-        category: editingPlayer.category || 'U17',
-        categories: [editingPlayer.category || 'U17'],
-        img: editingPlayer.img || '/condor_logo_transparent.png',
-        detail_img: editingPlayer.detail_img || editingPlayer.img || '/condor_logo_transparent.png'
-      };
+    const payload: PlayerData = {
+      ...editingPlayer,
+      id: String(editingPlayer.id || Date.now()),
+      num: parseInt(editingPlayer.num) || 0,
+      name: editingPlayer.name.trim(),
+      pos: editingPlayer.pos || 'Joueur',
+      category: editingPlayer.category || 'U17',
+      categories: [editingPlayer.category || 'U17'],
+      img: editingPlayer.img || '/condor_logo_transparent.png',
+      detail_img: editingPlayer.detail_img || editingPlayer.img || '/condor_logo_transparent.png'
+    };
 
-      const res = await savePlayerRecord(payload);
-      if (res.success) {
-        showToast(`Fiche de ${payload.name} enregistrée avec succès !`);
-        setEditingPlayer(null);
-        setIsCreating(false);
-        onRefresh();
-      } else {
-        showToast("Erreur lors de l'enregistrement du joueur.");
+    askConfirm({
+      title: isCreating ? 'AJOUTER LE JOUEUR' : 'MODIFIER LE JOUEUR',
+      message: isCreating 
+        ? `Confirmez-vous l'ajout de ${payload.name} à l'effectif ?` 
+        : `Confirmez-vous la modification de la fiche de ${payload.name} ?`,
+      confirmLabel: isCreating ? 'OUI, AJOUTER' : 'OUI, ENREGISTRER',
+      itemDetails: {
+        type: isCreating ? 'Ajout' : 'Modification',
+        title: payload.name,
+        subtitle: `Dossard #${payload.num} • ${payload.pos}`,
+        image: payload.img,
+        badge: payload.category
+      },
+      onConfirm: async () => {
+        setSaving(true);
+        try {
+          const res = await savePlayerRecord(payload);
+          if (res.success) {
+            showToast(`Fiche de ${payload.name} enregistrée avec succès !`);
+            setEditingPlayer(null);
+            setIsCreating(false);
+            onRefresh();
+          } else {
+            showToast("Erreur lors de l'enregistrement du joueur.");
+          }
+        } catch (err) {
+          showToast("Erreur lors de la sauvegarde.");
+        } finally {
+          setSaving(false);
+        }
       }
-    } catch (err) {
-      showToast("Erreur lors de la sauvegarde.");
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   // Delete player
   const handleDelete = (id: string, name: string) => {
+    const targetPlayer = players[id] || (editingPlayer?.id === id ? editingPlayer : null);
     askConfirm({
       title: 'SUPPRIMER LE JOUEUR',
       message: `Confirmez-vous la suppression définitive du profil de ${name} (#${id}) ?\nCette action supprimera également sa fiche de la base de données.`,
       confirmLabel: 'OUI, SUPPRIMER',
+      itemDetails: {
+        type: 'Suppression',
+        title: name,
+        subtitle: `Dossard #${targetPlayer?.num || id} • ${targetPlayer?.pos || 'Joueur'}`,
+        image: targetPlayer?.img,
+        badge: targetPlayer?.category || 'Effectif'
+      },
       onConfirm: async () => {
         try {
           const res = await deletePlayerRecord(id);

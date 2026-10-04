@@ -40,22 +40,37 @@ export default function TimelineManager({ timeline, onRefresh, showToast }: Time
       return;
     }
 
-    setSaving(true);
-    try {
-      const res = await saveTimeline(editingItem);
-      if (res.success) {
-        showToast(`Étape "${editingItem.title}" enregistrée avec succès !`);
-        setEditingItem(null);
-        setIsCreating(false);
-        onRefresh();
-      } else {
-        showToast("Erreur lors de l'enregistrement.");
+    askConfirm({
+      title: isCreating ? "AJOUTER AU PALMARÈS" : "MODIFIER L'ÉTAPE",
+      message: isCreating 
+        ? `Confirmez-vous l'ajout de l'étape "${editingItem.title}" ?` 
+        : `Confirmez-vous la modification de "${editingItem.title}" ?`,
+      confirmLabel: isCreating ? "OUI, AJOUTER" : "OUI, ENREGISTRER",
+      itemDetails: {
+        type: isCreating ? 'Ajout' : 'Modification',
+        title: editingItem.title,
+        subtitle: editingItem.description || `Année: ${editingItem.year}`,
+        badge: editingItem.year
+      },
+      onConfirm: async () => {
+        setSaving(true);
+        try {
+          const res = await saveTimeline(editingItem);
+          if (res.success) {
+            showToast(`Étape "${editingItem.title}" enregistrée avec succès !`);
+            setEditingItem(null);
+            setIsCreating(false);
+            onRefresh();
+          } else {
+            showToast("Erreur lors de l'enregistrement.");
+          }
+        } catch (err) {
+          showToast("Erreur lors de la sauvegarde.");
+        } finally {
+          setSaving(false);
+        }
       }
-    } catch (err) {
-      showToast("Erreur lors de la sauvegarde.");
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   const handleDelete = (item: TimelineItem) => {
@@ -63,6 +78,12 @@ export default function TimelineManager({ timeline, onRefresh, showToast }: Time
       title: "SUPPRIMER DU PALMARÈS",
       message: `Supprimer l'étape "${item.title}" du palmarès et parcours officiel ?`,
       confirmLabel: "OUI, SUPPRIMER",
+      itemDetails: {
+        type: 'Suppression',
+        title: item.title,
+        subtitle: item.description || `Année: ${item.year}`,
+        badge: item.year
+      },
       onConfirm: async () => {
         try {
           const res = await deleteTimeline(item.id);

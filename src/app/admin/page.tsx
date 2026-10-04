@@ -226,13 +226,27 @@ export default function AdminPanel() {
   // -------------------------------------------------------------
   const handleSaveMatch = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await saveMatchConfig(matchConfig);
-    if (res.success) {
-      showToast('Configuration du match enregistrée avec succès !');
-      fetchData();
-    } else {
-      showToast('Erreur lors de l\'enregistrement du match.');
-    }
+    askConfirm({
+      title: 'ENREGISTRER LE MATCH',
+      message: 'Confirmez-vous la mise à jour des paramètres du match officiel ?',
+      confirmLabel: 'OUI, ENREGISTRER',
+      itemDetails: {
+        type: 'Modification',
+        title: `${matchConfig.home_team || 'Condor FC'} vs ${matchConfig.opponent || 'Adversaire'}`,
+        subtitle: `${matchConfig.match_date || 'Date à définir'} • ${matchConfig.location || 'Parc Sportif Delmas'}`,
+        image: matchConfig.opponent_logo,
+        badge: matchConfig.competition || 'Match Officiel'
+      },
+      onConfirm: async () => {
+        const res = await saveMatchConfig(matchConfig);
+        if (res.success) {
+          showToast('Configuration du match enregistrée avec succès !');
+          fetchData();
+        } else {
+          showToast('Erreur lors de l\'enregistrement du match.');
+        }
+      }
+    });
   };
 
   const handleToggleNoMatches = async () => {
@@ -244,24 +258,51 @@ export default function AdminPanel() {
 
   const addSlide = async () => {
     if (!newSlideUrl) return;
-    const { error } = await supabase.from('slides').insert({ url: newSlideUrl });
-    if (error) {
-      showToast('Erreur lors de l\'ajout de la photo.');
-    } else {
-      setNewSlideUrl('');
-      fetchData();
-      showToast('Photo ajoutée au slider avec succès !');
-    }
+    askConfirm({
+      title: 'AJOUTER AU SLIDER',
+      message: 'Confirmez-vous l\'ajout de cette nouvelle image au slider de la page d\'accueil ?',
+      confirmLabel: 'OUI, AJOUTER',
+      itemDetails: {
+        type: 'Ajout',
+        title: 'Nouvelle Photo Carrousel',
+        subtitle: 'Slider Page d\'accueil',
+        image: newSlideUrl
+      },
+      onConfirm: async () => {
+        const { error } = await supabase.from('slides').insert({ url: newSlideUrl });
+        if (error) {
+          showToast('Erreur lors de l\'ajout de la photo.');
+        } else {
+          setNewSlideUrl('');
+          fetchData();
+          showToast('Photo ajoutée au slider avec succès !');
+        }
+      }
+    });
   };
 
   const removeSlide = async (id: number) => {
-    const { error } = await supabase.from('slides').delete().eq('id', id);
-    if (error) {
-      showToast('Erreur lors de la suppression.');
-    } else {
-      fetchData();
-      showToast('Photo supprimée avec succès.');
-    }
+    const slide = slides.find(s => s.id === id);
+    askConfirm({
+      title: 'SUPPRIMER LA PHOTO',
+      message: 'Voulez-vous vraiment retirer cette photo du carrousel de la page d\'accueil ?',
+      confirmLabel: 'OUI, SUPPRIMER',
+      itemDetails: {
+        type: 'Suppression',
+        title: 'Photo Slider Accueil',
+        subtitle: `ID #${id}`,
+        image: slide?.url
+      },
+      onConfirm: async () => {
+        const { error } = await supabase.from('slides').delete().eq('id', id);
+        if (error) {
+          showToast('Erreur lors de la suppression.');
+        } else {
+          fetchData();
+          showToast('Photo supprimée avec succès.');
+        }
+      }
+    });
   };
 
   // -------------------------------------------------------------
@@ -274,21 +315,44 @@ export default function AdminPanel() {
       return;
     }
 
-    const res = await saveVideo(editingVideo);
-    if (res.success) {
-      showToast('Vidéo enregistrée avec succès !');
-      setEditingVideo(null);
-      fetchData();
-    } else {
-      showToast('Erreur lors de l\'enregistrement de la vidéo.');
-    }
+    const isEdit = !!editingVideo.id;
+    askConfirm({
+      title: isEdit ? 'MODIFIER LA VIDÉO' : 'AJOUTER LA VIDÉO',
+      message: isEdit 
+        ? `Confirmez-vous la modification de la vidéo "${editingVideo.title}" ?` 
+        : `Confirmez-vous l'ajout de "${editingVideo.title}" sur Condor TV ?`,
+      confirmLabel: isEdit ? 'OUI, MODIFIER' : 'OUI, AJOUTER',
+      itemDetails: {
+        type: isEdit ? 'Modification' : 'Ajout',
+        title: editingVideo.title,
+        subtitle: `Catégorie: ${editingVideo.category || 'Vidéothèque'}`,
+        badge: editingVideo.duration || editingVideo.tag
+      },
+      onConfirm: async () => {
+        const res = await saveVideo(editingVideo);
+        if (res.success) {
+          showToast('Vidéo enregistrée avec succès !');
+          setEditingVideo(null);
+          fetchData();
+        } else {
+          showToast('Erreur lors de l\'enregistrement de la vidéo.');
+        }
+      }
+    });
   };
 
   const handleDeleteVideo = (id: number | string) => {
+    const video = videos.find(v => String(v.id) === String(id));
     askConfirm({
       title: 'SUPPRIMER LA VIDÉO',
-      message: 'Voulez-vous vraiment supprimer cette vidéo de Condor TV ?',
+      message: `Voulez-vous vraiment supprimer définitivement la vidéo "${video?.title || 'Vidéo'}" de Condor TV ?`,
       confirmLabel: 'OUI, SUPPRIMER',
+      itemDetails: {
+        type: 'Suppression',
+        title: video?.title || 'Vidéo Condor TV',
+        subtitle: `Catégorie: ${video?.category || 'Général'}`,
+        badge: video?.duration
+      },
       onConfirm: async () => {
         await deleteVideo(id);
         showToast('Vidéo supprimée avec succès.');
@@ -307,21 +371,44 @@ export default function AdminPanel() {
       return;
     }
 
-    const res = await saveStage(editingStage);
-    if (res.success) {
-      showToast('Session de stage enregistrée avec succès !');
-      setEditingStage(null);
-      fetchData();
-    } else {
-      showToast('Erreur lors de l\'enregistrement du stage.');
-    }
+    const isEdit = !!editingStage.id;
+    askConfirm({
+      title: isEdit ? 'MODIFIER LA SESSION' : 'CRÉER LA SESSION DE STAGE',
+      message: isEdit 
+        ? `Confirmez-vous la modification de la session "${editingStage.title}" ?` 
+        : `Confirmez-vous la création de la session "${editingStage.title}" ?`,
+      confirmLabel: isEdit ? 'OUI, ENREGISTRER' : 'OUI, CRÉER',
+      itemDetails: {
+        type: isEdit ? 'Modification' : 'Ajout',
+        title: editingStage.title,
+        subtitle: `${editingStage.dates} • ${editingStage.price || ''}`,
+        badge: editingStage.categories
+      },
+      onConfirm: async () => {
+        const res = await saveStage(editingStage);
+        if (res.success) {
+          showToast('Session de stage enregistrée avec succès !');
+          setEditingStage(null);
+          fetchData();
+        } else {
+          showToast('Erreur lors de l\'enregistrement du stage.');
+        }
+      }
+    });
   };
 
   const handleDeleteStage = (id: number | string) => {
+    const stage = stages.find(s => String(s.id) === String(id));
     askConfirm({
       title: 'SUPPRIMER LA SESSION',
-      message: 'Voulez-vous vraiment supprimer cette session de stage ?',
+      message: `Voulez-vous vraiment supprimer la session "${stage?.title || 'Stage'}" ?`,
       confirmLabel: 'OUI, SUPPRIMER',
+      itemDetails: {
+        type: 'Suppression',
+        title: stage?.title || 'Session de Stage',
+        subtitle: stage?.dates,
+        badge: stage?.categories
+      },
       onConfirm: async () => {
         await deleteStage(id);
         showToast('Session de stage supprimée avec succès.');
@@ -331,10 +418,17 @@ export default function AdminPanel() {
   };
 
   const handleDeleteStageRegistration = (id: number) => {
+    const reg = stageRegistrations.find(r => r.id === id);
     askConfirm({
       title: 'SUPPRIMER LA PRÉ-INSCRIPTION',
-      message: 'Supprimer définitivement cette pré-inscription ?',
+      message: `Supprimer définitivement la pré-inscription de ${reg?.child_name || 'cet enfant'} ?`,
       confirmLabel: 'OUI, SUPPRIMER',
+      itemDetails: {
+        type: 'Suppression',
+        title: reg?.child_name || 'Pré-inscription Stage',
+        subtitle: `Parent: ${reg?.parent_name || 'N/A'} • Tél: ${reg?.phone || 'N/A'}`,
+        badge: reg?.stage_title
+      },
       onConfirm: async () => {
         await supabase.from('stages_inscriptions').delete().eq('id', id);
         showToast('Pré-inscription supprimée.');
@@ -344,10 +438,17 @@ export default function AdminPanel() {
   };
 
   const handleDeleteAppointment = (id: number) => {
+    const rdv = appointments.find(a => a.id === id);
     askConfirm({
       title: 'SUPPRIMER LE RENDEZ-VOUS',
-      message: 'Supprimer ce rendez-vous administratif ?',
+      message: `Supprimer ce rendez-vous administratif de ${rdv?.name || 'la personne'} ?`,
       confirmLabel: 'OUI, SUPPRIMER',
+      itemDetails: {
+        type: 'Suppression',
+        title: rdv?.name || 'Rendez-vous Administratif',
+        subtitle: `${rdv?.date || ''} à ${rdv?.time || ''} • Tél: ${rdv?.phone || ''}`,
+        badge: rdv?.status || 'Programmé'
+      },
       onConfirm: async () => {
         await supabase.from('appointments').delete().eq('id', id);
         showToast('Rendez-vous supprimé.');
@@ -366,21 +467,49 @@ export default function AdminPanel() {
       return;
     }
 
-    const res = await saveProduct(editingProduct);
-    if (res.success) {
-      showToast('Article de boutique enregistré avec succès !');
-      setEditingProduct(null);
-      fetchData();
-    } else {
-      showToast('Erreur lors de l\'enregistrement du produit.');
-    }
+    askConfirm({
+      title: 'ENREGISTRER L\'ARTICLE',
+      message: `Confirmez-vous l'enregistrement de l'article "${editingProduct.title}" ?`,
+      confirmLabel: 'OUI, ENREGISTRER',
+      itemDetails: {
+        type: 'Modification',
+        title: editingProduct.title,
+        subtitle: `Prix: ${editingProduct.price} $`,
+        image: editingProduct.img,
+        badge: editingProduct.category
+      },
+      onConfirm: async () => {
+        const res = await saveProduct(editingProduct);
+        if (res.success) {
+          showToast('Article de boutique enregistré avec succès !');
+          setEditingProduct(null);
+          fetchData();
+        } else {
+          showToast('Erreur lors de l\'enregistrement du produit.');
+        }
+      }
+    });
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!confirm(`Supprimer l'article "${id}" de la boutique ?`)) return;
-    await deleteProduct(id);
-    showToast('Article supprimé de la boutique.');
-    fetchData();
+    const prod = products.find(p => p.id === id);
+    askConfirm({
+      title: 'SUPPRIMER L\'ARTICLE',
+      message: `Confirmez-vous la suppression définitive de "${prod?.title || id}" ?`,
+      confirmLabel: 'OUI, SUPPRIMER',
+      itemDetails: {
+        type: 'Suppression',
+        title: prod?.title || id,
+        subtitle: `Réf: ${id}`,
+        image: prod?.img,
+        badge: prod?.category
+      },
+      onConfirm: async () => {
+        await deleteProduct(id);
+        showToast('Article supprimé de la boutique.');
+        fetchData();
+      }
+    });
   };
 
   // -------------------------------------------------------------
@@ -389,36 +518,61 @@ export default function AdminPanel() {
   const handleSaveNews = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
-      cat: editingNews.cat || 'Match',
+      cat: editingNews.cat || 'Club',
       title: editingNews.title,
       desc_text: editingNews.desc_text || editingNews.desc || '',
       img: editingNews.img || '/player_action_1_1780681882713.png',
       date: editingNews.date || "À l'instant"
     };
 
-    let error;
-    if (editingNews.id) {
-      const res = await supabase.from('news').update(payload).eq('id', editingNews.id);
-      error = res.error;
-    } else {
-      const res = await supabase.from('news').insert(payload);
-      error = res.error;
-    }
+    const isEdit = !!editingNews.id;
+    askConfirm({
+      title: isEdit ? "MODIFIER L'ACTUALITÉ" : "PUBLIER L'ACTUALITÉ",
+      message: isEdit 
+        ? `Confirmez-vous la modification de l'article "${payload.title}" ?` 
+        : `Confirmez-vous la publication de "${payload.title}" ?`,
+      confirmLabel: isEdit ? "OUI, ENREGISTRER" : "OUI, PUBLIER",
+      itemDetails: {
+        type: isEdit ? 'Modification' : 'Ajout',
+        title: payload.title,
+        subtitle: `Catégorie: ${payload.cat} • Date: ${payload.date}`,
+        image: payload.img,
+        badge: payload.cat
+      },
+      onConfirm: async () => {
+        let error;
+        if (editingNews.id) {
+          const res = await supabase.from('news').update(payload).eq('id', editingNews.id);
+          error = res.error;
+        } else {
+          const res = await supabase.from('news').insert(payload);
+          error = res.error;
+        }
 
-    if (error) {
-      showToast('Erreur lors de l\'enregistrement de l\'article.');
-    } else {
-      showToast('Article de presse enregistré avec succès !');
-      setEditingNews(null);
-      fetchData();
-    }
+        if (error) {
+          showToast('Erreur lors de l\'enregistrement de l\'article.');
+        } else {
+          showToast('Article de presse enregistré avec succès !');
+          setEditingNews(null);
+          fetchData();
+        }
+      }
+    });
   };
 
   const handleDeleteNews = (id: number) => {
+    const article = newsList.find(n => n.id === id);
     askConfirm({
       title: "SUPPRIMER L'ACTUALITÉ",
-      message: 'Voulez-vous vraiment supprimer cet article de presse ?',
+      message: `Voulez-vous vraiment supprimer définitivement l'article "${article?.title || 'Article'}" ?`,
       confirmLabel: 'OUI, SUPPRIMER',
+      itemDetails: {
+        type: 'Suppression',
+        title: article?.title || 'Article de presse',
+        subtitle: `Publié le : ${article?.date || 'Récemment'}`,
+        image: article?.img,
+        badge: article?.cat || 'Club'
+      },
       onConfirm: async () => {
         const { error } = await supabase.from('news').delete().eq('id', id);
         if (error) {
@@ -453,22 +607,47 @@ export default function AdminPanel() {
       detail_img: editingPlayer.detail_img || editingPlayer.img || '/condor_logo_transparent.png'
     };
 
-    const res = await savePlayerRecord(payload);
-    if (res.success) {
-      showToast(`Fiche de ${payload.name} enregistrée avec succès !`);
-      setEditingPlayer(null);
-      setCreatingPlayer(false);
-      fetchData();
-    } else {
-      showToast(res.error || 'Erreur lors de l\'enregistrement du joueur.');
-    }
+    const isEdit = Boolean(players[payload.id] || (!creatingPlayer && editingPlayer.id));
+    askConfirm({
+      title: isEdit ? 'MODIFIER LE JOUEUR' : 'AJOUTER LE JOUEUR',
+      message: isEdit 
+        ? `Confirmez-vous la modification de la fiche de ${payload.name} ?` 
+        : `Confirmez-vous l'ajout de ${payload.name} à l'effectif ?`,
+      confirmLabel: isEdit ? 'OUI, ENREGISTRER' : 'OUI, AJOUTER',
+      itemDetails: {
+        type: isEdit ? 'Modification' : 'Ajout',
+        title: payload.name,
+        subtitle: `Dossard #${payload.num} • ${payload.pos}`,
+        image: payload.img,
+        badge: payload.category
+      },
+      onConfirm: async () => {
+        const res = await savePlayerRecord(payload);
+        if (res.success) {
+          showToast(`Fiche de ${payload.name} enregistrée avec succès !`);
+          setEditingPlayer(null);
+          setCreatingPlayer(false);
+          fetchData();
+        } else {
+          showToast(res.error || 'Erreur lors de l\'enregistrement du joueur.');
+        }
+      }
+    });
   };
 
   const handleDeletePlayer = (id: string, name: string) => {
+    const player = players[id];
     askConfirm({
       title: 'SUPPRIMER LE JOUEUR',
       message: `Confirmez-vous la suppression définitive du profil de ${name} (#${id}) ?\nCette action retirera sa fiche de l'effectif.`,
       confirmLabel: 'OUI, SUPPRIMER',
+      itemDetails: {
+        type: 'Suppression',
+        title: name,
+        subtitle: `Dossard #${player?.num || id} • ${player?.pos || 'Joueur'}`,
+        image: player?.img,
+        badge: player?.category || 'Effectif'
+      },
       onConfirm: async () => {
         const res = await deletePlayerRecord(id);
         if (res.success) {
@@ -485,10 +664,18 @@ export default function AdminPanel() {
   // INSCRIPTIONS HANDLERS
   // -------------------------------------------------------------
   const handleDeleteInscription = (id: number) => {
+    const insc = inscriptions.find(i => i.id === id);
+    const childName = insc?.child_first_name ? `${insc.child_first_name} ${insc.child_last_name}` : 'Dossier Inscription';
     askConfirm({
       title: "SUPPRIMER L'INSCRIPTION",
-      message: 'Voulez-vous vraiment supprimer définitivement ce dossier d\'inscription ?',
+      message: `Voulez-vous vraiment supprimer définitivement le dossier de ${childName} ?`,
       confirmLabel: 'OUI, SUPPRIMER',
+      itemDetails: {
+        type: 'Suppression',
+        title: childName,
+        subtitle: `Parent: ${insc?.parent_name || 'N/A'} • Tél: ${insc?.parent_phone || 'N/A'}`,
+        badge: insc?.child_category || 'Annuelle'
+      },
       onConfirm: async () => {
         const { error } = await supabase.from('inscriptions').delete().eq('id', id);
         if (!error) {

@@ -134,48 +134,72 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
       return;
     }
 
-    setSaving(true);
-    try {
-      const parsedHighlights = highlightsInput
-        .split('\n')
-        .map(h => sanitizeInput(h.trim()))
-        .filter(h => h.length > 0);
+    const parsedHighlights = highlightsInput
+      .split('\n')
+      .map(h => sanitizeInput(h.trim()))
+      .filter(h => h.length > 0);
 
-      const payload: ShopProduct = {
-        ...editingProduct,
-        id: editingProduct.id.trim().toLowerCase().replace(/\s+/g, '-'),
-        title: sanitizeInput(editingProduct.title),
-        subtitle: sanitizeInput(editingProduct.subtitle || ''),
-        category_label: sanitizeInput(editingProduct.category_label || ''),
-        tag: sanitizeInput(editingProduct.tag || ''),
-        badge_text: sanitizeInput(editingProduct.badge_text || ''),
-        description: sanitizeInput(editingProduct.description || ''),
-        formatted_price: `${editingProduct.price}.00 $`,
-        highlights: parsedHighlights
-      };
+    const payload: ShopProduct = {
+      ...editingProduct,
+      id: editingProduct.id.trim().toLowerCase().replace(/\s+/g, '-'),
+      title: sanitizeInput(editingProduct.title),
+      subtitle: sanitizeInput(editingProduct.subtitle || ''),
+      category_label: sanitizeInput(editingProduct.category_label || ''),
+      tag: sanitizeInput(editingProduct.tag || ''),
+      badge_text: sanitizeInput(editingProduct.badge_text || ''),
+      description: sanitizeInput(editingProduct.description || ''),
+      formatted_price: `${editingProduct.price}.00 $`,
+      highlights: parsedHighlights
+    };
 
-      const res = await saveProduct(payload);
-      if (res.success) {
-        showToast(`Article "${payload.title}" ${isCreating ? 'créé' : 'enregistré'} avec succès !`);
-        setEditingProduct(null);
-        setIsCreating(false);
-        onRefresh();
-      } else {
-        showToast(res.error || "Erreur lors de l'enregistrement de l'article.");
+    askConfirm({
+      title: isCreating ? "AJOUTER L'ARTICLE" : "MODIFIER L'ARTICLE",
+      message: isCreating 
+        ? `Confirmez-vous l'ajout de l'article "${payload.title}" au catalogue ?` 
+        : `Confirmez-vous la modification de la fiche de "${payload.title}" ?`,
+      confirmLabel: isCreating ? "OUI, AJOUTER" : "OUI, ENREGISTRER",
+      itemDetails: {
+        type: isCreating ? 'Ajout' : 'Modification',
+        title: payload.title,
+        subtitle: `${payload.category_label || payload.category} • ${payload.formatted_price}`,
+        image: payload.img,
+        badge: payload.tag || payload.badge_text
+      },
+      onConfirm: async () => {
+        setSaving(true);
+        try {
+          const res = await saveProduct(payload);
+          if (res.success) {
+            showToast(`Article "${payload.title}" ${isCreating ? 'créé' : 'enregistré'} avec succès !`);
+            setEditingProduct(null);
+            setIsCreating(false);
+            onRefresh();
+          } else {
+            showToast(res.error || "Erreur lors de l'enregistrement de l'article.");
+          }
+        } catch (err) {
+          showToast("Une erreur est survenue lors de l'enregistrement.");
+        } finally {
+          setSaving(false);
+        }
       }
-    } catch (err) {
-      showToast("Une erreur est survenue lors de l'enregistrement.");
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   // Delete Product
   const handleDelete = (id: string, title: string) => {
+    const prod = products.find(p => p.id === id);
     askConfirm({
       title: "SUPPRIMER L'ARTICLE",
       message: `Êtes-vous sûr de vouloir supprimer définitivement l'article "${title}" de la boutique ?`,
       confirmLabel: "OUI, SUPPRIMER",
+      itemDetails: {
+        type: 'Suppression',
+        title: title,
+        subtitle: `Réf: ${id} • ${prod?.formatted_price || ''}`,
+        image: prod?.img,
+        badge: prod?.category_label || prod?.category
+      },
       onConfirm: async () => {
         try {
           const res = await deleteProduct(id);

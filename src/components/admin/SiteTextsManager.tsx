@@ -7,6 +7,7 @@ import {
   Image as ImageIcon, Upload
 } from 'lucide-react';
 import { SiteContent, DEFAULT_SITE_CONTENT, DEFAULT_PILLARS, PillarItem, saveSiteContent } from '@/lib/dataService';
+import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 
 const BANNER_CONFIGS = [
   {
@@ -67,6 +68,7 @@ interface SiteTextsManagerProps {
 }
 
 export default function SiteTextsManager({ content, onRefresh, showToast }: SiteTextsManagerProps) {
+  const { askConfirm } = useConfirmPoster();
   const [activeSubTab, setActiveSubTab] = useState<'banners' | 'inscription' | 'club' | 'home'>('banners');
   const [form, setForm] = useState<SiteContent>({
     ...DEFAULT_SITE_CONTENT,
@@ -79,20 +81,32 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    try {
-      const res = await saveSiteContent(form);
-      if (res.success) {
-        showToast("Textes, clauses et contenus enregistrés avec succès !");
-        onRefresh();
-      } else {
-        showToast("Erreur lors de la sauvegarde.");
+    askConfirm({
+      title: 'ENREGISTRER LES MODIFICATIONS',
+      message: 'Confirmez-vous l\'enregistrement des modifications apportées aux textes, bannières et clauses du site ?',
+      confirmLabel: 'OUI, ENREGISTRER',
+      itemDetails: {
+        type: 'Modification',
+        title: 'Textes & Bannières du Site',
+        subtitle: 'Mise à jour des contenus du site officiel'
+      },
+      onConfirm: async () => {
+        setSaving(true);
+        try {
+          const res = await saveSiteContent(form);
+          if (res.success) {
+            showToast("Textes, clauses et contenus enregistrés avec succès !");
+            onRefresh();
+          } else {
+            showToast("Erreur lors de la sauvegarde.");
+          }
+        } catch (err) {
+          showToast("Erreur lors de l'enregistrement.");
+        } finally {
+          setSaving(false);
+        }
       }
-    } catch (err) {
-      showToast("Erreur lors de l'enregistrement.");
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   const convertFileToBase64 = (file: File): Promise<string> => {

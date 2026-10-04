@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import HeroSlider from '@/components/HeroSlider';
-import { Play, ArrowRight, Calendar, MapPin, ShoppingBag, Landmark, Heart, Trophy, Tv, ChevronLeft, ChevronRight, Award, Star, Activity } from 'lucide-react';
+import { Play, ArrowRight, Calendar, MapPin, ShoppingBag, Landmark, Heart, Trophy, Tv, ChevronLeft, ChevronRight, Award, Star, Activity, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { playersDB } from '@/lib/playersDB';
 import { 
@@ -53,6 +53,7 @@ export default function Home() {
 
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [latestNews, setLatestNews] = useState<any[]>([]);
+  const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
   const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number; s: number } | null>(null);
   const [playerIndex, setPlayerIndex] = useState(0);
   const [allPlayers, setAllPlayers] = useState<Record<string, any>>(playersDB);
@@ -256,7 +257,11 @@ export default function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 360px))', justifyContent: 'center', gap: '2.2rem' }}>
             {latestNews.length > 0 ? (
               latestNews.map((news, i) => (
-                <Link href="/news" key={news.id || i} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <div 
+                  key={news.id || i} 
+                  onClick={() => setSelectedArticle(news)}
+                  style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}
+                >
                   <motion.div 
                     initial={{ opacity: 0, y: 25 }} 
                     whileInView={{ opacity: 1, y: 0 }} 
@@ -272,6 +277,7 @@ export default function Home() {
                       boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
                       border: '1px solid #e5e7eb',
                       position: 'relative',
+                      height: '100%',
                       transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease'
                     }} 
                     whileHover={{ y: -8, boxShadow: '0 18px 38px rgba(0,0,0,0.12)' }}
@@ -341,9 +347,9 @@ export default function Home() {
                             fontSize: '0.88rem', 
                             margin: 0, 
                             lineHeight: 1.5,
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
+                            display: '-webkit-box', 
+                            WebkitLineClamp: 2, 
+                            WebkitBoxOrient: 'vertical', 
                             overflow: 'hidden' 
                           }}
                         >
@@ -351,9 +357,14 @@ export default function Home() {
                         </p>
                       </div>
 
-                      {/* Bouton "En savoir plus" */}
+                      {/* Bouton "En savoir plus" / "Voir plus" */}
                       <div style={{ paddingTop: '1.2rem', marginTop: '1.2rem', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedArticle(news);
+                          }}
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -365,20 +376,22 @@ export default function Home() {
                             padding: '8px 16px',
                             fontSize: '0.84rem',
                             fontWeight: 'bold',
-                            boxShadow: '0 3px 10px rgba(202, 2, 79, 0.25)'
+                            cursor: 'pointer',
+                            boxShadow: '0 3px 10px rgba(202, 2, 79, 0.25)',
+                            transition: 'opacity 0.2s'
                           }}
                         >
                           <span>En savoir plus</span>
                           <ArrowRight size={14} />
-                        </span>
+                        </button>
 
                         <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '500' }}>
-                          Lire la suite
+                          Lire l'article
                         </span>
                       </div>
                     </div>
                   </motion.div>
-                </Link>
+                </div>
               ))
             ) : (
               <div style={{ gridColumn: '1 / -1', background: 'white', padding: '3.5rem 2rem', borderRadius: '16px', textAlign: 'center', border: '1px solid #eee' }}>
@@ -956,6 +969,159 @@ export default function Home() {
           ))}
         </motion.div>
       </section>
+
+      {/* Modal Lecture Article Complet — Affichage instantané sur la page d'accueil sans redirection */}
+      {selectedArticle && (
+        <div 
+          onClick={() => setSelectedArticle(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.88)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 10000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem',
+            overflowY: 'auto'
+          }}
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'white',
+              maxWidth: '820px',
+              width: '100%',
+              borderRadius: '20px',
+              overflow: 'hidden',
+              boxShadow: '0 30px 80px rgba(0,0,0,0.5)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              position: 'relative'
+            }}
+          >
+            {/* Bouton Fermer flottant sticky en haut à droite */}
+            <div style={{ position: 'sticky', top: 0, zIndex: 30, display: 'flex', justifyContent: 'flex-end', height: 0, padding: '16px 16px 0 0', pointerEvents: 'none' }}>
+              <button 
+                onClick={() => setSelectedArticle(null)}
+                style={{
+                  pointerEvents: 'auto',
+                  background: 'rgba(0,0,0,0.75)',
+                  color: 'white',
+                  border: '1px solid rgba(255,255,255,0.3)',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(6px)',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
+                  transition: 'background 0.2s'
+                }}
+                aria-label="Fermer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Scène Image Complète (objectFit: contain — Aucun rognage, 100% visible) */}
+            <div 
+              style={{ 
+                position: 'relative', 
+                width: '100%', 
+                background: '#090a0f', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                minHeight: '260px'
+              }}
+            >
+              <img 
+                src={selectedArticle.img || '/condor_logo_transparent.png'} 
+                alt={selectedArticle.title}
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: '520px', 
+                  width: 'auto', 
+                  height: 'auto', 
+                  objectFit: 'contain', 
+                  display: 'block' 
+                }} 
+              />
+
+              {/* Tag Catégorie */}
+              <span 
+                style={{ 
+                  position: 'absolute', 
+                  bottom: '16px', 
+                  left: '20px', 
+                  background: 'var(--clr-primary)', 
+                  color: 'white', 
+                  padding: '6px 14px', 
+                  fontSize: '0.8rem', 
+                  fontWeight: '800', 
+                  textTransform: 'uppercase', 
+                  borderRadius: '6px',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.6)'
+                }}
+              >
+                {selectedArticle.cat || 'Club'}
+              </span>
+            </div>
+
+            {/* Corps de l'Article (défile harmonieusement avec l'image) */}
+            <div style={{ padding: '2rem 2.2rem' }}>
+              <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                <Calendar size={14} style={{ color: 'var(--clr-primary)' }} /> Publié : {selectedArticle.date || "Récemment"}
+              </span>
+
+              <h2 
+                style={{ 
+                  fontFamily: 'var(--font-heading)', 
+                  fontSize: '2.1rem', 
+                  color: 'var(--clr-black)', 
+                  margin: '0 0 1.5rem', 
+                  lineHeight: 1.25 
+                }}
+              >
+                {selectedArticle.title}
+              </h2>
+
+              <div 
+                style={{ 
+                  fontSize: '1.05rem', 
+                  color: '#334155', 
+                  lineHeight: 1.75, 
+                  whiteSpace: 'pre-line',
+                  wordBreak: 'break-word'
+                }}
+              >
+                {selectedArticle.desc_text || selectedArticle.desc}
+              </div>
+
+              {/* Pied de l'article avec bouton fermer */}
+              <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Condor École de Football — Communication Officielle</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedArticle(null)}
+                  className="btn btn-outline"
+                  style={{ padding: '8px 22px', fontSize: '0.88rem', color: '#1e293b', borderColor: '#cbd5e1' }}
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

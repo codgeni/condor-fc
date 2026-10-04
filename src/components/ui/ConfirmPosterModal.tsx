@@ -2,13 +2,22 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, AlertCircle, X, ShieldCheck } from 'lucide-react';
+import { Check, AlertCircle, X, ShieldCheck, FileText, Trash2, Plus, Edit } from 'lucide-react';
 
-interface ConfirmDialogOptions {
+export interface ConfirmItemDetails {
+  type?: 'Ajout' | 'Modification' | 'Suppression' | string;
+  title: string;
+  subtitle?: string;
+  image?: string;
+  badge?: string;
+}
+
+export interface ConfirmDialogOptions {
   title?: string;
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  itemDetails?: ConfirmItemDetails;
   onConfirm: () => void | Promise<void>;
   successMessage?: string;
 }
@@ -44,6 +53,7 @@ export function ConfirmPosterProvider({ children }: { children: React.ReactNode 
     message: string;
     confirmLabel: string;
     cancelLabel: string;
+    itemDetails?: ConfirmItemDetails;
     onConfirm?: () => void | Promise<void>;
     successMessage?: string;
   }>({
@@ -79,6 +89,7 @@ export function ConfirmPosterProvider({ children }: { children: React.ReactNode 
       message: options.message,
       confirmLabel: options.confirmLabel || 'OUI, CONFIRMER',
       cancelLabel: options.cancelLabel || 'ANNULER',
+      itemDetails: options.itemDetails,
       onConfirm: options.onConfirm,
       successMessage: options.successMessage
     });
@@ -475,14 +486,159 @@ export function ConfirmPosterProvider({ children }: { children: React.ReactNode 
                 style={{
                   fontSize: '1.05rem',
                   color: '#cbd5e1',
-                  lineHeight: 1.55,
-                  maxWidth: '430px',
-                  margin: '0 auto 2rem',
+                  lineHeight: '1.55',
+                  maxWidth: '440px',
+                  margin: '0 auto 1.5rem',
                   whiteSpace: 'pre-line'
                 }}
               >
                 {confirmDialog.message}
               </p>
+
+              {/* Carte Aperçu de l'élément concerné */}
+              {confirmDialog.itemDetails && (
+                <div
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '16px',
+                    padding: '14px 16px',
+                    margin: '0 auto 1.8rem',
+                    maxWidth: '440px',
+                    textAlign: 'left',
+                    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.3)',
+                    position: 'relative'
+                  }}
+                >
+                  {/* Badge Type d'opération */}
+                  {confirmDialog.itemDetails.type && (
+                    <div style={{ marginBottom: '10px' }}>
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: '800',
+                          letterSpacing: '1px',
+                          textTransform: 'uppercase',
+                          padding: '3px 10px',
+                          borderRadius: '12px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          background: confirmDialog.itemDetails.type === 'Suppression' 
+                            ? 'rgba(239, 68, 68, 0.2)' 
+                            : confirmDialog.itemDetails.type === 'Ajout' 
+                            ? 'rgba(34, 197, 94, 0.2)' 
+                            : 'rgba(245, 158, 11, 0.2)',
+                          color: confirmDialog.itemDetails.type === 'Suppression' 
+                            ? '#f87171' 
+                            : confirmDialog.itemDetails.type === 'Ajout' 
+                            ? '#4ade80' 
+                            : '#fbbf24',
+                          border: `1px solid ${confirmDialog.itemDetails.type === 'Suppression' ? 'rgba(239, 68, 68, 0.4)' : confirmDialog.itemDetails.type === 'Ajout' ? 'rgba(34, 197, 94, 0.4)' : 'rgba(245, 158, 11, 0.4)'}`
+                        }}
+                      >
+                        {confirmDialog.itemDetails.type === 'Suppression' && <><Trash2 size={12} /> SUPPRESSION DÉFINITIVE</>}
+                        {confirmDialog.itemDetails.type === 'Ajout' && <><Plus size={12} /> NOUVEL AJOUT</>}
+                        {confirmDialog.itemDetails.type === 'Modification' && <><Edit size={12} /> MODIFICATION ENREGISTRÉE</>}
+                        {!['Suppression', 'Ajout', 'Modification'].includes(confirmDialog.itemDetails.type) && `● ${confirmDialog.itemDetails.type}`}
+                      </span>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    {/* Thumbnail Image si existante */}
+                    {confirmDialog.itemDetails.image ? (
+                      <div
+                        style={{
+                          width: '56px',
+                          height: '56px',
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          background: '#0a0a0c',
+                          border: '1px solid rgba(255, 255, 255, 0.2)',
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <img
+                          src={confirmDialog.itemDetails.image}
+                          alt={confirmDialog.itemDetails.title}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          width: '54px',
+                          height: '54px',
+                          borderRadius: '12px',
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#94a3b8'
+                        }}
+                      >
+                        <FileText size={24} />
+                      </div>
+                    )}
+
+                    {/* Titre et détails */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: '1.02rem',
+                          fontWeight: '800',
+                          color: '#ffffff',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          lineHeight: 1.3
+                        }}
+                        title={confirmDialog.itemDetails.title}
+                      >
+                        {confirmDialog.itemDetails.title}
+                      </div>
+                      {confirmDialog.itemDetails.subtitle && (
+                        <div
+                          style={{
+                            fontSize: '0.84rem',
+                            color: '#cbd5e1',
+                            marginTop: '2px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {confirmDialog.itemDetails.subtitle}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tag badge latéral si existant */}
+                    {confirmDialog.itemDetails.badge && (
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: '700',
+                          background: 'rgba(255, 255, 255, 0.12)',
+                          color: '#e2e8f0',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          flexShrink: 0,
+                          border: '1px solid rgba(255, 255, 255, 0.15)'
+                        }}
+                      >
+                        {confirmDialog.itemDetails.badge}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -514,11 +670,11 @@ export function ConfirmPosterProvider({ children }: { children: React.ReactNode 
                     fontWeight: '800',
                     letterSpacing: '0.5px',
                     borderRadius: '10px',
-                    background: 'var(--clr-primary)',
+                    background: confirmDialog.itemDetails?.type === 'Suppression' ? '#dc2626' : confirmDialog.itemDetails?.type === 'Ajout' ? '#16a34a' : 'var(--clr-primary)',
                     color: '#ffffff',
                     border: 'none',
                     cursor: 'pointer',
-                    boxShadow: '0 6px 20px rgba(202, 2, 79, 0.4)'
+                    boxShadow: confirmDialog.itemDetails?.type === 'Suppression' ? '0 6px 20px rgba(220, 38, 38, 0.45)' : '0 6px 20px rgba(202, 2, 79, 0.4)'
                   }}
                 >
                   {confirmDialog.confirmLabel}

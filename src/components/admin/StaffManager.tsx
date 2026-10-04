@@ -56,22 +56,38 @@ export default function StaffManager({ staff, onRefresh, showToast }: StaffManag
       return;
     }
 
-    setSaving(true);
-    try {
-      const res = await saveStaff(editingStaff);
-      if (res.success) {
-        showToast(`Membre du staff "${editingStaff.name}" ${isCreating ? 'ajouté' : 'mis à jour'} !`);
-        setEditingStaff(null);
-        setIsCreating(false);
-        onRefresh();
-      } else {
-        showToast("Erreur lors de l'enregistrement.");
+    askConfirm({
+      title: isCreating ? "AJOUTER AU STAFF" : "MODIFIER LE MEMBRE DU STAFF",
+      message: isCreating 
+        ? `Confirmez-vous l'ajout de ${editingStaff.name} à l'encadrement technique ?` 
+        : `Confirmez-vous la modification de la fiche de ${editingStaff.name} ?`,
+      confirmLabel: isCreating ? "OUI, AJOUTER" : "OUI, ENREGISTRER",
+      itemDetails: {
+        type: isCreating ? 'Ajout' : 'Modification',
+        title: editingStaff.name,
+        subtitle: editingStaff.role || 'Encadrement Technique',
+        image: editingStaff.img,
+        badge: 'Staff'
+      },
+      onConfirm: async () => {
+        setSaving(true);
+        try {
+          const res = await saveStaff(editingStaff);
+          if (res.success) {
+            showToast(`Membre du staff "${editingStaff.name}" ${isCreating ? 'ajouté' : 'mis à jour'} !`);
+            setEditingStaff(null);
+            setIsCreating(false);
+            onRefresh();
+          } else {
+            showToast("Erreur lors de l'enregistrement.");
+          }
+        } catch (err) {
+          showToast("Erreur lors de la sauvegarde.");
+        } finally {
+          setSaving(false);
+        }
       }
-    } catch (err) {
-      showToast("Erreur lors de la sauvegarde.");
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   const handleDelete = (member: StaffMember) => {
@@ -79,6 +95,13 @@ export default function StaffManager({ staff, onRefresh, showToast }: StaffManag
       title: "SUPPRIMER DU STAFF",
       message: `Supprimer ${member.name} du staff et de l'encadrement ?`,
       confirmLabel: "OUI, SUPPRIMER",
+      itemDetails: {
+        type: 'Suppression',
+        title: member.name,
+        subtitle: member.role || 'Staff Technique',
+        image: member.img,
+        badge: 'Staff'
+      },
       onConfirm: async () => {
         try {
           const res = await deleteStaff(member.id);

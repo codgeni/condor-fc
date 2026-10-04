@@ -50,22 +50,37 @@ export default function UnitsManager({ units, players, onRefresh, showToast }: U
       return;
     }
 
-    setSaving(true);
-    try {
-      const res = await saveUnit(editingUnit);
-      if (res.success) {
-        showToast(`Unité "${editingUnit.name}" ${isCreating ? 'créée' : 'mise à jour'} avec succès !`);
-        setEditingUnit(null);
-        setIsCreating(false);
-        onRefresh();
-      } else {
-        showToast("Erreur lors de l'enregistrement de l'unité.");
+    askConfirm({
+      title: isCreating ? "AJOUTER L'UNITÉ" : "MODIFIER L'UNITÉ",
+      message: isCreating 
+        ? `Confirmez-vous la création de l'unité "${editingUnit.name}" ?` 
+        : `Confirmez-vous la modification de l'unité "${editingUnit.name}" ?`,
+      confirmLabel: isCreating ? "OUI, CRÉER" : "OUI, ENREGISTRER",
+      itemDetails: {
+        type: isCreating ? 'Ajout' : 'Modification',
+        title: editingUnit.name,
+        subtitle: editingUnit.description || `Ordre d'affichage: ${editingUnit.order}`,
+        badge: 'Catégorie'
+      },
+      onConfirm: async () => {
+        setSaving(true);
+        try {
+          const res = await saveUnit(editingUnit);
+          if (res.success) {
+            showToast(`Unité "${editingUnit.name}" ${isCreating ? 'créée' : 'mise à jour'} avec succès !`);
+            setEditingUnit(null);
+            setIsCreating(false);
+            onRefresh();
+          } else {
+            showToast("Erreur lors de l'enregistrement de l'unité.");
+          }
+        } catch (err) {
+          showToast("Erreur lors de la sauvegarde.");
+        } finally {
+          setSaving(false);
+        }
       }
-    } catch (err) {
-      showToast("Erreur lors de la sauvegarde.");
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   const handleDelete = (unit: UnitItem) => {
@@ -79,6 +94,12 @@ export default function UnitsManager({ units, players, onRefresh, showToast }: U
       title: "SUPPRIMER L'UNITÉ",
       message: confirmMsg,
       confirmLabel: "OUI, SUPPRIMER",
+      itemDetails: {
+        type: 'Suppression',
+        title: unit.name,
+        subtitle: `${count} joueur(s) rattaché(s)`,
+        badge: 'Catégorie'
+      },
       onConfirm: async () => {
         try {
           const res = await deleteUnit(unit.id);

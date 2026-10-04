@@ -273,7 +273,7 @@ export default function News() {
         </div>
       </section>
 
-      {/* 4. Modal Lecture Article Complet — Image affichée en entier sans découpe */}
+      {/* 4. Modal Lecture Article Complet — Image et texte défilent ensemble naturellement */}
       {selectedArticle && (
         <div 
           onClick={() => setSelectedArticle(null)}
@@ -289,7 +289,8 @@ export default function News() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '1.5rem'
+            padding: '1.5rem',
+            overflowY: 'auto'
           }}
         >
           <div 
@@ -301,50 +302,20 @@ export default function News() {
               borderRadius: '20px',
               overflow: 'hidden',
               boxShadow: '0 30px 80px rgba(0,0,0,0.5)',
-              maxHeight: '92vh',
-              display: 'flex',
-              flexDirection: 'column',
+              maxHeight: '90vh',
+              overflowY: 'auto',
               position: 'relative'
             }}
           >
-            {/* Scène Image Complète (objectFit: contain — Aucun rognage, 100% visible) */}
-            <div 
-              style={{ 
-                position: 'relative', 
-                width: '100%', 
-                maxHeight: '56vh', 
-                minHeight: '240px',
-                background: '#090a0f', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center',
-                flexShrink: 0,
-                borderBottom: '1px solid rgba(255,255,255,0.1)'
-              }}
-            >
-              <img 
-                src={selectedArticle.img} 
-                alt={selectedArticle.title}
-                style={{ 
-                  maxWidth: '100%', 
-                  maxHeight: '56vh', 
-                  width: 'auto', 
-                  height: 'auto', 
-                  objectFit: 'contain', 
-                  display: 'block' 
-                }} 
-              />
-
-              {/* Bouton Fermer */}
+            {/* Bouton Fermer flottant sticky en haut à droite */}
+            <div style={{ position: 'sticky', top: 0, zIndex: 30, display: 'flex', justifyContent: 'flex-end', height: 0, padding: '16px 16px 0 0', pointerEvents: 'none' }}>
               <button 
                 onClick={() => setSelectedArticle(null)}
                 style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  background: 'rgba(0,0,0,0.7)',
+                  pointerEvents: 'auto',
+                  background: 'rgba(0,0,0,0.75)',
                   color: 'white',
-                  border: '1px solid rgba(255,255,255,0.25)',
+                  border: '1px solid rgba(255,255,255,0.3)',
                   borderRadius: '50%',
                   width: '40px',
                   height: '40px',
@@ -352,13 +323,41 @@ export default function News() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  zIndex: 20,
+                  backdropFilter: 'blur(6px)',
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
                   transition: 'background 0.2s'
                 }}
                 aria-label="Fermer"
               >
                 <X size={20} />
               </button>
+            </div>
+
+            {/* Scène Image Complète (objectFit: contain — Aucun rognage, 100% visible) */}
+            <div 
+              style={{ 
+                position: 'relative', 
+                width: '100%', 
+                background: '#090a0f', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                minHeight: '260px'
+              }}
+            >
+              <img 
+                src={selectedArticle.img} 
+                alt={selectedArticle.title}
+                style={{ 
+                  maxWidth: '100%', 
+                  maxHeight: '520px', 
+                  width: 'auto', 
+                  height: 'auto', 
+                  objectFit: 'contain', 
+                  display: 'block' 
+                }} 
+              />
 
               {/* Tag Catégorie */}
               <span 
@@ -380,8 +379,8 @@ export default function News() {
               </span>
             </div>
 
-            {/* Corps de l'Article */}
-            <div style={{ padding: '2rem 2.2rem', overflowY: 'auto', flex: 1 }}>
+            {/* Corps de l'Article (défile avec l'image) */}
+            <div style={{ padding: '2rem 2.2rem' }}>
               <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                 <Calendar size={14} style={{ color: 'var(--clr-primary)' }} /> Publié : {selectedArticle.date || "Récemment"}
               </span>
