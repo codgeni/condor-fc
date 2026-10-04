@@ -1,16 +1,26 @@
 "use client";
  
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
-import { Award, Send, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Award, Send, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
-import { sanitizeFormRecord, checkRateLimit } from '@/lib/security';
+import { 
+  sanitizeFormRecord, 
+  checkRateLimit, 
+  validateEmail, 
+  validatePhone, 
+  validateBirthDate, 
+  validateRequired 
+} from '@/lib/security';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 import { fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
 
 export default function Contact() {
   const { showConfirmed } = useConfirmPoster();
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+  const [formErrors, setFormErrors] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const errorBannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchSiteContent().then(data => {
@@ -50,67 +60,193 @@ export default function Contact() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (formErrors.length > 0) setFormErrors([]);
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.checked });
+    if (formErrors.length > 0) setFormErrors([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors([]);
 
-    // Protection anti-flood / rate limiting
+    // 1. Validation Stricte de Sécurité et Conformité 2026
+    const errors: string[] = [];
+
+    // Enfant
+    const vEnfantNom = validateRequired(formData.enfantNom, "Nom de l'enfant", 2);
+    if (!vEnfantNom.valid && vEnfantNom.error) errors.push(vEnfantNom.error);
+
+    const vEnfantPrenom = validateRequired(formData.enfantPrenom, "Prénom de l'enfant", 2);
+    if (!vEnfantPrenom.valid && vEnfantPrenom.error) errors.push(vEnfantPrenom.error);
+
+    const vDob = validateBirthDate(formData.enfantDateNaissance, 3, 20);
+    if (!vDob.valid && vDob.error) errors.push(vDob.error);
+
+    if (!formData.enfantSexe) {
+      errors.push("Veuillez sélectionner le sexe de l'enfant.");
+    }
+
+    const vEnfantAdr = validateRequired(formData.enfantAdresse, "Adresse de l'enfant", 3);
+    if (!vEnfantAdr.valid && vEnfantAdr.error) errors.push(vEnfantAdr.error);
+
+    if (formData.enfantTelephones && formData.enfantTelephones.trim().length > 0) {
+      const vChildPhone = validatePhone(formData.enfantTelephones, "téléphone de l'enfant");
+      if (!vChildPhone.valid && vChildPhone.error) errors.push(vChildPhone.error);
+    }
+
+    // Parent / Responsable
+    const vParentNom = validateRequired(formData.parentNom, "Nom du parent / tuteur", 2);
+    if (!vParentNom.valid && vParentNom.error) errors.push(vParentNom.error);
+
+    const vParentPrenom = validateRequired(formData.parentPrenom, "Prénom du parent / tuteur", 2);
+    if (!vParentPrenom.valid && vParentPrenom.error) errors.push(vParentPrenom.error);
+
+    const vParentTel = validatePhone(formData.parentTelephones, "téléphone du parent");
+    if (!vParentTel.valid && vParentTel.error) errors.push(vParentTel.error);
+
+    const vParentWp = validatePhone(formData.parentWhatsapp, "WhatsApp du parent");
+    if (!vParentWp.valid && vParentWp.error) errors.push(vParentWp.error);
+
+    const vParentEmail = validateEmail(formData.parentCourriel);
+    if (!vParentEmail.valid && vParentEmail.error) errors.push(vParentEmail.error);
+
+    const vParentAdr = validateRequired(formData.parentAdresse, "Adresse du parent", 3);
+    if (!vParentAdr.valid && vParentAdr.error) errors.push(vParentAdr.error);
+
+    // Urgence
+    const vUrgNom = validateRequired(formData.urgenceNom, "Nom du contact d'urgence", 2);
+    if (!vUrgNom.valid && vUrgNom.error) errors.push(vUrgNom.error);
+
+    const vUrgPrenom = validateRequired(formData.urgencePrenom, "Prénom du contact d'urgence", 2);
+    if (!vUrgPrenom.valid && vUrgPrenom.error) errors.push(vUrgPrenom.error);
+
+    const vUrgLien = validateRequired(formData.urgenceLien, "Lien de parenté d'urgence", 2);
+    if (!vUrgLien.valid && vUrgLien.error) errors.push(vUrgLien.error);
+
+    const vUrgTel = validatePhone(formData.urgenceTelephones, "téléphone d'urgence");
+    if (!vUrgTel.valid && vUrgTel.error) errors.push(vUrgTel.error);
+
+    if (formData.urgenceWhatsapp && formData.urgenceWhatsapp.trim().length > 0) {
+      const vUrgWp = validatePhone(formData.urgenceWhatsapp, "WhatsApp d'urgence");
+      if (!vUrgWp.valid && vUrgWp.error) errors.push(vUrgWp.error);
+    }
+
+    if (formData.urgenceCourriel && formData.urgenceCourriel.trim().length > 0) {
+      const vUrgMail = validateEmail(formData.urgenceCourriel);
+      if (!vUrgMail.valid && vUrgMail.error) errors.push(`Courriel d'urgence : ${vUrgMail.error}`);
+    }
+
+    // Plan
+    if (!formData.planAdhesion) {
+      errors.push("Veuillez sélectionner un plan d'adhésion pour l'académie.");
+    }
+
+    // Médical
+    if (formData.medecinTel && formData.medecinTel.trim().length > 0) {
+      const vMedTel = validatePhone(formData.medecinTel, "téléphone du médecin");
+      if (!vMedTel.valid && vMedTel.error) errors.push(vMedTel.error);
+    }
+
+    if (formData.medecinWhatsapp && formData.medecinWhatsapp.trim().length > 0) {
+      const vMedWp = validatePhone(formData.medecinWhatsapp, "WhatsApp du médecin");
+      if (!vMedWp.valid && vMedWp.error) errors.push(vMedWp.error);
+    }
+
+    if (!formData.autorisationUrgence) {
+      errors.push("Veuillez préciser l'autorisation d'intervention en cas d'urgence médicale.");
+    }
+
+    // Consentements
+    if (!formData.consentementLuApprouve) {
+      errors.push("Vous devez approuver les conditions stipulées dans ce document.");
+    }
+    if (!formData.consentementTarifs) {
+      errors.push("Vous devez approuver la prise de connaissance des tarifs de l'école.");
+    }
+    if (!formData.consentementCertificat) {
+      errors.push("Vous devez vous engager à fournir un certificat médical sous 1 mois.");
+    }
+
+    const vSig = validateRequired(formData.signatureParent, "Signature du parent (nom complet)", 3);
+    if (!vSig.valid && vSig.error) errors.push(vSig.error);
+
+    if (!formData.dateSignature) {
+      errors.push("La date de signature est obligatoire.");
+    }
+
+    // En cas d'erreurs, interrompre et afficher le bandeau
+    if (errors.length > 0) {
+      setFormErrors(errors);
+      setTimeout(() => {
+        errorBannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+      return;
+    }
+
+    // 2. Protection anti-flood / rate limiting
     const rateCheck = checkRateLimit('inscription_submission', 4000);
     if (!rateCheck.allowed) {
-      alert(`Veuillez patienter ${rateCheck.remainingSeconds} seconde(s) avant de renvoyer le formulaire.`);
+      setFormErrors([`Veuillez patienter encore ${rateCheck.remainingSeconds} seconde(s) avant de renvoyer le formulaire.`]);
       return;
     }
 
-    // Assainissement strict de toutes les données du formulaire (Anti-XSS)
-    const sanitizedData = sanitizeFormRecord(formData);
+    setIsSubmitting(true);
 
-    // Enregistrement unique et sécurisé dans Supabase
-    const { error } = await supabase.from('inscriptions').insert({
-      enfant_nom: sanitizedData.enfantNom,
-      enfant_prenom: sanitizedData.enfantPrenom,
-      enfant_dob: sanitizedData.enfantDateNaissance,
-      parent_nom: sanitizedData.parentNom,
-      parent_prenom: sanitizedData.parentPrenom,
-      parent_tel: sanitizedData.parentTelephones,
-      parent_email: sanitizedData.parentCourriel,
-      form_data: sanitizedData
-    });
+    try {
+      // 3. Assainissement strict de toutes les données du formulaire (Anti-XSS & Null-byte clean)
+      const sanitizedData = sanitizeFormRecord(formData);
 
-    if (error) {
-      console.error("Erreur lors de l'enregistrement de l'inscription:", error);
-      alert("Une erreur est survenue lors de l'enregistrement de votre inscription. Veuillez vérifier vos données et réessayer.");
-      return;
-    }
-    
-    setSubmitted(true);
-    showConfirmed("Votre dossier d'inscription annuelle a été enregistré et transmis avec succès !", "CONFIRMÉ");
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({
-        connuPar: '', connuAutre: '',
-        enfantNom: '', enfantPrenom: '', enfantDateNaissance: '', enfantSexe: '', enfantTelephones: '', enfantAdresse: '',
-        parentNom: '', parentPrenom: '', parentWhatsapp: '', parentTelephones: '', parentNIF: '', parentCourriel: '', parentAdresse: '',
-        urgenceNom: '', urgencePrenom: '', urgenceWhatsapp: '', urgenceTelephones: '', urgenceLien: '', urgenceCourriel: '', urgenceAdresse: '',
-        ecoleClassique: '', niveauClasse: '', ecoleClub: '', position: '', duree: '', ageDebut: '',
-        tailleMaillot: '', tailleShort: '', taillePoitrine: '', tailleEpaule: '', tailleLongueur: '', tailleHauteur: '', tailleHanche: '', taille: '', pointure: '', uniformeDesire: '', uniformeTrouve: '',
-        planAdhesion: '',
-        allergies: '', asthme: '', medicaments: '', medecinNom: '', preoccupation: '', medecinTel: '', medecinWhatsapp: '', causeAllergie: '',
-        autorisationUrgence: '',
-        consentementLuApprouve: false,
-        consentementTarifs: false,
-        consentementCertificat: false,
-        autoriseRecuperer: '',
-        nifRecuperer: '',
-        rentrerSeul: false,
-        signatureParent: '',
-        dateSignature: '',
+      // 4. Enregistrement sécurisé dans Supabase
+      const { error } = await supabase.from('inscriptions').insert({
+        enfant_nom: sanitizedData.enfantNom,
+        enfant_prenom: sanitizedData.enfantPrenom,
+        enfant_dob: sanitizedData.enfantDateNaissance,
+        parent_nom: sanitizedData.parentNom,
+        parent_prenom: sanitizedData.parentPrenom,
+        parent_tel: sanitizedData.parentTelephones,
+        parent_email: sanitizedData.parentCourriel,
+        form_data: sanitizedData
       });
-    }, 5000);
+
+      if (error) {
+        console.error("Erreur Supabase lors de l'enregistrement de l'inscription:", error);
+        setFormErrors(["Une erreur est survenue lors de l'enregistrement de votre inscription sur nos serveurs. Veuillez vérifier vos données et réessayer."]);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      setSubmitted(true);
+      showConfirmed("Votre dossier d'inscription annuelle a été enregistré et transmis avec succès !", "CONFIRMÉ");
+      setTimeout(() => {
+        setSubmitted(false);
+        setFormData({
+          connuPar: '', connuAutre: '',
+          enfantNom: '', enfantPrenom: '', enfantDateNaissance: '', enfantSexe: '', enfantTelephones: '', enfantAdresse: '',
+          parentNom: '', parentPrenom: '', parentWhatsapp: '', parentTelephones: '', parentNIF: '', parentCourriel: '', parentAdresse: '',
+          urgenceNom: '', urgencePrenom: '', urgenceWhatsapp: '', urgenceTelephones: '', urgenceLien: '', urgenceCourriel: '', urgenceAdresse: '',
+          ecoleClassique: '', niveauClasse: '', ecoleClub: '', position: '', duree: '', ageDebut: '',
+          tailleMaillot: '', tailleShort: '', taillePoitrine: '', tailleEpaule: '', tailleLongueur: '', tailleHauteur: '', tailleHanche: '', taille: '', pointure: '', uniformeDesire: '', uniformeTrouve: '',
+          planAdhesion: '',
+          allergies: '', asthme: '', medicaments: '', medecinNom: '', preoccupation: '', medecinTel: '', medecinWhatsapp: '', causeAllergie: '',
+          autorisationUrgence: '',
+          consentementLuApprouve: false,
+          consentementTarifs: false,
+          consentementCertificat: false,
+          autoriseRecuperer: '',
+          nifRecuperer: '',
+          rentrerSeul: false,
+          signatureParent: '',
+          dateSignature: '',
+        });
+      }, 5000);
+    } catch (err: any) {
+      setFormErrors([err?.message || "Une erreur inattendue s'est produite lors de la transmission."]);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const sectionTitleStyle = {
@@ -178,6 +314,33 @@ export default function Contact() {
               </motion.div>
             ) : (
               <form onSubmit={handleSubmit}>
+                <div ref={errorBannerRef} />
+
+                {/* BANNIÈRE D'ERREURS DE VALIDATION */}
+                {formErrors.length > 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{ 
+                      background: 'rgba(239, 68, 68, 0.15)', 
+                      border: '2px solid #ef4444', 
+                      borderRadius: '12px', 
+                      padding: '20px 24px', 
+                      marginBottom: '25px',
+                      boxShadow: '0 8px 25px rgba(239, 68, 68, 0.2)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#f87171', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '10px' }}>
+                      <AlertTriangle size={24} />
+                      <span>Veuillez corriger les informations suivantes avant de valider :</span>
+                    </div>
+                    <ul style={{ paddingLeft: '25px', color: '#fecaca', fontSize: '0.95rem', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {formErrors.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                )}
 
                 {/* CONDITIONS IMPORTANTES */}
                 <div style={{ background: 'rgba(202, 2, 79, 0.1)', borderLeft: '4px solid var(--clr-primary)', padding: '20px', borderRadius: '4px', marginBottom: '30px' }}>
@@ -396,13 +559,50 @@ export default function Contact() {
                   </div>
                 </div>
 
+                {/* Bottom error reminder if errors exist */}
+                {formErrors.length > 0 && (
+                  <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid #ef4444', borderRadius: '8px', padding: '15px 20px', marginTop: '1.5rem', color: '#fecaca', fontSize: '0.9rem' }}>
+                    <p style={{ fontWeight: 'bold', color: '#f87171', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <AlertTriangle size={18} /> {formErrors.length} champ(s) incomplet(s) ou invalide(s) à corriger :
+                    </p>
+                    <ul style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      {formErrors.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 {/* Submit Button */}
                 <button 
                   type="submit" 
+                  disabled={isSubmitting}
                   className="btn btn-primary"
-                  style={{ width: '100%', padding: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '2rem', fontSize: '1.25rem', letterSpacing: '1px', textTransform: 'uppercase' }}
+                  style={{ 
+                    width: '100%', 
+                    padding: '22px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '12px', 
+                    marginTop: '2rem', 
+                    fontSize: '1.25rem', 
+                    letterSpacing: '1px', 
+                    textTransform: 'uppercase',
+                    opacity: isSubmitting ? 0.7 : 1,
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer'
+                  }}
                 >
-                  {siteContent.inscr_submit_btn || "Envoyer l'inscription complète"} <Send size={24} />
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                      Envoi sécurisé en cours...
+                    </>
+                  ) : (
+                    <>
+                      {siteContent.inscr_submit_btn || "Envoyer l'inscription complète"} <Send size={24} />
+                    </>
+                  )}
                 </button>
 
               </form>

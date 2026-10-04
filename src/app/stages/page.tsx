@@ -2,10 +2,17 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { Calendar, Phone, Mail, MapPin, CheckCircle, Clock, User, PhoneCall } from 'lucide-react';
+import { Calendar, Phone, Mail, MapPin, CheckCircle, Clock, User, PhoneCall, AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { fetchStages, StageSession } from '@/lib/dataService';
-import { sanitizeFormRecord, checkRateLimit } from '@/lib/security';
+import { 
+  sanitizeFormRecord, 
+  checkRateLimit, 
+  validatePhone, 
+  validateBirthDate, 
+  validateFutureDate, 
+  validateRequired 
+} from '@/lib/security';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 
 export default function Stages() {
@@ -20,6 +27,10 @@ export default function Stages() {
   
   const [stageSubmitted, setStageSubmitted] = useState(false);
   const [rdvSubmitted, setRdvSubmitted] = useState(false);
+  const [stageErrors, setStageErrors] = useState<string[]>([]);
+  const [rdvErrors, setRdvErrors] = useState<string[]>([]);
+  const [isStageSubmitting, setIsStageSubmitting] = useState(false);
+  const [isRdvSubmitting, setIsRdvSubmitting] = useState(false);
 
   useEffect(() => {
     fetchStages().then(data => {
@@ -29,83 +40,151 @@ export default function Stages() {
 
   const handleStageChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setStageFormData({ ...stageFormData, [e.target.name]: e.target.value });
+    if (stageErrors.length > 0) setStageErrors([]);
   };
 
   const handleRdvChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setRdvFormData({ ...rdvFormData, [e.target.name]: e.target.value });
+    if (rdvErrors.length > 0) setRdvErrors([]);
   };
 
   const handleStageSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setStageErrors([]);
+
+    // 1. Validation Stricte de Sécurité et Conformité
+    const errors: string[] = [];
+
+    const vNom = validateRequired(stageFormData.nom, "Nom de l'enfant", 2);
+    if (!vNom.valid && vNom.error) errors.push(vNom.error);
+
+    const vPrenom = validateRequired(stageFormData.prenom, "Prénom de l'enfant", 2);
+    if (!vPrenom.valid && vPrenom.error) errors.push(vPrenom.error);
+
+    const vDob = validateBirthDate(stageFormData.dob, 3, 20);
+    if (!vDob.valid && vDob.error) errors.push(vDob.error);
+
+    const vTel = validatePhone(stageFormData.tel, "téléphone du responsable");
+    if (!vTel.valid && vTel.error) errors.push(vTel.error);
+
+    const vStage = validateRequired(stageFormData.stage, "Session de stage", 2);
+    if (!vStage.valid && vStage.error) errors.push(vStage.error);
+
+    if (errors.length > 0) {
+      setStageErrors(errors);
+      return;
+    }
     
-    // Protection anti-flood
+    // 2. Protection anti-flood
     const rateCheck = checkRateLimit('stage_registration', 3000);
     if (!rateCheck.allowed) {
-      alert(`Veuillez patienter ${rateCheck.remainingSeconds} seconde(s) avant de soumettre à nouveau.`);
+      setStageErrors([`Veuillez patienter encore ${rateCheck.remainingSeconds} seconde(s) avant de soumettre à nouveau.`]);
       return;
     }
 
-    const sanitized = sanitizeFormRecord(stageFormData);
+    setIsStageSubmitting(true);
 
-    // Save to Supabase Table 'stages_inscriptions'
-    const { error } = await supabase.from('stages_inscriptions').insert({
-      nom: sanitized.nom,
-      prenom: sanitized.prenom,
-      dob: sanitized.dob,
-      tel: sanitized.tel,
-      stage: sanitized.stage,
-      note: sanitized.note,
-      photo: sanitized.photo
-    });
+    try {
+      const sanitized = sanitizeFormRecord(stageFormData);
 
-    if (error) {
-      console.error('Error submitting stage registration:', error);
-      alert('Une erreur est survenue lors de l\'envoi de l\'inscription.');
-      return;
+      // Save to Supabase Table 'stages_inscriptions'
+      const { error } = await supabase.from('stages_inscriptions').insert({
+        nom: sanitized.nom,
+        prenom: sanitized.prenom,
+        dob: sanitized.dob,
+        tel: sanitized.tel,
+        stage: sanitized.stage,
+        note: sanitized.note,
+        photo: sanitized.photo
+      });
+
+      if (error) {
+        console.error('Error submitting stage registration:', error);
+        setStageErrors(["Une erreur est survenue lors de l'envoi de la pré-inscription. Veuillez réessayer."]);
+        setIsStageSubmitting(false);
+        return;
+      }
+
+      setStageSubmitted(true);
+      showConfirmed("Votre pré-inscription au stage a été transmise avec succès au secrétariat !", "CONFIRMÉ");
+      setTimeout(() => {
+        setStageSubmitted(false);
+        setStageFormData({ nom: '', prenom: '', dob: '', tel: '', photo: '', stage: '', note: '' });
+      }, 4000);
+    } catch (err: any) {
+      setStageErrors([err?.message || "Une erreur inattendue est survenue."]);
+    } finally {
+      setIsStageSubmitting(false);
     }
-
-    setStageSubmitted(true);
-    showConfirmed("Votre pré-inscription au stage a été transmise avec succès au secrétariat !", "CONFIRMÉ");
-    setTimeout(() => {
-      setStageSubmitted(false);
-      setStageFormData({ nom: '', prenom: '', dob: '', tel: '', photo: '', stage: '', note: '' });
-    }, 4000);
   };
 
   const handleRdvSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRdvErrors([]);
 
-    // Protection anti-flood
+    // 1. Validation Stricte du Rendez-vous
+    const errors: string[] = [];
+
+    const vParent = validateRequired(rdvFormData.parentNom, "Nom du parent", 2);
+    if (!vParent.valid && vParent.error) errors.push(vParent.error);
+
+    const vEnfant = validateRequired(rdvFormData.enfantNom, "Nom & prénom de l'enfant", 2);
+    if (!vEnfant.valid && vEnfant.error) errors.push(vEnfant.error);
+
+    const vTel = validatePhone(rdvFormData.tel, "numéro de téléphone");
+    if (!vTel.valid && vTel.error) errors.push(vTel.error);
+
+    const vDate = validateFutureDate(rdvFormData.date);
+    if (!vDate.valid && vDate.error) errors.push(vDate.error);
+
+    const vHeure = validateRequired(rdvFormData.heure, "Heure souhaitée", 2);
+    if (!vHeure.valid && vHeure.error) errors.push(vHeure.error);
+
+    if (errors.length > 0) {
+      setRdvErrors(errors);
+      return;
+    }
+
+    // 2. Protection anti-flood
     const rateCheck = checkRateLimit('rdv_booking', 3000);
     if (!rateCheck.allowed) {
-      alert(`Veuillez patienter ${rateCheck.remainingSeconds} seconde(s) avant de réserver à nouveau.`);
+      setRdvErrors([`Veuillez patienter encore ${rateCheck.remainingSeconds} seconde(s) avant de réserver à nouveau.`]);
       return;
     }
 
-    const sanitized = sanitizeFormRecord(rdvFormData);
+    setIsRdvSubmitting(true);
 
-    // Save to Supabase Table 'appointments'
-    const { error } = await supabase.from('appointments').insert({
-      parent_nom: sanitized.parentNom,
-      enfant_nom: sanitized.enfantNom,
-      tel: sanitized.tel,
-      date: sanitized.date,
-      heure: sanitized.heure,
-      raison: sanitized.raison
-    });
+    try {
+      const sanitized = sanitizeFormRecord(rdvFormData);
 
-    if (error) {
-      console.error('Error booking appointment:', error);
-      alert('Une erreur est survenue lors de la prise de rendez-vous.');
-      return;
+      // Save to Supabase Table 'appointments'
+      const { error } = await supabase.from('appointments').insert({
+        parent_nom: sanitized.parentNom,
+        enfant_nom: sanitized.enfantNom,
+        tel: sanitized.tel,
+        date: sanitized.date,
+        heure: sanitized.heure,
+        raison: sanitized.raison
+      });
+
+      if (error) {
+        console.error('Error booking appointment:', error);
+        setRdvErrors(["Une erreur est survenue lors de la prise de rendez-vous. Veuillez réessayer."]);
+        setIsRdvSubmitting(false);
+        return;
+      }
+
+      setRdvSubmitted(true);
+      showConfirmed("Votre rendez-vous administratif a été enregistré avec succès !", "CONFIRMÉ");
+      setTimeout(() => {
+        setRdvSubmitted(false);
+        setRdvFormData({ parentNom: '', enfantNom: '', tel: '', date: '', heure: '', raison: 'Inscription académique' });
+      }, 4000);
+    } catch (err: any) {
+      setRdvErrors([err?.message || "Une erreur inattendue est survenue."]);
+    } finally {
+      setIsRdvSubmitting(false);
     }
-
-    setRdvSubmitted(true);
-    showConfirmed("Votre rendez-vous administratif a été enregistré avec succès !", "CONFIRMÉ");
-    setTimeout(() => {
-      setRdvSubmitted(false);
-      setRdvFormData({ parentNom: '', enfantNom: '', tel: '', date: '', heure: '', raison: 'Inscription académique' });
-    }, 4000);
   };
 
   const sectionTitleStyle = {
@@ -195,6 +274,19 @@ export default function Stages() {
                 </div>
               ) : (
                 <form onSubmit={handleStageSubmit}>
+                  {stageErrors.length > 0 && (
+                    <div style={{ background: '#fef2f2', border: '1px solid #ef4444', borderRadius: '8px', padding: '15px', marginBottom: '20px', color: '#991b1b', fontSize: '0.9rem' }}>
+                      <p style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <AlertTriangle size={18} /> Veuillez corriger les points suivants :
+                      </p>
+                      <ul style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {stageErrors.map((err, idx) => (
+                          <li key={idx}>{err}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div>
                       <label style={labelStyle}>Nom de l'enfant</label>
@@ -233,7 +325,20 @@ export default function Stages() {
                     <textarea name="note" value={stageFormData.note} onChange={handleStageChange} style={{ ...inputStyle, minHeight: '100px' }} placeholder="Allergies, niveau de pratique, attentes..." />
                   </div>
 
-                  <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '16px' }}>Envoyer la Pré-inscription</button>
+                  <button 
+                    type="submit" 
+                    disabled={isStageSubmitting}
+                    className="btn btn-primary" 
+                    style={{ width: '100%', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                  >
+                    {isStageSubmitting ? (
+                      <>
+                        <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> Envoi en cours...
+                      </>
+                    ) : (
+                      "Envoyer la Pré-inscription"
+                    )}
+                  </button>
                 </form>
               )}
             </section>
@@ -259,6 +364,19 @@ export default function Stages() {
                 </div>
               ) : (
                 <form onSubmit={handleRdvSubmit}>
+                  {rdvErrors.length > 0 && (
+                    <div style={{ background: '#fef2f2', border: '1px solid #ef4444', borderRadius: '8px', padding: '12px', marginBottom: '15px', color: '#991b1b', fontSize: '0.85rem' }}>
+                      <p style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                        <AlertTriangle size={16} /> Erreur :
+                      </p>
+                      <ul style={{ paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        {rdvErrors.map((err, idx) => (
+                          <li key={idx}>{err}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <div>
                     <label style={labelStyle}>Nom du Parent</label>
                     <input type="text" name="parentNom" required value={rdvFormData.parentNom} onChange={handleRdvChange} style={inputStyle} />
@@ -290,7 +408,20 @@ export default function Stages() {
                       <option value="Autre">Autre demande</option>
                     </select>
                   </div>
-                  <button type="submit" className="btn btn-outline" style={{ width: '100%', borderColor: 'var(--clr-primary)', color: 'var(--clr-primary)', background: 'transparent' }}>Confirmer le Rendez-vous</button>
+                  <button 
+                    type="submit" 
+                    disabled={isRdvSubmitting}
+                    className="btn btn-outline" 
+                    style={{ width: '100%', borderColor: 'var(--clr-primary)', color: 'var(--clr-primary)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  >
+                    {isRdvSubmitting ? (
+                      <>
+                        <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} /> Réservation en cours...
+                      </>
+                    ) : (
+                      "Confirmer le Rendez-vous"
+                    )}
+                  </button>
                 </form>
               )}
 

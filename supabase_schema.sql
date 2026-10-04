@@ -427,11 +427,13 @@ BEGIN
     WITH CHECK (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
 
   -- -------------------------------------------------------------
-  -- B. TABLES PRIVÉES & DONNÉES PERSONNELLES (RGPD / PROTECTION MINEURS)
-  -- Soumission ouverte aux visiteurs, mais LECTURE & SUPPRESSION STRICTEMENT RÉSERVÉES À L'ADMIN
+  -- -------------------------------------------------------------
+  -- B. TABLES PRIVÉES & DONNÉES PERSONNELLES SENSIBLES (RGPD / COPPA 2026 - PROTECTION DES MINEURS)
+  -- Soumission ouverte aux visiteurs publics (INSERT), 
+  -- mais LECTURE, MODIFICATION & SUPPRESSION STRICTEMENT RÉSERVÉES AU COMPTE ADMIN ET SERVICE ROLE
   -- -------------------------------------------------------------
 
-  -- INSCRIPTIONS (Dossiers complets, coordonnées parents, antécédents médicaux)
+  -- INSCRIPTIONS (Dossiers complets : enfants, parents, santé, antécédents médicaux)
   DROP POLICY IF EXISTS "Public insert inscriptions" ON inscriptions;
   DROP POLICY IF EXISTS "Admin view inscriptions" ON inscriptions;
   DROP POLICY IF EXISTS "Admin manage inscriptions" ON inscriptions;
@@ -440,12 +442,12 @@ BEGIN
     FOR INSERT WITH CHECK (true);
 
   CREATE POLICY "Admin view inscriptions" ON inscriptions 
-    FOR SELECT USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+    FOR SELECT USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role');
 
   CREATE POLICY "Admin manage inscriptions" ON inscriptions 
-    FOR ALL USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+    FOR ALL USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role');
 
-  -- STAGES_INSCRIPTIONS (Pré-inscriptions aux stages)
+  -- STAGES_INSCRIPTIONS (Pré-inscriptions aux stages : données mineurs & téléphones)
   DROP POLICY IF EXISTS "Public insert stages_inscriptions" ON stages_inscriptions;
   DROP POLICY IF EXISTS "Admin view stages_inscriptions" ON stages_inscriptions;
   DROP POLICY IF EXISTS "Admin manage stages_inscriptions" ON stages_inscriptions;
@@ -454,12 +456,12 @@ BEGIN
     FOR INSERT WITH CHECK (true);
 
   CREATE POLICY "Admin view stages_inscriptions" ON stages_inscriptions 
-    FOR SELECT USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+    FOR SELECT USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role');
 
   CREATE POLICY "Admin manage stages_inscriptions" ON stages_inscriptions 
-    FOR ALL USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+    FOR ALL USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role');
 
-  -- APPOINTMENTS (Rendez-vous)
+  -- APPOINTMENTS (Rendez-vous confidentiels : motifs, dates, téléphones)
   DROP POLICY IF EXISTS "Public insert appointments" ON appointments;
   DROP POLICY IF EXISTS "Admin view appointments" ON appointments;
   DROP POLICY IF EXISTS "Admin manage appointments" ON appointments;
@@ -468,24 +470,25 @@ BEGIN
     FOR INSERT WITH CHECK (true);
 
   CREATE POLICY "Admin view appointments" ON appointments 
-    FOR SELECT USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+    FOR SELECT USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role');
 
   CREATE POLICY "Admin manage appointments" ON appointments 
-    FOR ALL USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+    FOR ALL USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role');
 
-  -- SUPPORTERS (Abonnés newsletter & notifications)
+  -- SUPPORTERS (Comptes utilisateurs : un utilisateur ne peut voir et modifier que son propre profil)
   DROP POLICY IF EXISTS "Public insert supporters" ON supporters;
+  DROP POLICY IF EXISTS "User view own supporter" ON supporters;
   DROP POLICY IF EXISTS "Admin view supporters" ON supporters;
   DROP POLICY IF EXISTS "Admin manage supporters" ON supporters;
 
   CREATE POLICY "Public insert supporters" ON supporters 
     FOR INSERT WITH CHECK (true);
 
-  CREATE POLICY "Admin view supporters" ON supporters 
-    FOR SELECT USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+  CREATE POLICY "User view own supporter" ON supporters 
+    FOR SELECT USING (auth.uid() = id OR auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role');
 
   CREATE POLICY "Admin manage supporters" ON supporters 
-    FOR ALL USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+    FOR ALL USING (auth.uid() = id OR auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role');
 
 END $$;
 

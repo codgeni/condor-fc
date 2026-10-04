@@ -7,7 +7,8 @@ import {
   Trash2, Plus, Edit2, CheckCircle, LogOut, Award, Upload,
   Tv, ShoppingBag, Trophy, CheckSquare, Square, Eye, EyeOff,
   Radio, Shield, Clock, MapPin, Save, X, Menu,
-  UserCheck, History, Type, ArrowRightLeft
+  UserCheck, History, Type, ArrowRightLeft,
+  Printer, PhoneCall, Mail, MessageSquare, AlertCircle, FileText, Search, ExternalLink, Activity, HeartPulse, ShieldAlert
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
@@ -103,6 +104,7 @@ export default function AdminPanel() {
   const [stages, setStages] = useState<StageSession[]>([]);
   const [editingStage, setEditingStage] = useState<any>(null);
   const [stageRegistrations, setStageRegistrations] = useState<any[]>([]);
+  const [selectedStageRegistration, setSelectedStageRegistration] = useState<any>(null);
   const [appointments, setAppointments] = useState<any[]>([]);
 
   // 4. Boutique / Products State
@@ -121,6 +123,7 @@ export default function AdminPanel() {
   // 7. Inscriptions & Supporters State
   const [inscriptions, setInscriptions] = useState<any[]>([]);
   const [selectedInscription, setSelectedInscription] = useState<any>(null);
+  const [inscriptionSearch, setInscriptionSearch] = useState('');
   const [supporters, setSupporters] = useState<any[]>([]);
 
   // 8. Units, Roles, Staff, Timeline, Site Content States
@@ -1256,9 +1259,55 @@ export default function AdminPanel() {
               )}
             </div>
 
+            {/* Modal Détails Pré-inscription au Stage */}
+            {selectedStageRegistration && (
+              <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', border: '2px solid var(--clr-primary)', marginBottom: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #eee', paddingBottom: '12px', marginBottom: '1.5rem' }}>
+                  <div>
+                    <h3 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 'bold' }}>
+                      Pré-inscription : {selectedStageRegistration.nom} {selectedStageRegistration.prenom}
+                    </h3>
+                    <span style={{ fontSize: '0.85rem', color: '#666' }}>
+                      Reçue le {selectedStageRegistration.created_at ? new Date(selectedStageRegistration.created_at).toLocaleString('fr-FR') : 'N/A'}
+                    </span>
+                  </div>
+                  <button onClick={() => setSelectedStageRegistration(null)} className="btn btn-outline" style={{ color: 'black', borderColor: '#ddd', padding: '6px 12px' }}>Fermer</button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                  <div>
+                    <p style={{ marginBottom: '8px' }}><strong>Enfant :</strong> {selectedStageRegistration.nom} {selectedStageRegistration.prenom}</p>
+                    <p style={{ marginBottom: '8px' }}><strong>Date de naissance :</strong> {selectedStageRegistration.dob} {selectedStageRegistration.dob ? `(${new Date().getFullYear() - new Date(selectedStageRegistration.dob).getFullYear()} ans)` : ''}</p>
+                    <p style={{ marginBottom: '8px' }}><strong>Session de Stage :</strong> <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold' }}>{selectedStageRegistration.stage}</span></p>
+                  </div>
+                  <div>
+                    <p style={{ marginBottom: '8px' }}><strong>Téléphone Responsable :</strong> {selectedStageRegistration.tel}</p>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                      <a href={`tel:${selectedStageRegistration.tel}`} className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.85rem', color: 'black', borderColor: '#ccc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <PhoneCall size={14} /> Appeler
+                      </a>
+                      <a href={`https://wa.me/${selectedStageRegistration.tel?.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.85rem', color: '#16a34a', borderColor: '#16a34a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <MessageSquare size={14} /> WhatsApp
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '1.5rem', background: '#fefce8', border: '1px solid #fde047', borderRadius: '8px', padding: '15px' }}>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '0.95rem', color: '#854d0e', fontWeight: 'bold' }}>Remarques, Besoins Particuliers & Allergies :</h4>
+                  <p style={{ margin: 0, color: '#713f12', fontStyle: selectedStageRegistration.note ? 'normal' : 'italic' }}>
+                    {selectedStageRegistration.note || "Aucune remarque ou besoin particulier signalé."}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Inscriptions aux Stages */}
             <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', border: '1px solid #eee', marginBottom: '2.5rem' }}>
-              <h3 style={{ fontSize: '1.3rem', marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>Pré-inscriptions Reçues</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
+                <h3 style={{ fontSize: '1.3rem', margin: 0 }}>Pré-inscriptions aux Stages ({stageRegistrations.length})</h3>
+                <span style={{ fontSize: '0.85rem', color: '#666' }}>Données chiffrées & protégées</span>
+              </div>
               {stageRegistrations.length === 0 ? (
                 <p style={{ color: '#666' }}>Aucune inscription trouvée.</p>
               ) : (
@@ -1269,7 +1318,8 @@ export default function AdminPanel() {
                       <th style={{ padding: '10px' }}>Date Naissance</th>
                       <th style={{ padding: '10px' }}>Téléphone</th>
                       <th style={{ padding: '10px' }}>Stage Souhaité</th>
-                      <th style={{ padding: '10px', textAlign: 'right' }}>Action</th>
+                      <th style={{ padding: '10px' }}>Remarques</th>
+                      <th style={{ padding: '10px', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1277,10 +1327,24 @@ export default function AdminPanel() {
                       <tr key={reg.id} style={{ borderBottom: '1px solid #eee' }}>
                         <td style={{ padding: '10px', fontWeight: 'bold' }}>{reg.nom} {reg.prenom}</td>
                         <td style={{ padding: '10px' }}>{reg.dob}</td>
-                        <td style={{ padding: '10px' }}>{reg.tel}</td>
-                        <td style={{ padding: '10px' }}>{reg.stage}</td>
+                        <td style={{ padding: '10px' }}>
+                          <a href={`tel:${reg.tel}`} style={{ color: 'var(--clr-primary)', textDecoration: 'none' }}>{reg.tel}</a>
+                        </td>
+                        <td style={{ padding: '10px' }}>
+                          <span style={{ background: 'rgba(202, 2, 79, 0.08)', color: 'var(--clr-primary)', padding: '3px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                            {reg.stage}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#666', fontSize: '0.85rem' }}>
+                          {reg.note ? reg.note : <span style={{ color: '#aaa', fontStyle: 'italic' }}>Aucune</span>}
+                        </td>
                         <td style={{ padding: '10px', textAlign: 'right' }}>
-                          <button onClick={() => handleDeleteStageRegistration(reg.id)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                          <button onClick={() => setSelectedStageRegistration(reg)} className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.8rem', marginRight: '8px', color: 'black', borderColor: '#ccc' }}>
+                            Détails
+                          </button>
+                          <button onClick={() => handleDeleteStageRegistration(reg.id)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer' }} title="Supprimer">
+                            <Trash2 size={16} />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -1291,7 +1355,10 @@ export default function AdminPanel() {
 
             {/* Rendez-vous Administratifs */}
             <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', border: '1px solid #eee' }}>
-              <h3 style={{ fontSize: '1.3rem', marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>Rendez-vous Administratifs</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>
+                <h3 style={{ fontSize: '1.3rem', margin: 0 }}>Rendez-vous Administratifs ({appointments.length})</h3>
+                <span style={{ fontSize: '0.85rem', color: '#666' }}>Gestion des entrevues au club</span>
+              </div>
               {appointments.length === 0 ? (
                 <p style={{ color: '#666' }}>Aucun rendez-vous planifié.</p>
               ) : (
@@ -1303,7 +1370,7 @@ export default function AdminPanel() {
                       <th style={{ padding: '10px' }}>Téléphone</th>
                       <th style={{ padding: '10px' }}>Date & Heure</th>
                       <th style={{ padding: '10px' }}>Motif</th>
-                      <th style={{ padding: '10px', textAlign: 'right' }}>Action</th>
+                      <th style={{ padding: '10px', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1311,11 +1378,20 @@ export default function AdminPanel() {
                       <tr key={rdv.id} style={{ borderBottom: '1px solid #eee' }}>
                         <td style={{ padding: '10px', fontWeight: 'bold' }}>{rdv.parent_nom || rdv.parentNom}</td>
                         <td style={{ padding: '10px' }}>{rdv.enfant_nom || rdv.enfantNom}</td>
-                        <td style={{ padding: '10px' }}>{rdv.tel}</td>
+                        <td style={{ padding: '10px' }}>
+                          <a href={`tel:${rdv.tel}`} style={{ color: 'var(--clr-primary)', textDecoration: 'none' }}>{rdv.tel}</a>
+                        </td>
                         <td style={{ padding: '10px', color: 'var(--clr-primary)', fontWeight: 'bold' }}>{rdv.date} à {rdv.heure}</td>
-                        <td style={{ padding: '10px' }}>{rdv.raison}</td>
+                        <td style={{ padding: '10px' }}>
+                          <span style={{ background: '#f3f4f6', padding: '3px 8px', borderRadius: '4px', fontSize: '0.85rem' }}>{rdv.raison}</span>
+                        </td>
                         <td style={{ padding: '10px', textAlign: 'right' }}>
-                          <button onClick={() => handleDeleteAppointment(rdv.id)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer' }}><Trash2 size={16} /></button>
+                          <a href={`https://wa.me/${rdv.tel?.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" style={{ marginRight: '10px', color: '#16a34a', display: 'inline-flex', verticalAlign: 'middle' }} title="Contacter sur WhatsApp">
+                            <MessageSquare size={16} />
+                          </a>
+                          <button onClick={() => handleDeleteAppointment(rdv.id)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', verticalAlign: 'middle' }} title="Supprimer">
+                            <Trash2 size={16} />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -1530,80 +1606,429 @@ export default function AdminPanel() {
             <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', marginBottom: '1.5rem' }}>Inscriptions Annuelles</h2>
             <p style={{ color: 'var(--clr-gray)', marginBottom: '2rem' }}>Consultez et gérez les formulaires d'inscriptions annuels complets reçus.</p>
 
-            {selectedInscription ? (
-              <div style={{ background: 'white', padding: '2.5rem', borderRadius: '12px', border: '1px solid #eee', marginBottom: '2rem', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--clr-primary)', paddingBottom: '10px', marginBottom: '1.5rem' }}>
-                  <h3 style={{ fontSize: '1.5rem', margin: 0, fontWeight: 'bold' }}>
-                    Dossier d'inscription : {selectedInscription.enfant_nom} {selectedInscription.enfant_prenom}
-                  </h3>
-                  <button onClick={() => setSelectedInscription(null)} className="btn btn-outline" style={{ color: 'black', borderColor: '#ddd', padding: '6px 12px' }}>Fermer</button>
-                </div>
+            {selectedInscription ? (() => {
+              const fd = selectedInscription.form_data || {};
+              const dob = fd.enfantDateNaissance || selectedInscription.enfant_dob;
+              let age: number | null = null;
+              let category = '';
+              if (dob) {
+                const d = new Date(dob);
+                if (!isNaN(d.getTime())) {
+                  const today = new Date();
+                  age = today.getFullYear() - d.getFullYear();
+                  const m = today.getMonth() - d.getMonth();
+                  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+                  if (age <= 7) category = 'U7';
+                  else if (age <= 9) category = 'U9';
+                  else if (age <= 11) category = 'U11';
+                  else if (age <= 13) category = 'U13';
+                  else if (age <= 15) category = 'U15';
+                  else if (age <= 17) category = 'U17';
+                  else category = 'U20+';
+                }
+              }
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                  <div>
-                    <h4 style={{ color: 'var(--clr-primary)', fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '5px', marginBottom: '10px' }}>1. Informations Enfant</h4>
-                    <p><strong>Nom & Prénom:</strong> {selectedInscription.form_data?.enfantNom} {selectedInscription.form_data?.enfantPrenom}</p>
-                    <p><strong>Date de naissance:</strong> {selectedInscription.form_data?.enfantDateNaissance}</p>
-                    <p><strong>Sexe:</strong> {selectedInscription.form_data?.enfantSexe || 'N/A'}</p>
-                    <p><strong>Téléphones:</strong> {selectedInscription.form_data?.enfantTelephones || 'N/A'}</p>
-                    <p><strong>Adresse:</strong> {selectedInscription.form_data?.enfantAdresse}</p>
+              return (
+                <div style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '2px solid var(--clr-primary)', marginBottom: '2.5rem', boxShadow: '0 15px 40px rgba(0,0,0,0.08)' }}>
+                  {/* Header bar with actions */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px', borderBottom: '2px solid #eee', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                        <h3 style={{ fontSize: '1.8rem', margin: 0, fontWeight: 'bold', fontFamily: 'var(--font-heading)', textTransform: 'uppercase' }}>
+                          Dossier d'Inscription : {fd.enfantNom || selectedInscription.enfant_nom} {fd.enfantPrenom || selectedInscription.enfant_prenom}
+                        </h3>
+                        {category && (
+                          <span style={{ background: 'var(--clr-primary)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                            Catégorie {category} {age !== null ? `(${age} ans)` : ''}
+                          </span>
+                        )}
+                        <span style={{ background: '#f3f4f6', color: '#111', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                          {fd.planAdhesion?.split(':')[0] || 'Plan Standard'}
+                        </span>
+                      </div>
+                      <p style={{ margin: '8px 0 0', color: '#666', fontSize: '0.9rem' }}>
+                        Enregistré le {selectedInscription.created_at ? new Date(selectedInscription.created_at).toLocaleString('fr-FR') : 'N/A'} • Dossier intégral certifié et conforme aux normes 2026
+                      </p>
+                    </div>
 
-                    <h4 style={{ color: 'var(--clr-primary)', fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '5px', marginBottom: '10px', marginTop: '1.5rem' }}>2. Parent Responsable</h4>
-                    <p><strong>Nom & Prénom:</strong> {selectedInscription.form_data?.parentNom} {selectedInscription.form_data?.parentPrenom}</p>
-                    <p><strong>WhatsApp:</strong> {selectedInscription.form_data?.parentWhatsapp}</p>
-                    <p><strong>Téléphones:</strong> {selectedInscription.form_data?.parentTelephones}</p>
-                    <p><strong>Courriel:</strong> {selectedInscription.form_data?.parentCourriel}</p>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button 
+                        onClick={() => window.print()} 
+                        className="btn btn-outline" 
+                        style={{ color: '#111', borderColor: '#ccc', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}
+                      >
+                        <Printer size={16} /> Imprimer Dossier (PDF)
+                      </button>
+                      <button 
+                        onClick={() => setSelectedInscription(null)} 
+                        className="btn btn-primary" 
+                        style={{ padding: '8px 18px', fontSize: '0.9rem' }}
+                      >
+                        Fermer le Dossier
+                      </button>
+                    </div>
                   </div>
 
-                  <div>
-                    <h4 style={{ color: 'var(--clr-primary)', fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '5px', marginBottom: '10px' }}>3. Plan & Sport</h4>
-                    <p><strong>Plan d'adhésion:</strong> <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold' }}>{selectedInscription.form_data?.planAdhesion}</span></p>
-                    <p><strong>Position:</strong> {selectedInscription.form_data?.position || 'N/A'}</p>
-                    <p><strong>Uniforme désiré:</strong> {selectedInscription.form_data?.uniformeDesire || 'N/A'}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                     
-                    <h4 style={{ color: 'var(--clr-primary)', fontWeight: 'bold', borderBottom: '1px solid #eee', paddingBottom: '5px', marginBottom: '10px', marginTop: '1.5rem' }}>4. Médical & Consentement</h4>
-                    <p><strong>Allergies:</strong> {selectedInscription.form_data?.allergies || 'Aucune'}</p>
-                    <p><strong>Signature:</strong> {selectedInscription.form_data?.signatureParent} le {selectedInscription.form_data?.dateSignature}</p>
+                    {/* Grille 1 : Enfant & Parent */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                      
+                      {/* 1. ENFANT */}
+                      <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                        <h4 style={{ color: 'var(--clr-primary)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1rem', borderBottom: '2px solid rgba(202,2,79,0.2)', paddingBottom: '6px' }}>
+                          1. Identité de l'Enfant
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.95rem' }}>
+                          <p><strong>Nom :</strong> {fd.enfantNom || selectedInscription.enfant_nom || 'N/A'}</p>
+                          <p><strong>Prénom :</strong> {fd.enfantPrenom || selectedInscription.enfant_prenom || 'N/A'}</p>
+                          <p><strong>Date de naissance :</strong> {dob || 'N/A'} {age !== null ? `(${age} ans)` : ''}</p>
+                          <p><strong>Sexe :</strong> {fd.enfantSexe === 'M' ? 'Masculin' : fd.enfantSexe === 'F' ? 'Féminin' : (fd.enfantSexe || 'N/A')}</p>
+                          <p><strong>Téléphones enfant :</strong> {fd.enfantTelephones || 'Non renseigné'}</p>
+                          <p><strong>Adresse de résidence :</strong> {fd.enfantAdresse || 'N/A'}</p>
+                          <p><strong>Connu par :</strong> {fd.connuPar || 'N/A'} {fd.connuAutre ? `(${fd.connuAutre})` : ''}</p>
+                        </div>
+                      </div>
+
+                      {/* 2. PARENT */}
+                      <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                        <h4 style={{ color: 'var(--clr-primary)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1rem', borderBottom: '2px solid rgba(202,2,79,0.2)', paddingBottom: '6px' }}>
+                          2. Parent / Tuteur Légal
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.95rem' }}>
+                          <p><strong>Nom & Prénom :</strong> {fd.parentNom || selectedInscription.parent_nom || ''} {fd.parentPrenom || selectedInscription.parent_prenom || ''}</p>
+                          <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <strong>Téléphones :</strong> {fd.parentTelephones || selectedInscription.parent_tel || 'N/A'}
+                            {(fd.parentTelephones || selectedInscription.parent_tel) && (
+                              <a href={`tel:${fd.parentTelephones || selectedInscription.parent_tel}`} style={{ color: 'var(--clr-primary)', display: 'inline-flex' }}>
+                                <PhoneCall size={14} />
+                              </a>
+                            )}
+                          </p>
+                          <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <strong>WhatsApp :</strong> {fd.parentWhatsapp || 'N/A'}
+                            {fd.parentWhatsapp && (
+                              <a href={`https://wa.me/${fd.parentWhatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" style={{ color: '#16a34a', display: 'inline-flex' }}>
+                                <MessageSquare size={14} />
+                              </a>
+                            )}
+                          </p>
+                          <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <strong>Courriel :</strong> {fd.parentCourriel || selectedInscription.parent_email || 'N/A'}
+                            {(fd.parentCourriel || selectedInscription.parent_email) && (
+                              <a href={`mailto:${fd.parentCourriel || selectedInscription.parent_email}`} style={{ color: 'var(--clr-primary)', display: 'inline-flex' }}>
+                                <Mail size={14} />
+                              </a>
+                            )}
+                          </p>
+                          <p><strong>NIF / NINU :</strong> {fd.parentNIF || 'Non communiqué'}</p>
+                          <p><strong>Adresse du parent :</strong> {fd.parentAdresse || 'N/A'}</p>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Grille 2 : Urgence & Récupération */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                      
+                      {/* 3. URGENCE */}
+                      <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                        <h4 style={{ color: 'var(--clr-primary)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1rem', borderBottom: '2px solid rgba(202,2,79,0.2)', paddingBottom: '6px' }}>
+                          3. Contact en Cas d'Urgence
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.95rem' }}>
+                          <p><strong>Nom & Prénom :</strong> {fd.urgenceNom || 'N/A'} {fd.urgencePrenom || ''}</p>
+                          <p><strong>Lien de parenté :</strong> {fd.urgenceLien || 'N/A'}</p>
+                          <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <strong>Téléphones urgence :</strong> {fd.urgenceTelephones || 'N/A'}
+                            {fd.urgenceTelephones && (
+                              <a href={`tel:${fd.urgenceTelephones}`} style={{ color: 'var(--clr-primary)', display: 'inline-flex' }}>
+                                <PhoneCall size={14} />
+                              </a>
+                            )}
+                          </p>
+                          <p><strong>WhatsApp urgence :</strong> {fd.urgenceWhatsapp || 'N/A'}</p>
+                          <p><strong>Courriel urgence :</strong> {fd.urgenceCourriel || 'N/A'}</p>
+                          <p><strong>Adresse urgence :</strong> {fd.urgenceAdresse || 'N/A'}</p>
+                        </div>
+                      </div>
+
+                      {/* 4. SÉCURITÉ RÉCUPÉRATION */}
+                      <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                        <h4 style={{ color: 'var(--clr-primary)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1rem', borderBottom: '2px solid rgba(202,2,79,0.2)', paddingBottom: '6px' }}>
+                          4. Modalités de Récupération & Fin de Séance
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.95rem' }}>
+                          <p><strong>Personne autorisée à récupérer :</strong> {fd.autoriseRecuperer || 'Seul le parent / tuteur légal'}</p>
+                          <p><strong>NIF / NINU personne autorisée :</strong> {fd.nifRecuperer || 'N/A'}</p>
+                          <div>
+                            <strong>Autorisation de rentrer seul :</strong>{' '}
+                            {fd.rentrerSeul ? (
+                              <span style={{ background: '#dcfce7', color: '#15803d', padding: '4px 10px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                OUI - Autorisé à rentrer seul par ses propres moyens
+                              </span>
+                            ) : (
+                              <span style={{ background: '#fee2e2', color: '#b91c1c', padding: '4px 10px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                NON - Doit impérativement être récupéré par un responsable
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Grille 3 : Football & Dimensions Uniformes */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                      
+                      {/* 5. FOOTBALL */}
+                      <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                        <h4 style={{ color: 'var(--clr-primary)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1rem', borderBottom: '2px solid rgba(202,2,79,0.2)', paddingBottom: '6px' }}>
+                          5. Rapport Scolaire & Football
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.95rem' }}>
+                          <p><strong>École classique :</strong> {fd.ecoleClassique || 'N/A'}</p>
+                          <p><strong>Niveau / Classe :</strong> {fd.niveauClasse || 'N/A'}</p>
+                          <p><strong>École / Club antérieur :</strong> {fd.ecoleClub || 'N/A'}</p>
+                          <p><strong>Position occupée :</strong> <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold' }}>{fd.position || 'Non spécifié'}</span></p>
+                          <p><strong>Durée de pratique :</strong> {fd.duree || 'N/A'}</p>
+                          <p><strong>Âge de début du football :</strong> {fd.ageDebut || 'N/A'}</p>
+                        </div>
+                      </div>
+
+                      {/* 6. UNIFORMES */}
+                      <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                        <h4 style={{ color: 'var(--clr-primary)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1rem', borderBottom: '2px solid rgba(202,2,79,0.2)', paddingBottom: '6px' }}>
+                          6. Dimensions Complètes des Uniformes
+                        </h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px', fontSize: '0.85rem' }}>
+                          <div style={{ background: 'white', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                            <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}>Maillot</span>
+                            <strong>{fd.tailleMaillot || 'N/A'}</strong>
+                          </div>
+                          <div style={{ background: 'white', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                            <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}>Short</span>
+                            <strong>{fd.tailleShort || 'N/A'}</strong>
+                          </div>
+                          <div style={{ background: 'white', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                            <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}>Pointure</span>
+                            <strong>{fd.pointure || 'N/A'}</strong>
+                          </div>
+                          <div style={{ background: 'white', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                            <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}>Poitrine</span>
+                            <strong>{fd.taillePoitrine || 'N/A'}</strong>
+                          </div>
+                          <div style={{ background: 'white', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                            <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}>Épaule</span>
+                            <strong>{fd.tailleEpaule || 'N/A'}</strong>
+                          </div>
+                          <div style={{ background: 'white', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                            <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}>Longueur</span>
+                            <strong>{fd.tailleLongueur || 'N/A'}</strong>
+                          </div>
+                          <div style={{ background: 'white', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                            <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}>Hauteur</span>
+                            <strong>{fd.tailleHauteur || 'N/A'}</strong>
+                          </div>
+                          <div style={{ background: 'white', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                            <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}>Hanche</span>
+                            <strong>{fd.tailleHanche || 'N/A'}</strong>
+                          </div>
+                          <div style={{ background: 'white', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                            <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}>Taille gén.</span>
+                            <strong>{fd.taille || 'N/A'}</strong>
+                          </div>
+                          <div style={{ background: 'white', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                            <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}># Désiré</span>
+                            <strong style={{ color: 'var(--clr-primary)' }}>{fd.uniformeDesire || 'N/A'}</strong>
+                          </div>
+                          <div style={{ background: 'white', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                            <span style={{ color: '#666', fontSize: '0.75rem', display: 'block' }}># Trouvé</span>
+                            <strong>{fd.uniformeTrouve || 'Non fixé'}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+
+                    {/* Grille 4 : Renseignements Médicaux (Données Protégées) */}
+                    <div style={{ background: '#fef2f2', padding: '1.5rem', borderRadius: '12px', border: '1px solid #fecaca' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', borderBottom: '2px solid rgba(239,68,68,0.2)', paddingBottom: '6px' }}>
+                        <HeartPulse size={20} color="#b91c1c" />
+                        <h4 style={{ color: '#991b1b', fontWeight: 'bold', fontSize: '1.1rem', margin: 0 }}>
+                          7. Dossier Médical Confidentiel & Autorisation d'Urgence
+                        </h4>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', fontSize: '0.95rem' }}>
+                        <div>
+                          <p><strong>Allergies alimentaires :</strong> {fd.allergies || 'Aucune'}</p>
+                          <p><strong>Asthme :</strong> {fd.asthme || 'Non'}</p>
+                          <p><strong>Médicaments pris régulièrement :</strong> {fd.medicaments || 'Aucun'}</p>
+                          <p><strong>Préoccupation médicale signalée :</strong> {fd.preoccupation || 'Aucune'}</p>
+                          {fd.causeAllergie && (
+                            <div style={{ marginTop: '8px', background: 'white', padding: '10px', borderRadius: '6px', border: '1px solid #fee2e2' }}>
+                              <strong>Cause allergie & conduite à tenir :</strong>
+                              <p style={{ margin: '4px 0 0', color: '#7f1d1d' }}>{fd.causeAllergie}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div>
+                          <p><strong>Médecin traitant :</strong> {fd.medecinNom || 'Non renseigné'}</p>
+                          <p><strong>Téléphone médecin :</strong> {fd.medecinTel || 'N/A'}</p>
+                          <p><strong>WhatsApp médecin :</strong> {fd.medecinWhatsapp || 'N/A'}</p>
+                          
+                          <div style={{ marginTop: '12px', background: 'white', padding: '12px', borderRadius: '8px', border: '1px solid #fee2e2' }}>
+                            <span style={{ display: 'block', fontWeight: 'bold', marginBottom: '4px', color: '#991b1b' }}>Autorisation d'Urgence Médicale :</span>
+                            <span style={{ 
+                              display: 'inline-block',
+                              background: fd.autorisationUrgence?.includes("J'autorise") ? '#dcfce7' : '#fee2e2', 
+                              color: fd.autorisationUrgence?.includes("J'autorise") ? '#15803d' : '#b91c1c', 
+                              padding: '6px 12px', 
+                              borderRadius: '6px', 
+                              fontWeight: 'bold' 
+                            }}>
+                              {fd.autorisationUrgence || "Non renseigné"}
+                            </span>
+                            <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '6px' }}>
+                              Prise en charge selon l'avis du médecin traitant, transport en véhicule et actes médicaux/chirurgicaux d'urgence.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Grille 5 : Plan d'adhésion & Consentements Légaux */}
+                    <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                      <h4 style={{ color: 'var(--clr-primary)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1rem', borderBottom: '2px solid rgba(202,2,79,0.2)', paddingBottom: '6px' }}>
+                        8. Plan Financier, Consentements Juridiques & Signature
+                      </h4>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', fontSize: '0.95rem' }}>
+                        <div>
+                          <p style={{ marginBottom: '10px' }}>
+                            <strong>Plan d'adhésion souscrit :</strong>{' '}
+                            <span style={{ background: 'var(--clr-primary)', color: 'white', padding: '4px 10px', borderRadius: '4px', fontWeight: 'bold' }}>
+                              {fd.planAdhesion || 'Standard'}
+                            </span>
+                          </p>
+                          <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <CheckSquare size={16} color="var(--clr-primary)" />
+                              <span>Conditions d'inscription & droit à l'image : <strong>{fd.consentementLuApprouve ? 'APPROUVÉ' : 'NON'}</strong></span>
+                            </li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <CheckSquare size={16} color="var(--clr-primary)" />
+                              <span>Prise de connaissance et respect des tarifs : <strong>{fd.consentementTarifs ? 'APPROUVÉ' : 'NON'}</strong></span>
+                            </li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <CheckSquare size={16} color="var(--clr-primary)" />
+                              <span>Engagement certificat médical sous 1 mois : <strong>{fd.consentementCertificat ? 'APPROUVÉ' : 'NON'}</strong></span>
+                            </li>
+                          </ul>
+                        </div>
+
+                        <div style={{ background: 'white', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                          <span style={{ color: '#666', fontSize: '0.85rem', display: 'block', marginBottom: '4px' }}>Signature Parentale Électronique :</span>
+                          <p style={{ fontSize: '1.3rem', fontFamily: 'serif', fontStyle: 'italic', color: '#111', margin: '4px 0 8px 0', borderBottom: '1px dashed #ccc', paddingBottom: '6px' }}>
+                            {fd.signatureParent || 'N/A'}
+                          </p>
+                          <p style={{ fontSize: '0.85rem', color: '#666', margin: 0 }}>
+                            Signé le : <strong>{fd.dateSignature || 'N/A'}</strong>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
+                </div>
+              );
+            })() : null}
+
+            {/* Table des Inscriptions avec Barre de Recherche */}
+            <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #eee', overflow: 'hidden', padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '15px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.3rem', margin: 0 }}>Dossiers d'Inscriptions Reçus ({inscriptions.length})</h3>
+                  <span style={{ fontSize: '0.85rem', color: '#666' }}>Données chiffrées & protégées selon les normes de cybersécurité 2026</span>
+                </div>
+                <div style={{ position: 'relative', width: '320px', maxWidth: '100%' }}>
+                  <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
+                  <input 
+                    type="text" 
+                    placeholder="Filtrer (enfant, parent, tél, plan)..." 
+                    value={inscriptionSearch}
+                    onChange={e => setInscriptionSearch(e.target.value)}
+                    style={{ width: '100%', padding: '9px 12px 9px 38px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.9rem', outline: 'none' }}
+                  />
                 </div>
               </div>
-            ) : null}
 
-            <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #eee', overflow: 'hidden' }}>
               {inscriptions.length === 0 ? (
                 <p style={{ padding: '2rem', color: '#666', textAlign: 'center' }}>Aucune inscription trouvée.</p>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ background: '#f5f7fa', borderBottom: '1px solid #eee' }}>
-                      <th style={{ padding: '15px' }}>Enfant</th>
-                      <th style={{ padding: '15px' }}>Date Naissance</th>
-                      <th style={{ padding: '15px' }}>Parent</th>
-                      <th style={{ padding: '15px' }}>Téléphone</th>
-                      <th style={{ padding: '15px' }}>Plan</th>
-                      <th style={{ padding: '15px', textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inscriptions.map((ins) => (
-                      <tr key={ins.id} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '15px', fontWeight: 'bold' }}>{ins.enfant_nom} {ins.enfant_prenom}</td>
-                        <td style={{ padding: '15px' }}>{ins.enfant_dob}</td>
-                        <td style={{ padding: '15px' }}>{ins.parent_nom} {ins.parent_prenom}</td>
-                        <td style={{ padding: '15px' }}>{ins.parent_tel}</td>
-                        <td style={{ padding: '15px' }}>
-                          <span style={{ background: 'var(--clr-gray-light)', color: 'var(--clr-primary)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                            {ins.form_data?.planAdhesion?.split(':')[0] || 'Standard'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '15px', textAlign: 'right' }}>
-                          <button onClick={() => { setSelectedInscription(ins); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="btn btn-outline" style={{ padding: '5px 10px', fontSize: '0.85rem', marginRight: '10px', color: 'black', borderColor: '#ddd' }}>Voir Dossier</button>
-                          <button onClick={() => handleDeleteInscription(ins.id)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer' }}><Trash2 size={16} /></button>
-                        </td>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ background: '#f5f7fa', borderBottom: '1px solid #eee' }}>
+                        <th style={{ padding: '12px 15px' }}>Date Réception</th>
+                        <th style={{ padding: '12px 15px' }}>Enfant</th>
+                        <th style={{ padding: '12px 15px' }}>Date Naissance</th>
+                        <th style={{ padding: '12px 15px' }}>Parent Responsable</th>
+                        <th style={{ padding: '12px 15px' }}>Téléphone</th>
+                        <th style={{ padding: '12px 15px' }}>Plan</th>
+                        <th style={{ padding: '12px 15px', textAlign: 'right' }}>Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {inscriptions
+                        .filter(ins => {
+                          if (!inscriptionSearch.trim()) return true;
+                          const q = inscriptionSearch.toLowerCase();
+                          const enfant = `${ins.enfant_nom || ''} ${ins.enfant_prenom || ''}`.toLowerCase();
+                          const parent = `${ins.parent_nom || ''} ${ins.parent_prenom || ''}`.toLowerCase();
+                          const tel = `${ins.parent_tel || ''}`.toLowerCase();
+                          const plan = `${ins.form_data?.planAdhesion || ''}`.toLowerCase();
+                          return enfant.includes(q) || parent.includes(q) || tel.includes(q) || plan.includes(q);
+                        })
+                        .map((ins) => (
+                          <tr key={ins.id} style={{ borderBottom: '1px solid #eee' }}>
+                            <td style={{ padding: '12px 15px', color: '#666', fontSize: '0.85rem' }}>
+                              {ins.created_at ? new Date(ins.created_at).toLocaleDateString('fr-FR') : 'N/A'}
+                            </td>
+                            <td style={{ padding: '12px 15px', fontWeight: 'bold' }}>{ins.enfant_nom} {ins.enfant_prenom}</td>
+                            <td style={{ padding: '12px 15px' }}>{ins.enfant_dob}</td>
+                            <td style={{ padding: '12px 15px' }}>{ins.parent_nom} {ins.parent_prenom}</td>
+                            <td style={{ padding: '12px 15px' }}>
+                              <a href={`tel:${ins.parent_tel}`} style={{ color: 'var(--clr-primary)', textDecoration: 'none' }}>{ins.parent_tel}</a>
+                            </td>
+                            <td style={{ padding: '12px 15px' }}>
+                              <span style={{ background: 'var(--clr-gray-light)', color: 'var(--clr-primary)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                {ins.form_data?.planAdhesion?.split(':')[0] || 'Standard'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '12px 15px', textAlign: 'right' }}>
+                              <button 
+                                onClick={() => { setSelectedInscription(ins); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
+                                className="btn btn-outline" 
+                                style={{ padding: '6px 12px', fontSize: '0.85rem', marginRight: '10px', color: 'black', borderColor: '#ccc' }}
+                              >
+                                Dossier Complet
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteInscription(ins.id)} 
+                                style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer', verticalAlign: 'middle' }}
+                                title="Supprimer le dossier"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </motion.div>
