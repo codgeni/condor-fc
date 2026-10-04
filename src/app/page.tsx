@@ -230,43 +230,158 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3. Section À la Une (Actualités Réelles) */}
+      {/* 3. Section À la Une (Actualités Réelles au Format Carré Joueurs) */}
       <section className="section-padding" style={{ paddingTop: 0 }}>
-        <div className="container">
-          <motion.h2 initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', marginBottom: '2rem' }}>À la Une</motion.h2>
+        <div className="container" style={{ maxWidth: '1240px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <div>
+              <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '0.85rem' }}>
+                Le Journal du Condor
+              </span>
+              <motion.h2 
+                initial={{ opacity: 0, x: -30 }} 
+                whileInView={{ opacity: 1, x: 0 }} 
+                viewport={{ once: true }} 
+                style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', margin: '4px 0 0' }}
+              >
+                À la Une
+              </motion.h2>
+            </div>
+            <Link href="/news" className="btn btn-outline" style={{ padding: '8px 18px', fontSize: '0.9rem', color: 'var(--clr-black)', borderColor: '#cbd5e1', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <span>Toutes les actualités</span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 360px))', justifyContent: 'center', gap: '2.2rem' }}>
             {latestNews.length > 0 ? (
               latestNews.map((news, i) => (
                 <Link href="/news" key={news.id || i} style={{ textDecoration: 'none', color: 'inherit' }}>
                   <motion.div 
-                    initial={{ opacity: 0, y: 30 }} 
+                    initial={{ opacity: 0, y: 25 }} 
                     whileInView={{ opacity: 1, y: 0 }} 
                     viewport={{ once: true }} 
-                    transition={{ duration: 0.4, delay: i * 0.1 }} 
-                    style={{ display: 'flex', flexDirection: 'column', height: '460px', borderRadius: '12px', overflow: 'hidden', background: 'var(--clr-gray-light)', cursor: 'pointer', boxShadow: '0 10px 25px rgba(0,0,0,0.05)' }} 
-                    whileHover={{ y: -8, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}
+                    transition={{ duration: 0.4, delay: i * 0.08 }} 
+                    style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      borderRadius: '14px', 
+                      overflow: 'hidden', 
+                      background: 'white', 
+                      cursor: 'pointer', 
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+                      border: '1px solid #e5e7eb',
+                      position: 'relative',
+                      transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease'
+                    }} 
+                    whileHover={{ y: -8, boxShadow: '0 18px 38px rgba(0,0,0,0.12)' }}
                   >
-                    <div style={{ height: '240px', overflow: 'hidden', position: 'relative' }}>
-                      <img src={news.img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt={news.title} />
-                      <span style={{ position: 'absolute', top: '15px', left: '15px', background: 'var(--clr-primary)', color: 'white', padding: '5px 10px', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', borderRadius: '4px' }}>
+                    {/* Photo de l'article au format Carré (1:1 comme les fiches joueurs) */}
+                    <div 
+                      style={{ 
+                        position: 'relative', 
+                        width: '100%', 
+                        aspectRatio: '1 / 1', 
+                        background: 'radial-gradient(circle at center, #242533 0%, #0d0d12 100%)', 
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <img 
+                        src={news.img || '/condor_logo_transparent.png'} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s ease' }} 
+                        alt={news.title} 
+                      />
+                      <span 
+                        style={{ 
+                          position: 'absolute', 
+                          top: '14px', 
+                          left: '14px', 
+                          background: 'var(--clr-primary)', 
+                          color: 'white', 
+                          padding: '5px 12px', 
+                          fontSize: '0.74rem', 
+                          fontWeight: '800', 
+                          textTransform: 'uppercase', 
+                          borderRadius: '20px',
+                          letterSpacing: '0.8px',
+                          boxShadow: '0 4px 12px rgba(202, 2, 79, 0.45)'
+                        }}
+                      >
                         {news.cat || 'Actualité'}
                       </span>
                     </div>
-                    <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+
+                    {/* Contenu Texte sous l'image */}
+                    <div style={{ padding: '1.4rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div>
-                        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', margin: '0 0 10px', color: 'var(--clr-black)', lineHeight: 1.3 }}>{news.title}</h3>
-                        <p style={{ color: 'var(--clr-gray)', fontSize: '0.95rem', margin: 0, lineClamp: 3, WebkitLineClamp: 3, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        <span style={{ color: '#888', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px', fontWeight: 'bold' }}>
+                          <Calendar size={13} style={{ color: 'var(--clr-primary)' }} /> {news.date || "Récemment"}
+                        </span>
+                        <h3 
+                          style={{ 
+                            fontFamily: 'var(--font-heading)', 
+                            fontSize: '1.3rem', 
+                            margin: '0 0 10px', 
+                            color: 'var(--clr-black)', 
+                            lineHeight: 1.3,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {news.title}
+                        </h3>
+                        <p 
+                          style={{ 
+                            color: '#555', 
+                            fontSize: '0.88rem', 
+                            margin: 0, 
+                            lineHeight: 1.5,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden' 
+                          }}
+                        >
                           {news.desc_text || news.desc}
                         </p>
                       </div>
-                      <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '10px' }}>Lire l'article <ArrowRight size={14} /></span>
+
+                      {/* Bouton "En savoir plus" */}
+                      <div style={{ paddingTop: '1.2rem', marginTop: '1.2rem', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'var(--clr-primary)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 16px',
+                            fontSize: '0.84rem',
+                            fontWeight: 'bold',
+                            boxShadow: '0 3px 10px rgba(202, 2, 79, 0.25)'
+                          }}
+                        >
+                          <span>En savoir plus</span>
+                          <ArrowRight size={14} />
+                        </span>
+
+                        <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '500' }}>
+                          Lire la suite
+                        </span>
+                      </div>
                     </div>
                   </motion.div>
                 </Link>
               ))
             ) : (
-              <div style={{ gridColumn: '1 / -1', background: 'var(--clr-gray-light)', padding: '3rem', borderRadius: '12px', textAlign: 'center' }}>
+              <div style={{ gridColumn: '1 / -1', background: 'white', padding: '3.5rem 2rem', borderRadius: '16px', textAlign: 'center', border: '1px solid #eee' }}>
                 <p style={{ color: 'var(--clr-gray)', fontSize: '1.1rem', margin: 0 }}>Aucune actualité publiée pour le moment. Consultez notre section Actualités pour les dernières annonces du club.</p>
                 <Link href="/news" className="btn btn-outline" style={{ marginTop: '1.5rem', color: 'black', borderColor: '#ccc' }}>Consulter les actualités</Link>
               </div>
