@@ -21,8 +21,8 @@ export const ALLOWED_IMAGE_EXTENSIONS = [
   '.gif'
 ];
 
-// Limite maximale de taille de fichier : 5 Mo
-export const MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024;
+// Limite maximale de taille de fichier : 10 Mo
+export const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
 
 /**
  * Assainit une chaîne de caractères pour neutraliser tout vecteur Cross-Site Scripting (XSS).

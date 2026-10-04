@@ -39,7 +39,7 @@ import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 
 const convertToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
-    // Validation de sécurité : taille max 5 Mo et type MIME d'image certifié
+    // Validation de sécurité : taille max 10 Mo et type MIME d'image certifié
     const validation = validateUploadFile(file);
     if (!validation.valid) {
       alert(validation.error || 'Fichier non valide.');

@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 import Providers from '@/components/Providers';
 import { Analytics } from '@vercel/analytics/next';
 
-const siteUrl = 'https://www.condorecoledefootball.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.condor-ecoledefootball.com';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

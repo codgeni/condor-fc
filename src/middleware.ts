@@ -46,10 +46,22 @@ export function middleware(request: NextRequest) {
     });
   }
 
-  // 3. Traitement standard de la requête
+  // 3. Redirection canonique 301 & Désindexation des domaines temporaires Vercel (*.vercel.app)
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || request.nextUrl.hostname || '';
+  if (host.includes('.vercel.app')) {
+    const targetDomain = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.condor-ecoledefootball.com';
+    const redirectUrl = new URL(pathname + search, targetDomain);
+
+    const redirectResponse = NextResponse.redirect(redirectUrl, 301);
+    // Interdire expressément à Google d'indexer le sous-domaine vercel.app
+    redirectResponse.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+    return redirectResponse;
+  }
+
+  // 4. Traitement standard de la requête
   const response = NextResponse.next();
 
-  // 4. Protection de l'espace Admin : indexation des moteurs de recherche désactivée
+  // 5. Protection de l'espace Admin : indexation des moteurs de recherche désactivée
   if (pathname.startsWith('/admin')) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
   }
