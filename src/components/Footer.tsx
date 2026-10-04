@@ -1,9 +1,17 @@
 "use client";
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { MapPin, Phone, Mail, MessageSquare } from 'lucide-react';
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  // Hide public footer in admin dashboard to prevent body scrolling
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <footer className="footer">
       <div className="container">

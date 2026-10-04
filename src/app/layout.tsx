@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import Providers from '@/components/Providers';
 import { Analytics } from '@vercel/analytics/next';
 
 const siteUrl = 'https://www.condorecoledefootball.com';
@@ -129,12 +130,14 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <Navbar />
-        <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-          {children}
-        </main>
-        <Footer />
-        <Analytics />
+        <Providers>
+          <Navbar />
+          <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+            {children}
+          </main>
+          <Footer />
+          <Analytics />
+        </Providers>
       </body>
     </html>
   );

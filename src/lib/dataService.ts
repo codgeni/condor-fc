@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { playersDB } from './playersDB';
 
 export interface MatchConfig {
   id?: number | string;
@@ -62,7 +63,11 @@ export interface PlayerData {
   num: number;
   img: string;
   detail_img?: string;
+  detailImg?: string;
   category: string;
+  categories?: string[];
+  role?: string;
+  filter?: string;
   height?: string;
   weight?: string;
   foot?: string;
@@ -73,7 +78,318 @@ export interface PlayerData {
   matches?: number;
   goals?: number;
   assists?: number;
+  stat2lbl?: string;
+  stat2val?: number;
+  honours1?: number;
+  honours2?: number;
+  created_at?: string;
 }
+
+// -------------------------------------------------------------
+// NEW CRUD INTERFACES: Units, Roles, Staff, Timeline, SiteContent
+// -------------------------------------------------------------
+export interface UnitItem {
+  id: string | number;
+  name: string;
+  description?: string;
+  order: number;
+  is_active?: boolean;
+  created_at?: string;
+}
+
+export interface RoleItem {
+  id: string | number;
+  name: string;
+  keywords?: string;
+  order: number;
+  created_at?: string;
+}
+
+export interface StaffMember {
+  id: string | number;
+  name: string;
+  role: string;
+  img: string;
+  order?: number;
+  created_at?: string;
+}
+
+export interface TimelineItem {
+  id: string | number;
+  year: string;
+  title: string;
+  description: string;
+  order?: number;
+  created_at?: string;
+}
+
+export interface SiteContent {
+  id?: string | number;
+  hero_tag?: string;
+  hero_title?: string;
+  hero_slogan?: string;
+  no_match_text?: string;
+  about_title?: string;
+  about_text?: string;
+  created_at?: string;
+}
+
+// -------------------------------------------------------------
+// DEFAULTS
+// -------------------------------------------------------------
+export const DEFAULT_UNITS: UnitItem[] = [
+  { id: 'unit-1', name: 'Équipe Première', description: 'Effectif Senior & Élite', order: 1, is_active: true },
+  { id: 'unit-2', name: 'U17', description: 'Moins de 17 ans (Cadets)', order: 2, is_active: true },
+  { id: 'unit-3', name: 'U15', description: 'Moins de 15 ans (Minimes)', order: 3, is_active: true },
+  { id: 'unit-4', name: 'U13', description: 'Moins de 13 ans (Benjamins)', order: 4, is_active: true },
+  { id: 'unit-5', name: 'U9', description: 'Moins de 9 ans (Poussins / École)', order: 5, is_active: true },
+];
+
+export const DEFAULT_ROLES: RoleItem[] = [
+  { id: 'role-1', name: 'Gardiens de but', keywords: 'Gardien, Goal, GK, Portier', order: 1 },
+  { id: 'role-2', name: 'Défenseurs', keywords: 'Défenseur, Arrière, Latéral, Défenseure, Stoppeur, Lateral', order: 2 },
+  { id: 'role-3', name: 'Milieux de terrain', keywords: 'Milieu, MDF, Relayeur, Meneur, Central, Milieue', order: 3 },
+  { id: 'role-4', name: 'Attaquants', keywords: 'Attaquant, Ailier, Avant, Pointe, Buteur, Attaquante', order: 4 },
+  { id: 'role-5', name: 'Effectif & Autres', keywords: 'N/A, Polyvalent, Joueur, Talent', order: 5 },
+];
+
+export const DEFAULT_STAFF: StaffMember[] = [
+  { id: 'staff-1', name: 'Jean-Claude Valme', role: 'Directeur Technique', img: '/condor_logo_transparent.png', order: 1 },
+  { id: 'staff-2', name: 'Pierre-Richard Guerrier', role: 'Entraîneur Principal U17', img: '/player_action_2_1780681894021.png', order: 2 },
+  { id: 'staff-3', name: 'Dieudonné Lamothe', role: 'Préparateur Physique', img: '/stadium_hero_1780681869623.png', order: 3 },
+  { id: 'staff-4', name: 'Marise Lafontant', role: 'Secrétaire Générale', img: '/club_hero.png', order: 4 },
+];
+
+export const DEFAULT_TIMELINE: TimelineItem[] = [
+  { id: 'era-1', year: 'Mai 2023', title: 'La Fondation', description: "Lancement officiel de Condor École de Football à Delmas 77. L'école est créée pour offrir un encadrement sportif et éducatif structuré aux jeunes de la communauté.", order: 1 },
+  { id: 'era-2', year: 'Mai 2025', title: 'Vice-Champion U13 - Flag Day 12e édition', description: "Première distinction majeure pour l'école, démontrant la qualité de la formation dès les plus jeunes catégories.", order: 2 },
+  { id: 'era-3', year: 'Septembre 2025', title: 'Champion U17 - Tournoi Back To School', description: "Consécration pour nos aînés U17 qui remportent le titre avec un parcours sans faute.", order: 3 },
+  { id: 'era-4', year: 'Décembre 2025', title: 'Champion U15 - Tournoi Copa Undecima', description: "Les U15 s'imposent lors de ce prestigieux tournoi de fin d'année, confirmant la montée en puissance de l'académie.", order: 4 },
+  { id: 'era-5', year: 'Avril 2026', title: 'Triplé Historique - Tournoi Chale Chale 7e édition', description: "Une performance historique inégalée : Condor est sacré Champion simultanément dans les catégories U11, U15 et U16.", order: 5 },
+  { id: 'era-6', year: 'Mai 2026', title: 'Vice-Champion U15 - Flag Day 13e édition', description: "Les U15 continuent de briller au plus haut niveau en atteignant à nouveau la finale de ce tournoi majeur.", order: 6 },
+];
+
+export const DEFAULT_SITE_CONTENT: SiteContent = {
+  hero_tag: 'CHAQUE ENFANT EST UNIQUE',
+  hero_title: 'Condor École de Football',
+  hero_slogan: '"Plus fort, plus haut dans le score !"',
+  no_match_text: "Nos équipes sont actuellement en période d'entraînement intensif et de préparation technique. Suivez nos actualités pour être tenus informés des prochaines rencontres officielles !",
+  about_title: "Plus Qu'une École, Une Famille.",
+  about_text: "Depuis Mai 2023, la Condor École de Football est un symbole d'excellence, d'éducation et de passion sportive à Delmas, Haïti. Nous formons les leaders et les champions de demain."
+};
+
+export const DEFAULT_PRODUCTS: ShopProduct[] = [
+  {
+    id: 'kit-officiel-polo-condor',
+    title: 'Kit Officiel Match Polo 26/27',
+    category: 'match',
+    category_label: 'Tenue Officielle Domicile',
+    subtitle: 'Tenue Complète : Polo, Short #17 & Chaussettes',
+    price: 65,
+    formatted_price: '65.00 $',
+    tag: 'DOMICILE',
+    tag_bg: 'var(--clr-primary)',
+    img: '/shop/kit_officiel_polo_condor.png',
+    badge_text: 'Pack Complet 3 Pièces',
+    description: "La tenue officielle complète de référence du Condor FC pour la saison 2026/27. Polo bicolore rouge rubis et noir avec col classique boutonné, grand blason Condor Edu-Sport Académie et drapeau national haïtien sur l'ourlet. Inclus le short de match noir numéroté 17 et les chaussettes hautes bicolores assorties.",
+    highlights: [
+      'Pack complet 3 pièces : Maillot Polo + Short + Chaussettes',
+      'Écusson brodé Condor Edu-Sport Académie & drapeau Haïti',
+      'Dos floqué "NOM 17" personnalisable avec votre nom',
+      'Tissu respirant haute durabilité adapté au climat des Caraïbes'
+    ],
+    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL']
+  },
+  {
+    id: 'kit-officiel-exterieur-blanc',
+    title: 'Kit Officiel Extérieur 26/27 - Blanc',
+    category: 'match',
+    category_label: 'Tenue Officielle Extérieure',
+    subtitle: 'Maillot Blanc Rayé Pinceau, Short #08 & Chaussettes',
+    price: 65,
+    formatted_price: '65.00 $',
+    tag: 'EXTÉRIEUR',
+    tag_bg: '#0284c7',
+    img: '/shop/kit_officiel_exterieur_blanc.png',
+    badge_text: 'Pack Complet 3 Pièces',
+    description: "La tenue officielle extérieure du Condor FC. Design blanc éclatant avec rayures horizontales artistiques rouges et noires effet coups de pinceau, sponsor officiel DNC, drapeau d'Haïti sur l'ourlet, dos orné de la devise officielle \"Plus fort, plus haut dans le score\" et verset PS60:12, short blanc assorti #08 et chaussettes blanches avec aigle Condor.",
+    highlights: [
+      'Pack complet 3 pièces : Maillot extérieur + Short #08 + Chaussettes',
+      'Design exclusif coups de pinceau dynamique rouge & noir',
+      'Devise officielle du club "Plus fort, plus haut dans le score"',
+      'Détails haute précision : écussons club et drapeau d\'Haïti'
+    ],
+    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL']
+  },
+  {
+    id: 'kit-third-alveoles-lave',
+    title: 'Kit Third 26/27 - Alvéoles & Lave',
+    category: 'match',
+    category_label: 'Tenue Third Spéciale',
+    subtitle: 'Maillot Graphique Grunge, Short à Vagues & Détails',
+    price: 65,
+    formatted_price: '65.00 $',
+    tag: 'THIRD PRO',
+    tag_bg: '#475569',
+    img: '/shop/kit_third_alveoles_lave.png',
+    badge_text: 'Édition Graphique',
+    description: "L'édition alternative spectaculaire de la saison 2026/27. Maillot noir et blanc à trame nid d'abeille avec estafilade diagonale rouge lave, sponsor DNC, manche asymétrique blanche avec aigle Condor et drapeau national, dos avec devise officielle du club, et short noir à liserés ondulés blancs et numéro 00.",
+    highlights: [
+      'Motif alvéolaire haute définition et griffure rouge lave',
+      'Manche gauche asymétrique blanche avec blason club',
+      'Short noir exclusif à liserés ondulés aérodynamiques',
+      'Dos floqué avec devise du club et verset PS60:12'
+    ],
+    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL']
+  },
+  {
+    id: 'maillot-match-pro-marbre',
+    title: 'Maillot Match Pro 26/27 - Noir & Rouge Marbré',
+    category: 'match',
+    category_label: 'Maillot de Match Pro',
+    subtitle: 'Motif Fusion Marbré & Sponsor Officiel DNC',
+    price: 50,
+    formatted_price: '50.00 $',
+    tag: 'PRO MATCH',
+    tag_bg: '#0f172a',
+    badge_text: 'Top Vente',
+    img: '/shop/maillot_match_pro_marbre.png',
+    description: "Le nouveau maillot de match Pro sensationnel du club. Arborant une texture de lave marbrée rouge feu sur fond noir profond, un col en V athlétique rehaussé de rouge, le logo sponsor officiel DNC en blanc contrasté, et le blason de l'académie.",
+    highlights: [
+      'Sublimation numérique haute définition effet marbré',
+      'Col V athlétique renforcé et finitions bords-côtes',
+      'Sponsor officiel DNC et écusson Condor thermo-appliqué',
+      'Coupe moderne ergonomique favorisant l\'agilité'
+    ],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL']
+  },
+  {
+    id: 'short-chaussettes-pro-marbre',
+    title: 'Short & Chaussettes Match Pro - Marbré',
+    category: 'match',
+    category_label: 'Ensemble Bas Match Pro',
+    subtitle: 'Ensemble Bas Officiel Marbré Assorti',
+    price: 30,
+    formatted_price: '30.00 $',
+    tag: 'BAS ASSORTI',
+    tag_bg: '#334155',
+    badge_text: 'Complément Pro',
+    img: '/shop/short_chaussettes_pro_marbre.png',
+    description: "Le complément parfait du maillot Match Pro marbré. Short noir orné de la texture marbrée rouge et du blason Condor FC, accompagné de la paire de chaussettes hautes de compression coordonnées avec l'écusson du club.",
+    highlights: [
+      'Design texturé assorti au Maillot Match Pro 26/27',
+      'Ceinture élastique ultra-confortable avec cordon de serrage',
+      'Chaussettes montantes anatomiques avec maintien voûte plantaire',
+      'Renforts amortissants au talon et aux orteils'
+    ],
+    sizes: ['Taille Unique Adulte', 'Taille Junior']
+  },
+  {
+    id: 'kit-officiel-polo-sleeves',
+    title: 'Kit Officiel Polo - Édition Manches',
+    category: 'match',
+    category_label: 'Tenue Officielle Club',
+    subtitle: 'Torse Épuré & Badges sur Manches',
+    price: 65,
+    formatted_price: '65.00 $',
+    tag: 'OFFICIEL',
+    tag_bg: 'var(--clr-primary)',
+    badge_text: 'Édition Club',
+    img: '/shop/kit_officiel_polo_sleeves.png',
+    description: "Une variante raffinée du polo officiel avec blason circulaire sur le cœur et logos Condor Edu-Sport Académie élégamment disposés sur les manches. Coupe droite impeccable, col polo contrasté, short noir n°17 et chaussettes de performance.",
+    highlights: [
+      'Finition torse épurée avec écusson club sur le cœur',
+      'Double marquage aigle Condor sur chaque manche',
+      'Short noir compétition et chaussettes techniques inclus',
+      'Confort athlétique stretch et résistant'
+    ],
+    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL']
+  },
+  {
+    id: 'kit-entrainement-pro-rouge-10',
+    title: 'Kit Entraînement Pro Rouge #10',
+    category: 'training',
+    category_label: 'Entraînement Pro',
+    subtitle: 'Débardeur Rouge #10, Short Assorti & Devise Club',
+    price: 45,
+    formatted_price: '45.00 $',
+    tag: 'PRO TRAINING',
+    tag_bg: '#dc2626',
+    badge_text: 'Pack Entraînement',
+    img: '/shop/kit_entrainement_pro_rouge_10.png',
+    description: "L'ensemble d'entraînement sans manches officiel porté par les équipes élite de l'Académie Condor. Débardeur rouge avec empiècements courbes aérodynamiques noir et blanc, sponsor DNC, dos complet avec numéro 10 et devise du club \"Plus fort, plus haut dans le score\", et short rouge n°10 coordonné.",
+    highlights: [
+      'Ensemble 2 pièces : Débardeur d\'entraînement + Short n°10',
+      'Dos floqué "NAME 10", PS60:12 et devise officielle',
+      'Maille légère anti-humidité et régulation thermique',
+      'Short à découpes ergonomiques avec écusson club'
+    ],
+    sizes: ['Enfant (6-10 ans)', 'Enfant (11-14 ans)', 'S', 'M', 'L', 'XL']
+  },
+  {
+    id: 'kit-entrainement-debardeur-rouge',
+    title: 'Kit Entraînement Sans Manches DNC (#08)',
+    category: 'training',
+    category_label: 'Entraînement Académie',
+    subtitle: 'Débardeur Rouge, Short #08 & Chaussettes Rayées',
+    price: 45,
+    formatted_price: '45.00 $',
+    tag: 'ENTRAÎNEMENT',
+    tag_bg: '#e11d48',
+    badge_text: 'Académie Condor',
+    img: '/shop/kit_entrainement_debardeur_rouge.png',
+    description: "L'ensemble d'entraînement sans manches classique de l'École de Football Condor. Débardeur rouge vif avec sponsor DNC, détails d'épaules noir et blanc, drapeau national haïtien à la taille, short rouge n°08 et chaussettes montantes à rayures blanches.",
+    highlights: [
+      'Débardeur ultra-aéré en maille alvéolée anti-transpiration',
+      'Logos officiels DNC et Condor École de Football',
+      'Drapeau haïtien cousu sur la base du maillot',
+      'Short technique avec cordon élastique et chaussettes rayées'
+    ],
+    sizes: ['Enfant (6-10 ans)', 'Enfant (11-14 ans)', 'S', 'M', 'L', 'XL']
+  },
+  {
+    id: 'debardeur-entrainement-noir-fitness',
+    title: 'Débardeur Entraînement Noir Fitness',
+    category: 'training',
+    category_label: 'Entraînement',
+    subtitle: 'Coupe Athlétique Sans Manches Noir',
+    price: 28,
+    formatted_price: '28.00 $',
+    tag: 'FITNESS',
+    tag_bg: '#1e293b',
+    badge_text: 'Essentiel',
+    img: '/shop/debardeur_entrainement_noir_fitness.png',
+    description: "Débardeur officiel Condor sans manches, coupe athlétique respirante avec finitions bicolores rouge et blanc.",
+    highlights: [
+      'Coupe athlétique sans manches libérant les mouvements',
+      'Écusson officiel Condor École de Football',
+      'Flancs contrastés rouge et blanc',
+      'Tissu technique stretch et respirant'
+    ],
+    sizes: ['S', 'M', 'L', 'XL', 'XXL']
+  },
+  {
+    id: 'debardeur-entrainement-blanc',
+    title: 'Débardeur Entraînement Blanc Académie',
+    category: 'training',
+    category_label: 'Entraînement',
+    subtitle: 'Coupe Athlétique Sans Manches Blanc',
+    price: 28,
+    formatted_price: '28.00 $',
+    tag: 'ACADÉMIE',
+    tag_bg: '#64748b',
+    badge_text: 'Essentiel',
+    img: '/shop/debardeur_entrainement_blanc.png',
+    description: "Débardeur officiel blanc sans manches de l'Académie Condor avec écusson club et finitions bicolores noir et rouge.",
+    highlights: [
+      'Coupe athlétique sans manches haute respirabilité',
+      'Écusson officiel Condor École de Football',
+      'Flancs bicolores latéraux noir et rouge',
+      'Tissu léger et aéré adapté aux entraînements'
+    ],
+    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL']
+  }
+];
 
 // -------------------------------------------------------------
 // Helper : YouTube Link Parser (converts any youtube link to embed & extracts thumbnail)
@@ -83,12 +399,10 @@ export function parseVideoUrl(rawUrl: string): { embedUrl: string; thumbnail: st
   
   const trimmed = rawUrl.trim();
   
-  // Rejeter formellement les protocoles dangereux (javascript:, data:, vbscript:)
   if (/^(javascript|vbscript|data):/i.test(trimmed)) {
     return { embedUrl: '', thumbnail: '' };
   }
   
-  // Extraire l'identifiant YouTube (formats standards, shorts, mobile, embed)
   let videoId = '';
   const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
   const match = trimmed.match(ytRegex);
@@ -101,7 +415,6 @@ export function parseVideoUrl(rawUrl: string): { embedUrl: string; thumbnail: st
     };
   }
 
-  // Si c'est déjà une URL d'intégration, s'assurer qu'elle provient d'un domaine vidéo sécurisé en HTTPS
   try {
     const parsed = new URL(trimmed);
     if (parsed.protocol === 'https:' && (parsed.hostname.includes('youtube.com') || parsed.hostname.includes('youtube-nocookie.com'))) {
@@ -123,7 +436,7 @@ export function parseVideoUrl(rawUrl: string): { embedUrl: string; thumbnail: st
 // -------------------------------------------------------------
 // Fallback Local Storage Helpers
 // -------------------------------------------------------------
-function getLocalItem<T>(key: string, defaultValue: T): T {
+export function getLocalItem<T>(key: string, defaultValue: T): T {
   if (typeof window === 'undefined') return defaultValue;
   try {
     const saved = localStorage.getItem(`condor_${key}`);
@@ -133,7 +446,7 @@ function getLocalItem<T>(key: string, defaultValue: T): T {
   }
 }
 
-function setLocalItem<T>(key: string, value: T): void {
+export function setLocalItem<T>(key: string, value: T): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(`condor_${key}`, JSON.stringify(value));
@@ -184,7 +497,6 @@ export async function saveMatchConfig(config: MatchConfig): Promise<{ success: b
     if (config.id && typeof config.id === 'number') {
       result = await supabase.from('matches').update(config).eq('id', config.id).select();
     } else {
-      // Check if there is an existing match record
       const { data: existing } = await supabase.from('matches').select('id').limit(1);
       if (existing && existing.length > 0) {
         result = await supabase.from('matches').update(config).eq('id', existing[0].id).select();
@@ -195,7 +507,7 @@ export async function saveMatchConfig(config: MatchConfig): Promise<{ success: b
 
     if (result.error) {
       console.warn('Supabase match save note:', result.error.message);
-      return { success: true, data: config }; // Stored in local cache
+      return { success: true, data: config };
     }
 
     return { success: true, data: result.data?.[0] || config };
@@ -214,7 +526,7 @@ export async function fetchVideos(): Promise<VideoItem[]> {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
+    if (!error && data && data.length > 0) {
       setLocalItem('videos_list', data);
       return data;
     }
@@ -242,14 +554,13 @@ export async function saveVideo(video: VideoItem): Promise<{ success: boolean; e
       res = await supabase.from('videos').insert(formattedVideo);
     }
 
-    if (!res.error) {
-      return { success: true };
+    if (!res?.error) {
+      // update local
     }
   } catch (e) {
     console.warn('Supabase save video note, stored in local cache', e);
   }
 
-  // Local fallback
   if (formattedVideo.id) {
     const updated = currentList.map(v => v.id === formattedVideo.id ? formattedVideo : v);
     setLocalItem('videos_list', updated);
@@ -284,7 +595,7 @@ export async function fetchStages(): Promise<StageSession[]> {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
+    if (!error && data && data.length > 0) {
       setLocalItem('stages_list', data);
       return data;
     }
@@ -305,15 +616,10 @@ export async function saveStage(stage: StageSession): Promise<{ success: boolean
     } else {
       res = await supabase.from('stages').insert(stage);
     }
-
-    if (!res.error) {
-      return { success: true };
-    }
   } catch (e) {
     console.warn('Supabase save stage note, stored in local cache', e);
   }
 
-  // Local fallback
   if (stage.id) {
     const updated = currentList.map(s => s.id === stage.id ? stage : s);
     setLocalItem('stages_list', updated);
@@ -355,33 +661,31 @@ export async function fetchProducts(): Promise<ShopProduct[]> {
     console.warn('Supabase products fetch error, fallback to local', err);
   }
 
-  return getLocalItem('products_list', []);
+  const cached = getLocalItem<ShopProduct[]>('products_list', DEFAULT_PRODUCTS);
+  if (cached && cached.length > 0) {
+    return cached;
+  }
+  return DEFAULT_PRODUCTS;
 }
 
 export async function saveProduct(product: ShopProduct): Promise<{ success: boolean; error?: string }> {
-  const currentList = getLocalItem<ShopProduct[]>('products_list', []);
+  const currentList = getLocalItem<ShopProduct[]>('products_list', DEFAULT_PRODUCTS);
   const formattedProduct: ShopProduct = {
     ...product,
     formatted_price: product.formatted_price || `${product.price}.00 $`
   };
 
   try {
-    let res;
     const { data: existing } = await supabase.from('products').select('id').eq('id', formattedProduct.id);
     if (existing && existing.length > 0) {
-      res = await supabase.from('products').update(formattedProduct).eq('id', formattedProduct.id);
+      await supabase.from('products').update(formattedProduct).eq('id', formattedProduct.id);
     } else {
-      res = await supabase.from('products').insert(formattedProduct);
-    }
-
-    if (!res.error) {
-      return { success: true };
+      await supabase.from('products').insert(formattedProduct);
     }
   } catch (e) {
     console.warn('Supabase save product note, stored in local cache', e);
   }
 
-  // Local fallback
   const exists = currentList.some(p => p.id === formattedProduct.id);
   if (exists) {
     const updated = currentList.map(p => p.id === formattedProduct.id ? formattedProduct : p);
@@ -400,41 +704,476 @@ export async function deleteProduct(id: string): Promise<{ success: boolean }> {
     console.warn('Supabase delete product note', e);
   }
 
-  const currentList = getLocalItem<ShopProduct[]>('products_list', []);
+  const currentList = getLocalItem<ShopProduct[]>('products_list', DEFAULT_PRODUCTS);
   setLocalItem('products_list', currentList.filter(p => p.id !== id));
   return { success: true };
 }
 
+export function resetProductsToDefault(): ShopProduct[] {
+  setLocalItem('products_list', DEFAULT_PRODUCTS);
+  return DEFAULT_PRODUCTS;
+}
+
 // =============================================================
-// 5. PLAYERS CRUD SERVICE
+// 5. UNITS / CATEGORIES SERVICE (Unités d'équipes: U17, U13, etc.)
 // =============================================================
-export async function savePlayerRecord(player: PlayerData): Promise<{ success: boolean; error?: string }> {
+export async function fetchUnits(): Promise<UnitItem[]> {
   try {
-    const { data: existing } = await supabase.from('players').select('id').eq('id', player.id);
+    const { data, error } = await supabase
+      .from('units')
+      .select('*')
+      .order('order', { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      setLocalItem('units_list', data);
+      return data;
+    }
+  } catch (err) {
+    console.warn('Supabase units fetch note, using local fallback', err);
+  }
+
+  return getLocalItem('units_list', DEFAULT_UNITS);
+}
+
+export async function saveUnit(unit: UnitItem): Promise<{ success: boolean; data?: UnitItem }> {
+  const currentList = getLocalItem<UnitItem[]>('units_list', DEFAULT_UNITS);
+  const targetUnit: UnitItem = {
+    ...unit,
+    id: unit.id || `unit-${Date.now()}`,
+    order: Number(unit.order) || (currentList.length + 1),
+    is_active: unit.is_active !== undefined ? unit.is_active : true
+  };
+
+  try {
+    const { data: existing } = await supabase.from('units').select('id').eq('id', targetUnit.id);
+    if (existing && existing.length > 0) {
+      await supabase.from('units').update(targetUnit).eq('id', targetUnit.id);
+    } else {
+      await supabase.from('units').insert(targetUnit);
+    }
+  } catch (e) {
+    console.warn('Supabase save unit note, stored in local cache', e);
+  }
+
+  const idx = currentList.findIndex(u => String(u.id) === String(targetUnit.id));
+  let updatedList: UnitItem[];
+  if (idx >= 0) {
+    updatedList = [...currentList];
+    updatedList[idx] = targetUnit;
+  } else {
+    updatedList = [...currentList, targetUnit];
+  }
+  updatedList.sort((a, b) => (a.order || 0) - (b.order || 0));
+  setLocalItem('units_list', updatedList);
+
+  return { success: true, data: targetUnit };
+}
+
+export async function deleteUnit(id: string | number): Promise<{ success: boolean }> {
+  try {
+    await supabase.from('units').delete().eq('id', id);
+  } catch (e) {
+    console.warn('Supabase delete unit note', e);
+  }
+
+  const currentList = getLocalItem<UnitItem[]>('units_list', DEFAULT_UNITS);
+  const filtered = currentList.filter(u => String(u.id) !== String(id));
+  setLocalItem('units_list', filtered);
+  return { success: true };
+}
+
+// =============================================================
+// 6. ROLES / POSITIONS SERVICE (Gardiens de but on top, etc.)
+// =============================================================
+export async function fetchRoles(): Promise<RoleItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from('roles')
+      .select('*')
+      .order('order', { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      setLocalItem('roles_list', data);
+      return data;
+    }
+  } catch (err) {
+    console.warn('Supabase roles fetch note, using local fallback', err);
+  }
+
+  return getLocalItem('roles_list', DEFAULT_ROLES);
+}
+
+export async function saveRole(role: RoleItem): Promise<{ success: boolean; data?: RoleItem }> {
+  const currentList = getLocalItem<RoleItem[]>('roles_list', DEFAULT_ROLES);
+  const targetRole: RoleItem = {
+    ...role,
+    id: role.id || `role-${Date.now()}`,
+    order: Number(role.order) || (currentList.length + 1)
+  };
+
+  try {
+    const { data: existing } = await supabase.from('roles').select('id').eq('id', targetRole.id);
+    if (existing && existing.length > 0) {
+      await supabase.from('roles').update(targetRole).eq('id', targetRole.id);
+    } else {
+      await supabase.from('roles').insert(targetRole);
+    }
+  } catch (e) {
+    console.warn('Supabase save role note, stored in local cache', e);
+  }
+
+  const idx = currentList.findIndex(r => String(r.id) === String(targetRole.id));
+  let updatedList: RoleItem[];
+  if (idx >= 0) {
+    updatedList = [...currentList];
+    updatedList[idx] = targetRole;
+  } else {
+    updatedList = [...currentList, targetRole];
+  }
+  updatedList.sort((a, b) => (a.order || 0) - (b.order || 0));
+  setLocalItem('roles_list', updatedList);
+
+  return { success: true, data: targetRole };
+}
+
+export async function deleteRole(id: string | number): Promise<{ success: boolean }> {
+  try {
+    await supabase.from('roles').delete().eq('id', id);
+  } catch (e) {
+    console.warn('Supabase delete role note', e);
+  }
+
+  const currentList = getLocalItem<RoleItem[]>('roles_list', DEFAULT_ROLES);
+  const filtered = currentList.filter(r => String(r.id) !== String(id));
+  setLocalItem('roles_list', filtered);
+  return { success: true };
+}
+
+export function matchPlayerToRole(player: { pos?: string; role?: string }, roles: RoleItem[]): RoleItem {
+  const sorted = [...roles].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  if (player.role) {
+    const directMatch = sorted.find(r => r.name.toLowerCase() === player.role!.toLowerCase());
+    if (directMatch) return directMatch;
+  }
+
+  const pos = (player.pos || '').toLowerCase();
+  for (const r of sorted) {
+    if (!r.keywords) continue;
+    const kwList = r.keywords.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+    for (const kw of kwList) {
+      if (pos.includes(kw)) {
+        return r;
+      }
+    }
+  }
+
+  return sorted[sorted.length - 1] || { id: 'fallback', name: 'Effectif', order: 999 };
+}
+
+// =============================================================
+// 7. STAFF MEMBERS SERVICE (L'Équipe d'Encadrement)
+// =============================================================
+export async function fetchStaff(): Promise<StaffMember[]> {
+  try {
+    const { data, error } = await supabase
+      .from('staff')
+      .select('*')
+      .order('order', { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      setLocalItem('staff_list', data);
+      return data;
+    }
+  } catch (err) {
+    console.warn('Supabase staff fetch note, using local fallback', err);
+  }
+
+  return getLocalItem('staff_list', DEFAULT_STAFF);
+}
+
+export async function saveStaff(member: StaffMember): Promise<{ success: boolean; data?: StaffMember }> {
+  const currentList = getLocalItem<StaffMember[]>('staff_list', DEFAULT_STAFF);
+  const targetMember: StaffMember = {
+    ...member,
+    id: member.id || `staff-${Date.now()}`,
+    order: Number(member.order) || (currentList.length + 1)
+  };
+
+  try {
+    const { data: existing } = await supabase.from('staff').select('id').eq('id', targetMember.id);
+    if (existing && existing.length > 0) {
+      await supabase.from('staff').update(targetMember).eq('id', targetMember.id);
+    } else {
+      await supabase.from('staff').insert(targetMember);
+    }
+  } catch (e) {
+    console.warn('Supabase save staff note, stored in local cache', e);
+  }
+
+  const idx = currentList.findIndex(s => String(s.id) === String(targetMember.id));
+  let updatedList: StaffMember[];
+  if (idx >= 0) {
+    updatedList = [...currentList];
+    updatedList[idx] = targetMember;
+  } else {
+    updatedList = [...currentList, targetMember];
+  }
+  updatedList.sort((a, b) => (a.order || 0) - (b.order || 0));
+  setLocalItem('staff_list', updatedList);
+
+  return { success: true, data: targetMember };
+}
+
+export async function deleteStaff(id: string | number): Promise<{ success: boolean }> {
+  try {
+    await supabase.from('staff').delete().eq('id', id);
+  } catch (e) {
+    console.warn('Supabase delete staff note', e);
+  }
+
+  const currentList = getLocalItem<StaffMember[]>('staff_list', DEFAULT_STAFF);
+  const filtered = currentList.filter(s => String(s.id) !== String(id));
+  setLocalItem('staff_list', filtered);
+  return { success: true };
+}
+
+// =============================================================
+// 8. TIMELINE / HISTOIRE DU CLUB SERVICE
+// =============================================================
+export async function fetchTimeline(): Promise<TimelineItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from('timeline')
+      .select('*')
+      .order('order', { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      setLocalItem('timeline_list', data);
+      return data;
+    }
+  } catch (err) {
+    console.warn('Supabase timeline fetch note, using local fallback', err);
+  }
+
+  return getLocalItem('timeline_list', DEFAULT_TIMELINE);
+}
+
+export async function saveTimeline(item: TimelineItem): Promise<{ success: boolean; data?: TimelineItem }> {
+  const currentList = getLocalItem<TimelineItem[]>('timeline_list', DEFAULT_TIMELINE);
+  const targetItem: TimelineItem = {
+    ...item,
+    id: item.id || `era-${Date.now()}`,
+    order: Number(item.order) || (currentList.length + 1)
+  };
+
+  try {
+    const { data: existing } = await supabase.from('timeline').select('id').eq('id', targetItem.id);
+    if (existing && existing.length > 0) {
+      await supabase.from('timeline').update(targetItem).eq('id', targetItem.id);
+    } else {
+      await supabase.from('timeline').insert(targetItem);
+    }
+  } catch (e) {
+    console.warn('Supabase save timeline note, stored in local cache', e);
+  }
+
+  const idx = currentList.findIndex(t => String(t.id) === String(targetItem.id));
+  let updatedList: TimelineItem[];
+  if (idx >= 0) {
+    updatedList = [...currentList];
+    updatedList[idx] = targetItem;
+  } else {
+    updatedList = [...currentList, targetItem];
+  }
+  updatedList.sort((a, b) => (a.order || 0) - (b.order || 0));
+  setLocalItem('timeline_list', updatedList);
+
+  return { success: true, data: targetItem };
+}
+
+export async function deleteTimeline(id: string | number): Promise<{ success: boolean }> {
+  try {
+    await supabase.from('timeline').delete().eq('id', id);
+  } catch (e) {
+    console.warn('Supabase delete timeline note', e);
+  }
+
+  const currentList = getLocalItem<TimelineItem[]>('timeline_list', DEFAULT_TIMELINE);
+  const filtered = currentList.filter(t => String(t.id) !== String(id));
+  setLocalItem('timeline_list', filtered);
+  return { success: true };
+}
+
+// =============================================================
+// 9. SITE CONTENT / TEXTS SERVICE (Slogan, Textes officiels)
+// =============================================================
+export async function fetchSiteContent(): Promise<SiteContent> {
+  try {
+    const { data, error } = await supabase
+      .from('site_content')
+      .select('*')
+      .limit(1);
+
+    if (!error && data && data.length > 0) {
+      setLocalItem('site_content', data[0]);
+      return data[0];
+    }
+  } catch (err) {
+    console.warn('Supabase site content fetch note, using local fallback', err);
+  }
+
+  return getLocalItem('site_content', DEFAULT_SITE_CONTENT);
+}
+
+export async function saveSiteContent(content: SiteContent): Promise<{ success: boolean; data?: SiteContent }> {
+  setLocalItem('site_content', content);
+
+  try {
+    const { data: existing } = await supabase.from('site_content').select('id').limit(1);
+    if (existing && existing.length > 0) {
+      await supabase.from('site_content').update(content).eq('id', existing[0].id);
+    } else {
+      await supabase.from('site_content').insert(content);
+    }
+  } catch (e) {
+    console.warn('Supabase save site content note, stored in local cache', e);
+  }
+
+  return { success: true, data: content };
+}
+
+// =============================================================
+// 10. DELETED PLAYERS TRACKING & PLAYERS CRUD
+// =============================================================
+export function getDeletedPlayerIds(): string[] {
+  return getLocalItem<string[]>('deleted_player_ids', []);
+}
+
+export function markPlayerDeleted(id: string): void {
+  const current = getDeletedPlayerIds();
+  if (!current.includes(id)) {
+    setLocalItem('deleted_player_ids', [...current, id]);
+  }
+}
+
+export function unmarkPlayerDeleted(id: string): void {
+  const current = getDeletedPlayerIds();
+  setLocalItem('deleted_player_ids', current.filter(x => x !== id));
+}
+
+export async function fetchMergedPlayers(): Promise<Record<string, any>> {
+  const deletedIds = new Set(getDeletedPlayerIds());
+  const merged: Record<string, any> = {};
+
+  // 1. Initial base from playersDB
+  for (const [id, player] of Object.entries(playersDB)) {
+    if (!deletedIds.has(String(id))) {
+      merged[id] = { ...player };
+    }
+  }
+
+  // 2. Fetch from Supabase
+  try {
+    const { data } = await supabase.from('players').select('*');
+    if (data && data.length > 0) {
+      data.forEach((player: any) => {
+        const strId = String(player.id);
+        if (!deletedIds.has(strId)) {
+          merged[strId] = {
+            ...(merged[strId] || {}),
+            ...player,
+            categories: merged[strId]?.categories || (player.category ? [player.category] : ['U17'])
+          };
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('Supabase fetch players fallback to local', err);
+  }
+
+  // 3. Merge custom local cache
+  const localCache = getLocalItem<Record<string, any>>('players_custom', {});
+  for (const [id, player] of Object.entries(localCache)) {
+    const strId = String(id);
+    if (!deletedIds.has(strId)) {
+      merged[strId] = {
+        ...(merged[strId] || {}),
+        ...player
+      };
+    }
+  }
+
+  return merged;
+}
+
+export async function savePlayerRecord(player: PlayerData): Promise<{ success: boolean; error?: string }> {
+  const strId = String(player.id);
+  unmarkPlayerDeleted(strId);
+
+  // Update local cache
+  const localCache = getLocalItem<Record<string, any>>('players_custom', {});
+  localCache[strId] = {
+    ...player,
+    categories: player.categories || [player.category || 'U17']
+  };
+  setLocalItem('players_custom', localCache);
+
+  try {
+    const { data: existing } = await supabase.from('players').select('id').eq('id', strId);
     let res;
     if (existing && existing.length > 0) {
-      res = await supabase.from('players').update(player).eq('id', player.id);
+      res = await supabase.from('players').update(player).eq('id', strId);
     } else {
       res = await supabase.from('players').insert(player);
     }
 
-    if (res.error) {
-      return { success: false, error: res.error.message };
+    if (res?.error) {
+      console.warn('Supabase save player note:', res.error.message);
+      return { success: true };
     }
     return { success: true };
   } catch (e: any) {
-    return { success: false, error: e.message };
+    return { success: true };
   }
 }
 
 export async function deletePlayerRecord(id: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    const { error } = await supabase.from('players').delete().eq('id', id);
-    if (error) {
-      return { success: false, error: error.message };
-    }
-    return { success: true };
-  } catch (e: any) {
-    return { success: false, error: e.message };
+  const strId = String(id);
+  markPlayerDeleted(strId);
+
+  const localCache = getLocalItem<Record<string, any>>('players_custom', {});
+  if (localCache[strId]) {
+    delete localCache[strId];
+    setLocalItem('players_custom', localCache);
   }
+
+  try {
+    const { error } = await supabase.from('players').delete().eq('id', strId);
+    if (error) {
+      console.warn('Supabase delete player note:', error.message);
+    }
+  } catch (e: any) {
+    console.warn('Supabase delete player fallback note', e);
+  }
+
+  return { success: true };
+}
+
+export async function transferPlayerCategory(
+  id: string,
+  newCategory: string,
+  existingPlayer?: any
+): Promise<{ success: boolean }> {
+  const strId = String(id);
+  const player = existingPlayer || (await fetchMergedPlayers())[strId] || { id: strId };
+
+  const updated: PlayerData = {
+    ...player,
+    id: strId,
+    category: newCategory,
+    categories: [newCategory]
+  };
+
+  return await savePlayerRecord(updated);
 }

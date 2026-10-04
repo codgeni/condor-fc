@@ -6,7 +6,8 @@ import {
   Settings, Users, Calendar, BookOpen, Image, 
   Trash2, Plus, Edit2, CheckCircle, LogOut, Award, Upload,
   Tv, ShoppingBag, Trophy, CheckSquare, Square, Eye, EyeOff,
-  Radio, Shield, Clock, MapPin, Save, X, Menu
+  Radio, Shield, Clock, MapPin, Save, X, Menu,
+  UserCheck, History, Type, ArrowRightLeft
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
@@ -16,9 +17,24 @@ import {
   fetchVideos, saveVideo, deleteVideo, VideoItem, parseVideoUrl,
   fetchStages, saveStage, deleteStage, StageSession,
   fetchProducts, saveProduct, deleteProduct, ShopProduct,
-  savePlayerRecord, deletePlayerRecord
+  savePlayerRecord, deletePlayerRecord,
+  fetchUnits, UnitItem,
+  fetchRoles, RoleItem,
+  fetchStaff, StaffMember,
+  fetchTimeline, TimelineItem,
+  fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
+  fetchMergedPlayers
 } from '@/lib/dataService';
 import { validateUploadFile, sanitizeFormRecord } from '@/lib/security';
+
+import UnitsManager from '@/components/admin/UnitsManager';
+import RolesManager from '@/components/admin/RolesManager';
+import StaffManager from '@/components/admin/StaffManager';
+import TimelineManager from '@/components/admin/TimelineManager';
+import SiteTextsManager from '@/components/admin/SiteTextsManager';
+import PlayersManager from '@/components/admin/PlayersManager';
+import ShopManager from '@/components/admin/ShopManager';
+import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 
 const convertToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -58,6 +74,7 @@ const translateAuthError = (message: string): string => {
 };
 
 export default function AdminPanel() {
+  const { showConfirmed, askConfirm } = useConfirmPoster();
   const [activeTab, setActiveTab] = useState('matches');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -106,9 +123,15 @@ export default function AdminPanel() {
   const [selectedInscription, setSelectedInscription] = useState<any>(null);
   const [supporters, setSupporters] = useState<any[]>([]);
 
+  // 8. Units, Roles, Staff, Timeline, Site Content States
+  const [units, setUnits] = useState<UnitItem[]>([]);
+  const [roles, setRoles] = useState<RoleItem[]>([]);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+
   const showToast = (msg: string) => {
-    setMessage(msg);
-    setTimeout(() => setMessage(''), 4000);
+    showConfirmed(msg);
   };
 
   // Load all data
@@ -142,20 +165,26 @@ export default function AdminPanel() {
     const { data: newsData } = await supabase.from('news').select('*').order('created_at', { ascending: false });
     if (newsData) setNewsList(newsData);
 
-    // 6. Fetch Players
-    const { data: playersData } = await supabase.from('players').select('*');
-    const mergedPlayers: Record<string, any> = { ...playersDB };
-    if (playersData && playersData.length > 0) {
-      playersData.forEach((player: any) => {
-        mergedPlayers[player.id] = {
-          ...(mergedPlayers[player.id] || {}),
-          ...player
-        };
-      });
-    }
-    setPlayers(mergedPlayers);
+    // 6. Fetch Players (Merged with Supabase & local cache, excluding deleted players)
+    const mergedPlayers = await fetchMergedPlayers();
+    if (mergedPlayers) setPlayers(mergedPlayers);
 
-    // 7. Fetch Inscriptions & Supporters
+    // 7. Fetch Units, Roles, Staff, Timeline, Site Content
+    const [unitsData, rolesData, staffData, timelineData, siteContentData] = await Promise.all([
+      fetchUnits(),
+      fetchRoles(),
+      fetchStaff(),
+      fetchTimeline(),
+      fetchSiteContent()
+    ]);
+
+    if (unitsData) setUnits(unitsData);
+    if (rolesData) setRoles(rolesData);
+    if (staffData) setStaff(staffData);
+    if (timelineData) setTimeline(timelineData);
+    if (siteContentData) setSiteContent(siteContentData);
+
+    // 8. Fetch Inscriptions & Supporters
     const { data: inscriptionsData } = await supabase.from('inscriptions').select('*').order('created_at', { ascending: false });
     if (inscriptionsData) setInscriptions(inscriptionsData);
 
@@ -252,11 +281,17 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDeleteVideo = async (id: number | string) => {
-    if (!confirm('Voulez-vous vraiment supprimer cette vidéo ?')) return;
-    await deleteVideo(id);
-    showToast('Vidéo supprimée avec succès.');
-    fetchData();
+  const handleDeleteVideo = (id: number | string) => {
+    askConfirm({
+      title: 'SUPPRIMER LA VIDÉO',
+      message: 'Voulez-vous vraiment supprimer cette vidéo de Condor TV ?',
+      confirmLabel: 'OUI, SUPPRIMER',
+      onConfirm: async () => {
+        await deleteVideo(id);
+        showToast('Vidéo supprimée avec succès.');
+        fetchData();
+      }
+    });
   };
 
   // -------------------------------------------------------------
@@ -279,25 +314,43 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDeleteStage = async (id: number | string) => {
-    if (!confirm('Voulez-vous vraiment supprimer cette session de stage ?')) return;
-    await deleteStage(id);
-    showToast('Session de stage supprimée avec succès.');
-    fetchData();
+  const handleDeleteStage = (id: number | string) => {
+    askConfirm({
+      title: 'SUPPRIMER LA SESSION',
+      message: 'Voulez-vous vraiment supprimer cette session de stage ?',
+      confirmLabel: 'OUI, SUPPRIMER',
+      onConfirm: async () => {
+        await deleteStage(id);
+        showToast('Session de stage supprimée avec succès.');
+        fetchData();
+      }
+    });
   };
 
-  const handleDeleteStageRegistration = async (id: number) => {
-    if (!confirm('Supprimer cette pré-inscription ?')) return;
-    await supabase.from('stages_inscriptions').delete().eq('id', id);
-    showToast('Pré-inscription supprimée.');
-    fetchData();
+  const handleDeleteStageRegistration = (id: number) => {
+    askConfirm({
+      title: 'SUPPRIMER LA PRÉ-INSCRIPTION',
+      message: 'Supprimer définitivement cette pré-inscription ?',
+      confirmLabel: 'OUI, SUPPRIMER',
+      onConfirm: async () => {
+        await supabase.from('stages_inscriptions').delete().eq('id', id);
+        showToast('Pré-inscription supprimée.');
+        fetchData();
+      }
+    });
   };
 
-  const handleDeleteAppointment = async (id: number) => {
-    if (!confirm('Supprimer ce rendez-vous ?')) return;
-    await supabase.from('appointments').delete().eq('id', id);
-    showToast('Rendez-vous supprimé.');
-    fetchData();
+  const handleDeleteAppointment = (id: number) => {
+    askConfirm({
+      title: 'SUPPRIMER LE RENDEZ-VOUS',
+      message: 'Supprimer ce rendez-vous administratif ?',
+      confirmLabel: 'OUI, SUPPRIMER',
+      onConfirm: async () => {
+        await supabase.from('appointments').delete().eq('id', id);
+        showToast('Rendez-vous supprimé.');
+        fetchData();
+      }
+    });
   };
 
   // -------------------------------------------------------------
@@ -358,15 +411,21 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDeleteNews = async (id: number) => {
-    if (!confirm('Supprimer cet article d\'actualité ?')) return;
-    const { error } = await supabase.from('news').delete().eq('id', id);
-    if (error) {
-      showToast('Impossible de supprimer l\'article.');
-    } else {
-      showToast('Article supprimé avec succès.');
-      fetchData();
-    }
+  const handleDeleteNews = (id: number) => {
+    askConfirm({
+      title: "SUPPRIMER L'ACTUALITÉ",
+      message: 'Voulez-vous vraiment supprimer cet article de presse ?',
+      confirmLabel: 'OUI, SUPPRIMER',
+      onConfirm: async () => {
+        const { error } = await supabase.from('news').delete().eq('id', id);
+        if (error) {
+          showToast("Impossible de supprimer l'article.");
+        } else {
+          showToast('Article supprimé avec succès.');
+          fetchData();
+        }
+      }
+    });
   };
 
   // -------------------------------------------------------------
@@ -402,27 +461,39 @@ export default function AdminPanel() {
     }
   };
 
-  const handleDeletePlayer = async (id: string, name: string) => {
-    if (!confirm(`Confirmez-vous la suppression définitive du joueur ${name} (#${id}) ?`)) return;
-    const res = await deletePlayerRecord(id);
-    if (res.success) {
-      showToast(`Joueur ${name} supprimé avec succès.`);
-      fetchData();
-    } else {
-      showToast(res.error || 'Erreur lors de la suppression.');
-    }
+  const handleDeletePlayer = (id: string, name: string) => {
+    askConfirm({
+      title: 'SUPPRIMER LE JOUEUR',
+      message: `Confirmez-vous la suppression définitive du profil de ${name} (#${id}) ?\nCette action retirera sa fiche de l'effectif.`,
+      confirmLabel: 'OUI, SUPPRIMER',
+      onConfirm: async () => {
+        const res = await deletePlayerRecord(id);
+        if (res.success) {
+          showToast(`Joueur ${name} supprimé avec succès.`);
+          fetchData();
+        } else {
+          showToast(res.error || 'Erreur lors de la suppression.');
+        }
+      }
+    });
   };
 
   // -------------------------------------------------------------
   // INSCRIPTIONS HANDLERS
   // -------------------------------------------------------------
-  const handleDeleteInscription = async (id: number) => {
-    if (!confirm('Supprimer ce dossier d\'inscription ?')) return;
-    const { error } = await supabase.from('inscriptions').delete().eq('id', id);
-    if (!error) {
-      showToast('Dossier d\'inscription supprimé.');
-      fetchData();
-    }
+  const handleDeleteInscription = (id: number) => {
+    askConfirm({
+      title: "SUPPRIMER L'INSCRIPTION",
+      message: 'Voulez-vous vraiment supprimer définitivement ce dossier d\'inscription ?',
+      confirmLabel: 'OUI, SUPPRIMER',
+      onConfirm: async () => {
+        const { error } = await supabase.from('inscriptions').delete().eq('id', id);
+        if (!error) {
+          showToast('Dossier d\'inscription supprimé.');
+          fetchData();
+        }
+      }
+    });
   };
 
   if (loading) {
@@ -438,7 +509,7 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="admin-container" style={{ flex: 1, marginTop: '80px', display: 'flex', minHeight: 'calc(100vh - 80px)', background: '#f5f7fa', color: 'var(--clr-black)', position: 'relative' }}>
+    <div className="admin-container" style={{ flex: 1, marginTop: '80px', display: 'flex', height: 'calc(100vh - 80px)', maxHeight: 'calc(100vh - 80px)', overflow: 'hidden', background: '#f5f7fa', color: 'var(--clr-black)', position: 'relative' }}>
       
       {/* Mobile Top Header */}
       <div className="admin-mobile-header">
@@ -487,7 +558,11 @@ export default function AdminPanel() {
           display: 'flex', 
           flexDirection: 'column', 
           gap: '8px', 
-          flexShrink: 0 
+          flexShrink: 0,
+          height: 'calc(100vh - 80px)',
+          maxHeight: 'calc(100vh - 80px)',
+          overflowY: 'auto',
+          overflowX: 'hidden'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', padding: '0 4px' }}>
@@ -521,11 +596,16 @@ export default function AdminPanel() {
 
         {[
           { id: 'matches', label: 'Accueil & Matchs', icon: <Trophy size={18} /> },
+          { id: 'units', label: 'Unités & Catégories', icon: <Shield size={18} /> },
+          { id: 'roles', label: 'Rôles & Postes', icon: <Award size={18} /> },
+          { id: 'players', label: 'Équipe & Joueurs', icon: <Users size={18} /> },
+          { id: 'staff', label: 'Staff & Encadrement', icon: <UserCheck size={18} /> },
+          { id: 'timeline', label: 'Palmarès & Parcours', icon: <History size={18} /> },
+          { id: 'site_texts', label: 'Textes du Site', icon: <Type size={18} /> },
           { id: 'news', label: 'Actualités', icon: <BookOpen size={18} /> },
           { id: 'tv', label: 'Condor TV (Vidéos)', icon: <Tv size={18} /> },
           { id: 'stages', label: 'Stages & RDV', icon: <Calendar size={18} /> },
           { id: 'shop', label: 'Boutique Officielle', icon: <ShoppingBag size={18} /> },
-          { id: 'players', label: 'Équipe & Joueurs', icon: <Users size={18} /> },
           { id: 'inscriptions', label: 'Inscriptions Annuelles', icon: <Award size={18} /> },
           { id: 'supporters', label: 'Supporters & Alertes', icon: <Settings size={18} /> }
         ].map(tab => (
@@ -575,13 +655,7 @@ export default function AdminPanel() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="admin-main-content" style={{ flex: 1, padding: '2.5rem 3rem', overflowY: 'auto' }}>
-        
-        {message && (
-          <div style={{ background: '#d4edda', color: '#155724', padding: '14px 20px', borderRadius: '8px', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 'bold', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-            <CheckCircle size={20} /> {message}
-          </div>
-        )}
+      <main className="admin-main-content" style={{ flex: 1, padding: '2.5rem 3rem', height: 'calc(100vh - 80px)', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
 
         {/* ==============================================================
             TAB 1: ACCUEIL & MATCHS
@@ -1257,132 +1331,11 @@ export default function AdminPanel() {
         ============================================================== */}
         {activeTab === 'shop' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-              <div>
-                <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.4rem', margin: 0 }}>Gestion de la Boutique</h2>
-                <p style={{ color: 'var(--clr-gray)', margin: '5px 0 0' }}>Ajoutez, modifiez ou supprimez les maillots et équipements officiels mis en vente.</p>
-              </div>
-              <button 
-                onClick={() => setEditingProduct({ id: `item-${Date.now()}`, title: '', category: 'match', price: 65, tag: 'NOUVEAU', img: '/shop/kit_officiel_polo_condor.png', description: '', sizes: ['S', 'M', 'L', 'XL'] })} 
-                className="btn btn-primary"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <Plus size={18} /> Ajouter un Article
-              </button>
-            </div>
-
-            {editingProduct ? (
-              <form onSubmit={handleSaveProduct} style={{ background: 'white', padding: '2rem', borderRadius: '12px', border: '1px solid #eee', marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.3rem', marginBottom: '1.5rem' }}>{editingProduct.id ? 'Éditer l\'Article' : 'Nouvel Article'}</h3>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.2rem', marginBottom: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Identifiant Référence *</label>
-                    <input 
-                      type="text" 
-                      value={editingProduct.id} 
-                      onChange={e => setEditingProduct({ ...editingProduct, id: e.target.value })} 
-                      required 
-                      style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} 
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Titre du Produit *</label>
-                    <input 
-                      type="text" 
-                      value={editingProduct.title} 
-                      onChange={e => setEditingProduct({ ...editingProduct, title: e.target.value })} 
-                      required 
-                      style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} 
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Catégorie</label>
-                    <select 
-                      value={editingProduct.category} 
-                      onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value as any })} 
-                      style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
-                    >
-                      <option value="match">Match / Tenue Officielle</option>
-                      <option value="training">Entraînement</option>
-                      <option value="accessories">Accessoires</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Prix ($ USD) *</label>
-                    <input 
-                      type="number" 
-                      value={editingProduct.price} 
-                      onChange={e => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })} 
-                      required 
-                      style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} 
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.2rem', marginBottom: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Badge / Tag</label>
-                    <input 
-                      type="text" 
-                      placeholder="Ex: DOMICILE, TOP VENTE" 
-                      value={editingProduct.tag || ''} 
-                      onChange={e => setEditingProduct({ ...editingProduct, tag: e.target.value })} 
-                      style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} 
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Photo du Produit</label>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      {editingProduct.img && (
-                        <img src={editingProduct.img} style={{ width: '50px', height: '50px', objectFit: 'contain', borderRadius: '4px', border: '1px solid #eee' }} alt="Aperçu" />
-                      )}
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const base64 = await convertToBase64(file);
-                            setEditingProduct({ ...editingProduct, img: base64 });
-                          }
-                        }} 
-                        style={{ flex: 1, padding: '8px', border: '1px solid #ddd', borderRadius: '6px' }} 
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Description</label>
-                  <textarea 
-                    value={editingProduct.description || ''} 
-                    onChange={e => setEditingProduct({ ...editingProduct, description: e.target.value })} 
-                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', minHeight: '80px' }} 
-                  />
-                </div>
-
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button type="submit" className="btn btn-primary">Enregistrer l'article</button>
-                  <button type="button" onClick={() => setEditingProduct(null)} className="btn btn-outline" style={{ color: 'black', borderColor: '#ddd' }}>Annuler</button>
-                </div>
-              </form>
-            ) : null}
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.5rem' }}>
-              {products.map(prod => (
-                <div key={prod.id} style={{ background: 'white', borderRadius: '12px', border: '1px solid #eee', padding: '1.5rem', textAlign: 'center', position: 'relative' }}>
-                  <img src={prod.img} style={{ height: '180px', width: '100%', objectFit: 'contain', marginBottom: '1rem' }} alt={prod.title} />
-                  <span style={{ background: 'var(--clr-gray-light)', padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>{prod.tag || prod.category}</span>
-                  <h4 style={{ margin: '10px 0 5px', fontSize: '1.1rem' }}>{prod.title}</h4>
-                  <div style={{ color: 'var(--clr-primary)', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '1rem' }}>{prod.formatted_price || `${prod.price}.00 $`}</div>
-                  <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-                    <button onClick={() => setEditingProduct(prod)} className="btn btn-outline" style={{ padding: '6px 14px', fontSize: '0.85rem', color: 'black', borderColor: '#ddd' }}><Edit2 size={14} /> Éditer</button>
-                    <button onClick={() => handleDeleteProduct(prod.id)} className="btn btn-outline" style={{ padding: '6px 14px', fontSize: '0.85rem', color: 'red', borderColor: '#ffcccc' }}><Trash2 size={14} /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ShopManager
+              products={products}
+              onRefresh={fetchData}
+              showToast={showToast}
+            />
           </motion.div>
         )}
 
@@ -1488,155 +1441,84 @@ export default function AdminPanel() {
         )}
 
         {/* ==============================================================
-            TAB 6: ÉQUIPE & JOUEURS (FULL CRUD)
+            TAB: UNITÉS & CATÉGORIES (FULL CRUD)
+        ============================================================== */}
+        {activeTab === 'units' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <UnitsManager 
+              units={units} 
+              players={players} 
+              onRefresh={fetchData} 
+              showToast={showToast} 
+            />
+          </motion.div>
+        )}
+
+        {/* ==============================================================
+            TAB: RÔLES, POSTES & HIÉRARCHIE (FULL CRUD)
+        ============================================================== */}
+        {activeTab === 'roles' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <RolesManager 
+              roles={roles} 
+              players={players} 
+              onRefresh={fetchData} 
+              showToast={showToast} 
+            />
+          </motion.div>
+        )}
+
+        {/* ==============================================================
+            TAB: ÉQUIPE & JOUEURS (FULL CRUD AVEC TRANSFERTS & PHOTOS)
         ============================================================== */}
         {activeTab === 'players' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-              <div>
-                <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', margin: 0 }}>Roster & Joueurs</h2>
-                <p style={{ color: 'var(--clr-gray)', margin: '5px 0 0' }}>Ajoutez de nouveaux joueurs, mettez à jour leurs statistiques ou supprimez des fiches.</p>
-              </div>
-              <button 
-                onClick={() => {
-                  setCreatingPlayer(true);
-                  setEditingPlayer({
-                    id: (Date.now() % 10000).toString(),
-                    name: '',
-                    num: 10,
-                    pos: 'Attaquant',
-                    category: 'U17',
-                    height: '1.75m',
-                    weight: '68kg',
-                    foot: 'Droit',
-                    dob: '',
-                    nationality: 'Haïtienne',
-                    pob: 'Haiti',
-                    bio: '',
-                    img: '/condor_logo_transparent.png'
-                  });
-                }} 
-                className="btn btn-primary"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <Plus size={18} /> Ajouter un Nouveau Joueur
-              </button>
-            </div>
+            <PlayersManager 
+              players={players} 
+              units={units} 
+              roles={roles} 
+              onRefresh={fetchData} 
+              showToast={showToast} 
+            />
+          </motion.div>
+        )}
 
-            {editingPlayer ? (
-              <form onSubmit={handleSavePlayer} style={{ background: 'white', padding: '2rem', borderRadius: '12px', border: '1px solid #eee', marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.3rem', marginBottom: '1.5rem' }}>{creatingPlayer ? 'Ajouter un Joueur' : `Modifier : ${editingPlayer.name}`}</h3>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px' }}>Nom complet *</label>
-                    <input type="text" value={editingPlayer.name} onChange={e => setEditingPlayer({...editingPlayer, name: e.target.value})} required style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px' }}>Numéro de maillot *</label>
-                    <input type="number" value={editingPlayer.num} onChange={e => setEditingPlayer({...editingPlayer, num: e.target.value})} required style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px' }}>Poste *</label>
-                    <input type="text" value={editingPlayer.pos} onChange={e => setEditingPlayer({...editingPlayer, pos: e.target.value})} required style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px' }}>Catégorie</label>
-                    <select value={editingPlayer.category} onChange={e => setEditingPlayer({...editingPlayer, category: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
-                      <option value="Équipe Première">Équipe Première</option>
-                      <option value="U17">U17</option>
-                      <option value="U15">U15</option>
-                      <option value="U13">U13</option>
-                      <option value="U9">U9</option>
-                    </select>
-                  </div>
-                </div>
+        {/* ==============================================================
+            TAB: STAFF & ENCADREMENT (FULL CRUD)
+        ============================================================== */}
+        {activeTab === 'staff' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <StaffManager 
+              staff={staff} 
+              onRefresh={fetchData} 
+              showToast={showToast} 
+            />
+          </motion.div>
+        )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px' }}>Date de naissance</label>
-                    <input type="text" placeholder="JJ/MM/AAAA" value={editingPlayer.dob || ''} onChange={e => setEditingPlayer({...editingPlayer, dob: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px' }}>Taille</label>
-                    <input type="text" value={editingPlayer.height || ''} onChange={e => setEditingPlayer({...editingPlayer, height: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px' }}>Poids</label>
-                    <input type="text" value={editingPlayer.weight || ''} onChange={e => setEditingPlayer({...editingPlayer, weight: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px' }}>Pied Fort</label>
-                    <input type="text" value={editingPlayer.foot || 'Droit'} onChange={e => setEditingPlayer({...editingPlayer, foot: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-                  </div>
-                </div>
+        {/* ==============================================================
+            TAB: PALMARÈS & PARCOURS HISTORIQUE (FULL CRUD)
+        ============================================================== */}
+        {activeTab === 'timeline' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <TimelineManager 
+              timeline={timeline} 
+              onRefresh={fetchData} 
+              showToast={showToast} 
+            />
+          </motion.div>
+        )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px' }}>Photo Profil (Carte du Roster)</label>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      {editingPlayer.img && <img src={editingPlayer.img} style={{ width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover' }} alt="thumb" />}
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const base64 = await convertToBase64(file);
-                            setEditingPlayer({...editingPlayer, img: base64});
-                          }
-                        }} 
-                        style={{ flex: 1, padding: '8px', border: '1px solid #ddd', borderRadius: '6px' }} 
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px' }}>Photo Célébration (Page Détail Joueur)</label>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                      {(editingPlayer.detail_img || editingPlayer.detailImg) && <img src={editingPlayer.detail_img || editingPlayer.detailImg} style={{ width: '45px', height: '45px', borderRadius: '50%', objectFit: 'cover' }} alt="thumb" />}
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const base64 = await convertToBase64(file);
-                            setEditingPlayer({...editingPlayer, detail_img: base64, detailImg: base64});
-                          }
-                        }} 
-                        style={{ flex: 1, padding: '8px', border: '1px solid #ddd', borderRadius: '6px' }} 
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px' }}>Biographie</label>
-                  <textarea value={editingPlayer.bio || ''} onChange={e => setEditingPlayer({...editingPlayer, bio: e.target.value})} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', minHeight: '80px' }} />
-                </div>
-
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button type="submit" className="btn btn-primary">Enregistrer le Joueur</button>
-                  <button type="button" onClick={() => { setEditingPlayer(null); setCreatingPlayer(false); }} className="btn btn-outline" style={{ color: 'black', borderColor: '#ddd' }}>Annuler</button>
-                </div>
-              </form>
-            ) : null}
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
-              {Object.values(players).map((player: any) => (
-                <div key={player.id} style={{ background: 'white', borderRadius: '12px', border: '1px solid #eee', padding: '1.5rem', display: 'flex', gap: '15px', alignItems: 'center' }}>
-                  <img src={player.img} style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover' }} alt={player.name} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h4 style={{ margin: 0, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{player.name}</h4>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--clr-primary)', fontWeight: 'bold' }}>#{player.num} - {player.category}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => { setEditingPlayer(player); setCreatingPlayer(false); }} style={{ background: 'none', border: 'none', color: 'blue', cursor: 'pointer' }}><Edit2 size={16} /></button>
-                    <button onClick={() => handleDeletePlayer(player.id, player.name)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer' }}><Trash2 size={16} /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* ==============================================================
+            TAB: TEXTES DU SITE & SLOGANS (FULL CRUD)
+        ============================================================== */}
+        {activeTab === 'site_texts' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <SiteTextsManager 
+              content={siteContent} 
+              onRefresh={fetchData} 
+              showToast={showToast} 
+            />
           </motion.div>
         )}
 

@@ -5,8 +5,10 @@ import { useState } from 'react';
 import { Award, Send, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { sanitizeFormRecord, checkRateLimit } from '@/lib/security';
+import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 
 export default function Contact() {
+  const { showConfirmed } = useConfirmPoster();
   const [formData, setFormData] = useState({
     // Connu par
     connuPar: '', connuAutre: '',
@@ -78,6 +80,7 @@ export default function Contact() {
     }
     
     setSubmitted(true);
+    showConfirmed("Votre dossier d'inscription annuelle a été enregistré et transmis avec succès !", "CONFIRMÉ");
     setTimeout(() => {
       setSubmitted(false);
       setFormData({

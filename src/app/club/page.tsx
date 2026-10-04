@@ -1,31 +1,30 @@
 "use client";
 
 import { motion } from 'framer-motion';
-
-const STAFF_MEMBERS = [
-  {
-    name: "Jean-Claude Valme",
-    role: "Directeur Technique",
-    img: "/condor_logo_transparent.png"
-  },
-  {
-    name: "Pierre-Richard Guerrier",
-    role: "Entraîneur Principal U17",
-    img: "/player_action_2_1780681894021.png"
-  },
-  {
-    name: "Dieudonné Lamothe",
-    role: "Préparateur Physique",
-    img: "/stadium_hero_1780681869623.png"
-  },
-  {
-    name: "Marise Lafontant",
-    role: "Secrétaire Générale",
-    img: "/club_hero.png"
-  }
-];
+import { useState, useEffect } from 'react';
+import { 
+  fetchStaff, StaffMember, DEFAULT_STAFF,
+  fetchTimeline, TimelineItem, DEFAULT_TIMELINE,
+  fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT
+} from '@/lib/dataService';
 
 export default function Club() {
+  const [staff, setStaff] = useState<StaffMember[]>(DEFAULT_STAFF);
+  const [timeline, setTimeline] = useState<TimelineItem[]>(DEFAULT_TIMELINE);
+  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+
+  useEffect(() => {
+    fetchStaff().then(data => {
+      if (data && data.length > 0) setStaff(data);
+    });
+    fetchTimeline().then(data => {
+      if (data && data.length > 0) setTimeline(data);
+    });
+    fetchSiteContent().then(data => {
+      if (data) setSiteContent(data);
+    });
+  }, []);
+
   return (
     <div style={{ flex: 1, marginTop: '80px', overflowX: 'hidden' }}>
       
@@ -41,9 +40,11 @@ export default function Club() {
         }}
       >
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }} style={{ position: 'relative', zIndex: 10 }}>
-          <img src="/condor_logo_transparent.png" style={{ width: '150px', margin: '0 auto 2rem', borderRadius: '50%' }} />
-          <h1 className="hero-title" style={{ color: 'white' }}>Plus Qu'une École, Une Famille.</h1>
-          <p style={{ fontSize: '1.5rem', color: 'var(--clr-gray)', maxWidth: '800px', margin: '0 auto', lineHeight: 1.6 }}>Depuis Mai 2023, la Condor École de Football est un symbole d'excellence, d'éducation et de passion sportive à Delmas, Haïti. Nous formons les leaders et les champions de demain.</p>
+          <img src="/condor_logo_transparent.png" alt="Condor FC" style={{ width: '150px', margin: '0 auto 2rem', borderRadius: '50%' }} />
+          <h1 className="hero-title" style={{ color: 'white' }}>{siteContent.about_title || "Plus Qu'une École, Une Famille."}</h1>
+          <p style={{ fontSize: '1.5rem', color: 'var(--clr-gray)', maxWidth: '800px', margin: '0 auto', lineHeight: 1.6 }}>
+            {siteContent.about_text || "Depuis Mai 2023, la Condor École de Football est un symbole d'excellence, d'éducation et de passion sportive à Delmas, Haïti. Nous formons les leaders et les champions de demain."}
+          </p>
         </motion.div>
       </section>
 
@@ -98,83 +99,64 @@ export default function Club() {
             
             {/* Dieu */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #eee', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', color: 'var(--clr-primary)', marginBottom: '15px', borderBottom: '2px solid var(--clr-primary)', paddingBottom: '8px' }}>Dieu</h3>
-              <p style={{ fontSize: '1.05rem', lineHeight: 1.6, color: '#444', marginBottom: '15px' }}>
-                Le véritable service est indissociable de l'amour qui est plus qu'un sentiment, mais Dieu Lui-même. Alors, quand nous servons les autres, nous servons en réalité Dieu. Pendant que nous reconnaissons et respectons Son autorité suprême, nous adorons Dieu en faisant preuve d'amour et de gentillesse les uns envers les autres. Nous motivons les enfants à honorer Dieu en tout temps et dans tous les domaines à travers :
-              </p>
-              <ul style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '1rem', color: '#555' }}>
-                <li>Leur comportement dans leur famille et dans la société.</li>
-                <li>Leur façon de parler et de travailler.</li>
-                <li>Leur aide au prochain, croyants et incroyants.</li>
-                <li>L'exprimer de leur reconnaissance à Dieu.</li>
-                <li>La manifestation d'un esprit de soumission et d'humilité.</li>
-              </ul>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '1.5rem' }}>
+                <div style={{ width: '50px', height: '50px', background: 'rgba(224, 30, 38, 0.1)', color: 'var(--clr-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>✝</div>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', margin: 0 }}>Dieu</h3>
+              </div>
+              <p style={{ color: '#555', lineHeight: 1.6 }}>Nous plaçons la foi et la reconnaissance au cœur de notre développement. L’humilité devant le Créateur forge le caractère de nos athlètes.</p>
             </motion.div>
 
             {/* Patrie */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #eee', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', color: 'var(--clr-primary)', marginBottom: '15px', borderBottom: '2px solid var(--clr-primary)', paddingBottom: '8px' }}>Patrie</h3>
-              <p style={{ fontSize: '1.05rem', lineHeight: 1.6, color: '#444', marginBottom: '15px' }}>
-                Nous enseignons aux enfants d'être non seulement de bons joueurs de football mais aussi de bons citoyens. Nous leur inculquons le sentiment de dévotion, d'attachement et d'engagement au pays. Nous les conscientisons sur la restitution et l'obligation d'allégeance, de loyauté et d'unité visés à accroître et/ou maintenir leur amour du pays.
-              </p>
-              <ul style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '1rem', color: '#555' }}>
-                <li>Nous prônons le vivre-ensemble et la recherche collective des réponses aux problématiques de la société en abordant des questions de pouvoir et de droit ainsi que les causes et effets de l'action citoyenne et politique.</li>
-                <li>À travers ces 3 valeurs fondamentales (le civisme, la civilité et la solidarité), nous promouvons la citoyenneté au sein de l'école. Cet apprentissage apporte aux élèves une sensibilisation, des connaissances et le savoir-faire nécessaires pour jouer un rôle dans la société aux niveaux local, national et international pour en faire des citoyens informés et responsables.</li>
-              </ul>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '1.5rem' }}>
+                <div style={{ width: '50px', height: '50px', background: 'rgba(224, 30, 38, 0.1)', color: 'var(--clr-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>🇭🇹</div>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', margin: 0 }}>Patrie</h3>
+              </div>
+              <p style={{ color: '#555', lineHeight: 1.6 }}>L'amour de notre pays, Haïti, et la volonté de faire briller notre nation sur l'échiquier sportif international guident notre travail quotidien.</p>
             </motion.div>
 
-            {/* Service */}
+            {/* Discipline */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #eee', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', color: 'var(--clr-primary)', marginBottom: '15px', borderBottom: '2px solid var(--clr-primary)', paddingBottom: '8px' }}>Service</h3>
-              <p style={{ fontSize: '1.05rem', lineHeight: 1.6, color: '#444', marginBottom: '15px' }}>
-                Notre motivation pour servir les autres réside dans notre compréhension du dessein de Dieu pour l'humanité. Nous expliquons aux enfants que chaque geste compte pour créer une société plus juste, plus équitable, et pour aider ceux qui en ont besoin. Nous les incitons ainsi à multiplier des petits gestes qui auront un impact positif sur l'école, l'équipe, la famille, la communauté ou l'environnement. Nous mettons l'accent sur l'esprit collectif, l'aide à l'amélioration de la zone, de l'environnement, des conditions de vies communautaires en :
-              </p>
-              <ul style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '1rem', color: '#555' }}>
-                <li>Prenant soin de soi.</li>
-                <li>Prenant soin des autres.</li>
-                <li>Prenant soin de la planète.</li>
-              </ul>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '1.5rem' }}>
+                <div style={{ width: '50px', height: '50px', background: 'rgba(224, 30, 38, 0.1)', color: 'var(--clr-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>⚡</div>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', margin: 0 }}>Discipline</h3>
+              </div>
+              <p style={{ color: '#555', lineHeight: 1.6 }}>La rigueur et l'auto-discipline sont les clés pour transformer le talent brut en excellence durable, sur le terrain comme à l'école.</p>
             </motion.div>
-
           </div>
 
-          {/* Valeurs Fondamentales supplémentaires */}
-          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', margin: '5px 0' }}>Nos Valeurs Fondamentales</h2>
-            <p style={{ color: 'var(--clr-gray)', fontSize: '1.1rem' }}>Six piliers clés qui guident la formation sportive et humaine de chaque jeune</p>
-          </div>
-
+          {/* Grille des 6 Piliers Fondamentaux */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
             {[
               {
                 title: "Courtoisie",
                 subtitle: "être respectueux et gentil",
-                desc: "Le respect est la capacité de voir et d'apprécier notre valeur et celle des autres dans un contexte de diversité sociale. Nous inculquons aux joueurs que pour vraiment réussir au football et dans la vie, ils doivent d'abord apprécier leur propre individualité, traiter toutes les personnes qui les entourent avec courtoisie, respect et empathie. Nous enseignons aux enfants à valoriser les autres tout en encourageant leurs coéquipiers et à applaudir leurs efforts même lorsque les choses vont mal. Nous encourageons les parents et les entraîneurs à être un modèle dans tout ce qu'ils font car les enfants les suivent au niveau du respect qu'ils montrent."
+                desc: "Le respect est la capacité de voir et d'apprécier notre valeur et celle des autres dans un contexte de diversité sociale."
               },
               {
                 title: "Fraternité",
                 subtitle: "être solidaire et se faire des amis",
-                desc: "Le football favorise l'amitié, aide à créer un esprit d'équipe et à comprendre le pouvoir du travail d'équipe. Pour les enfants, se faire des amis est un élément important du développement social. Notre école de football offre non seulement aux enfants la possibilité de se faire des amis, mais aussi de trouver un endroit où ils peuvent appartenir, développer l'estime de soi et créer un espace sûr pour parler de problèmes difficiles."
+                desc: "Le football favorise l'amitié, aide à créer un esprit d'équipe et à comprendre le pouvoir du travail d'équipe."
               },
               {
                 title: "Confidence",
                 subtitle: "avoir une confiance tranquille",
-                desc: "La confiance est synonyme de puissance et elle fera passer le jeu au niveau supérieur, tandis que l'arrogance fera de soi une cible. Être humble tout en ayant une confiance tranquille dans le jeu, laisser le jeu parler par sa bouche, l'action ayant plus de poids que les mots, sont les leçons que nos footballeurs acquièrent à notre école. Lorsque nous nous sentons dignes de confiance, nous pouvons nous sentir plus à l'aise pour prendre des initiatives et accepter des responsabilités."
+                desc: "La confiance est synonyme de puissance et elle fera passer le jeu au niveau supérieur, tandis que l'arrogance fera de soi une cible."
               },
               {
                 title: "Responsabilité",
                 subtitle: "s'engager à son équipe",
-                desc: "La responsabilité est importante car elle donne un sens au but en plus de renforcer la résilience face à l'adversité au niveau individuel et sociétal. Échapper à la responsabilité peut être agréable à court terme, mais entraîne une souffrance exponentiellement pire à long terme. Avec la confiance vient la responsabilité : comprendre que le comportement individuel dans les séances d'entraînement et dans les jeux influence et a un impact sur la performance et l'expérience des autres. Travailler avec et pour les autres est un aspect clé dans notre école car le succès, en particulier dans le sport d'équipe, repose sur l'entraide."
+                desc: "La responsabilité est importante car elle donne un sens au but en plus de renforcer la résilience face à l'adversité."
               },
               {
                 title: "Excellence",
                 subtitle: "dépasser les attentes",
-                desc: "L'excellence vient d'un travail acharné, de normes élevées et d'un engagement à travailler. Nous percevons l'excellence comme prendre l'enfant et le rendre meilleur sur et hors du terrain car c'est un petit effort constant, jour après jour, qui produit des résultats. Puisque l'excellence est une attitude, nous enseignons à nos joueurs à donner le meilleur d'eux-mêmes à chaque entraînement."
+                desc: "L'excellence vient d'un travail acharné, de normes élevées et d'un engagement continu dans chaque entraînement."
               },
               {
                 title: "Plaisir",
                 subtitle: "s'amuser avec passion",
-                desc: "Le football est une activité amusante qui aide les enfants à rester actifs et en santé, et qui contribue au développement musculaire. Le plaisir est toujours au top des raisons pour lesquelles les enfants pratiquent le football. Certes, les footballeurs doivent s'entraîner dur pour atteindre un niveau d'élite, mais si tout n'est que travail et pas de jeu, ils ne continueront pas de jouer car le succès est déterminé par le propre désir du joueur de réussir et son amour pour l'activité. Les enfants restent toujours des enfants."
+                desc: "Le plaisir est toujours au top des raisons pour lesquelles les enfants pratiquent le football."
               }
             ].map((val, idx) => (
               <motion.div 
@@ -194,31 +176,24 @@ export default function Club() {
         </div>
       </section>
 
-      {/* 2. Timeline Historique */}
+      {/* 2. Timeline Historique Dynamique */}
       <section className="section-padding bg-gray">
         <div className="container">
           <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', marginBottom: '3rem', textAlign: 'center' }}>Notre Parcours & Palmarès</h2>
           <div style={{ position: 'relative', borderLeft: '4px solid var(--clr-primary)', marginLeft: '20px', paddingLeft: '40px', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-            {[
-              { y: 'Mai 2023', t: 'La Fondation', d: 'Lancement officiel de Condor École de Football à Delmas 77. L\'école est créée pour offrir un encadrement sportif et éducatif structuré aux jeunes de la communauté.' },
-              { y: 'Mai 2025', t: 'Vice-Champion U13 - Flag Day 12e édition', d: 'Première distinction majeure pour l\'école, démontrant la qualité de la formation dès les plus jeunes catégories.' },
-              { y: 'Septembre 2025', t: 'Champion U17 - Tournoi Back To School', d: 'Consécration pour nos aînés U17 qui remportent le titre avec un parcours sans faute.' },
-              { y: 'Décembre 2025', t: 'Champion U15 - Tournoi Copa Undecima', d: 'Les U15 s\'imposent lors de ce prestigieux tournoi de fin d\'année, confirmant la montée en puissance de l\'académie.' },
-              { y: 'Avril 2026', t: 'Triplé Historique - Tournoi Chale Chale 7e édition', d: 'Une performance historique inégalée : Condor est sacré Champion simultanément dans les catégories U11, U15 et U16.' },
-              { y: 'Mai 2026', t: 'Vice-Champion U15 - Flag Day 13e édition', d: 'Les U15 continuent de briller au plus haut niveau en atteignant à nouveau la finale de ce tournoi majeur.' }
-            ].map((era, i) => (
-              <motion.div key={i} initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} style={{ position: 'relative' }}>
+            {[...timeline].sort((a, b) => (a.order || 0) - (b.order || 0)).map((era, i) => (
+              <motion.div key={era.id || i} initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} style={{ position: 'relative' }}>
                 <div style={{ position: 'absolute', left: '-50px', top: 0, width: '16px', height: '16px', background: 'var(--clr-primary)', borderRadius: '50%', border: '4px solid white' }}></div>
-                <h3 style={{ fontSize: '2rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-primary)', margin: 0 }}>{era.y}</h3>
-                <h4 style={{ fontSize: '1.5rem', margin: '5px 0' }}>{era.t}</h4>
-                <p style={{ color: 'var(--clr-black-light)', fontSize: '1.1rem', maxWidth: '600px' }}>{era.d}</p>
+                <h3 style={{ fontSize: '2rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-primary)', margin: 0 }}>{era.year}</h3>
+                <h4 style={{ fontSize: '1.5rem', margin: '5px 0' }}>{era.title}</h4>
+                <p style={{ color: 'var(--clr-black-light)', fontSize: '1.1rem', maxWidth: '600px' }}>{era.description}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 3. Section Staff */}
+      {/* 3. Section Staff Dynamique */}
       <section className="section-padding" style={{ background: 'var(--clr-white)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
@@ -228,9 +203,9 @@ export default function Club() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2.5rem' }}>
-            {STAFF_MEMBERS.map((member, i) => (
+            {[...staff].sort((a, b) => (a.order || 0) - (b.order || 0)).map((member, i) => (
               <motion.div
-                key={i}
+                key={member.id || i}
                 style={{
                   background: 'white',
                   borderRadius: '12px',
@@ -247,7 +222,7 @@ export default function Club() {
                 whileHover={{ y: -5, boxShadow: '0 12px 30px rgba(0,0,0,0.08)' }}
               >
                 <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', margin: '0 auto 1.5rem', border: '3px solid var(--clr-primary)' }}>
-                  <img src={member.img} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={member.img || '/condor_logo_transparent.png'} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <h3 style={{ fontSize: '1.4rem', margin: '0 0 5px', color: 'var(--clr-black)', fontFamily: 'var(--font-body)', fontWeight: 'bold' }}>{member.name}</h3>
                 <span style={{ color: 'var(--clr-primary)', fontSize: '1rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>{member.role}</span>

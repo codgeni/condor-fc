@@ -3,36 +3,52 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { playersDB } from '@/lib/playersDB';
-import { supabase } from '@/lib/supabaseClient';
+import { 
+  fetchUnits, UnitItem, DEFAULT_UNITS,
+  fetchRoles, RoleItem, DEFAULT_ROLES, matchPlayerToRole,
+  fetchMergedPlayers
+} from '@/lib/dataService';
 
 export default function Teams() {
+  const [units, setUnits] = useState<UnitItem[]>(DEFAULT_UNITS);
+  const [roles, setRoles] = useState<RoleItem[]>(DEFAULT_ROLES);
   const [selectedCategory, setSelectedCategory] = useState('U17');
-  const [db, setDb] = useState<Record<string, any>>(playersDB);
+  const [db, setDb] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPlayers = async () => {
+    const loadData = async () => {
       try {
-        const { data } = await supabase.from('players').select('*');
-        if (data && data.length > 0) {
-          const merged: Record<string, any> = { ...playersDB };
-          data.forEach((player: any) => {
-            merged[player.id] = {
-              ...(merged[player.id] || {}),
-              ...player,
-              categories: merged[player.id]?.categories || (player.category ? [player.category] : ['U17'])
-            };
-          });
-          setDb(merged);
-        } else {
-          setDb(playersDB);
+        const [loadedUnits, loadedRoles, loadedPlayers] = await Promise.all([
+          fetchUnits(),
+          fetchRoles(),
+          fetchMergedPlayers()
+        ]);
+
+        if (loadedUnits && loadedUnits.length > 0) {
+          setUnits(loadedUnits);
+          // Set initial category if not selected or if previous selection not in list
+          if (!loadedUnits.some(u => u.name === selectedCategory)) {
+            const firstActive = loadedUnits.find(u => u.is_active !== false) || loadedUnits[0];
+            if (firstActive) setSelectedCategory(firstActive.name);
+          }
+        }
+
+        if (loadedRoles && loadedRoles.length > 0) {
+          setRoles(loadedRoles);
+        }
+
+        if (loadedPlayers) {
+          setDb(loadedPlayers);
         }
       } catch (err) {
-        console.warn("Supabase fetch failed, falling back to local DB", err);
-        setDb(playersDB);
+        console.warn("Failed to load teams data", err);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchPlayers();
+
+    loadData();
   }, []);
   
   const roster = Object.values(db).filter(p => {
@@ -45,14 +61,22 @@ export default function Teams() {
     return p.category === selectedCategory;
   });
 
-  // Classify players based on French translations in playersDB.ts
-  const goalkeepers = roster.filter(p => p.pos?.includes('Gardien'));
-  const defenders = roster.filter(p => !goalkeepers.includes(p) && (p.pos?.includes('Défenseur') || p.pos?.includes('Arrière') || p.pos?.includes('Défenseure')));
-  const midfielders = roster.filter(p => !goalkeepers.includes(p) && !defenders.includes(p) && p.pos?.includes('Milieu'));
-  const forwards = roster.filter(p => !goalkeepers.includes(p) && !defenders.includes(p) && !midfielders.includes(p) && (p.pos?.includes('Ailier') || p.pos?.includes('Avant') || p.pos?.includes('Attaquant') || p.pos?.includes('Attaquante')));
-  const unassigned = roster.filter(p => !goalkeepers.includes(p) && !defenders.includes(p) && !midfielders.includes(p) && !forwards.includes(p));
+  // Group players by configured roles in order (Rank 1: Gardiens de but on top!)
+  const sortedRoles = [...roles].sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  const categories = ['Équipe Première', 'U17', 'U15', 'U13', 'U9'];
+  const sectionsWithPlayers = sortedRoles.map(role => {
+    const matched = roster.filter(p => matchPlayerToRole(p, sortedRoles).id === role.id);
+    return {
+      role,
+      players: matched
+    };
+  });
+
+  // Check if any player didn't match any section
+  const matchedPlayerIds = new Set(
+    sectionsWithPlayers.flatMap(s => s.players.map(p => p.id))
+  );
+  const unassigned = roster.filter(p => !matchedPlayerIds.has(p.id));
 
   const renderSection = (title: string, players: typeof roster) => {
     if (players.length === 0) return null;
@@ -98,7 +122,7 @@ export default function Teams() {
                   <span className="player-number">{player.num}</span>
                   <div className="player-info">
                     <h3 className="player-name">{player.name}</h3>
-                    <span className="player-position">{player.pos}</span>
+                    <span className="player-position">{player.pos || player.role || 'Joueur'}</span>
                   </div>
                 </motion.div>
               </Link>
@@ -128,12 +152,12 @@ export default function Teams() {
           <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '5rem', textTransform: 'uppercase', margin: '15px 0', textShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>Les Joueurs</h1>
           <p style={{ fontSize: '1.3rem', color: '#ccc', maxWidth: '700px', margin: '0 auto 2rem' }}>Rencontrez les talents représentant le Condor FC. Une équipe forgée dans la passion, prête à conquérir le monde.</p>
           
-          {/* Menu de sélection des catégories */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', marginTop: '2rem' }}>
-            {categories.map(cat => (
+          {/* Menu dynamique de sélection des unités/catégories */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.8rem', flexWrap: 'wrap', marginTop: '2rem' }}>
+            {units.filter(u => u.is_active !== false).map(unit => (
               <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
+                key={unit.id}
+                onClick={() => setSelectedCategory(unit.name)}
                 style={{
                   padding: '12px 24px',
                   fontFamily: 'var(--font-heading)',
@@ -141,15 +165,15 @@ export default function Teams() {
                   fontWeight: 'bold',
                   textTransform: 'uppercase',
                   border: '2px solid',
-                  borderColor: selectedCategory === cat ? 'var(--clr-primary)' : 'rgba(255,255,255,0.3)',
-                  background: selectedCategory === cat ? 'var(--clr-primary)' : 'transparent',
+                  borderColor: selectedCategory === unit.name ? 'var(--clr-primary)' : 'rgba(255,255,255,0.3)',
+                  background: selectedCategory === unit.name ? 'var(--clr-primary)' : 'transparent',
                   color: 'white',
                   borderRadius: '4px',
                   cursor: 'pointer',
                   transition: 'all 0.3s'
                 }}
               >
-                {cat}
+                {unit.name}
               </button>
             ))}
           </div>
@@ -159,22 +183,28 @@ export default function Teams() {
       {/* Roster Sections */}
       <section className="section-padding" style={{ minHeight: '400px' }}>
         <div className="container">
-          {roster.length === 0 ? (
+          {loading ? (
             <div style={{ textAlign: 'center', padding: '5rem 0', color: 'var(--clr-gray)' }}>
-              <h3 style={{ fontSize: '1.6rem', color: 'var(--clr-black)', marginBottom: '0.8rem' }}>Aucun joueur enregistré dans cette catégorie pour le moment.</h3>
+              <h3>Chargement de l'effectif...</h3>
+            </div>
+          ) : roster.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '5rem 0', color: 'var(--clr-gray)' }}>
+              <h3 style={{ fontSize: '1.6rem', color: 'var(--clr-black)', marginBottom: '0.8rem' }}>
+                Aucun joueur enregistré dans l'unité "{selectedCategory}" pour le moment.
+              </h3>
               <p style={{ color: 'var(--clr-gray)', fontSize: '1rem', maxWidth: '500px', margin: '0 auto' }}>
-                {selectedCategory === 'Équipe Première' 
-                  ? "L'effectif officiel de l'Équipe Première est en cours de finalisation et sera disponible très prochainement."
-                  : "Les fiches officielles de cette catégorie seront publiées prochainement."}
+                Les fiches officielles de cette catégorie seront publiées très prochainement ou peuvent être ajoutées par l'administrateur.
               </p>
             </div>
           ) : (
             <>
-              {renderSection("Gardiens de but", goalkeepers)}
-              {renderSection("Défenseurs", defenders)}
-              {renderSection("Milieux de terrain", midfielders)}
-              {renderSection("Attaquants", forwards)}
-              {renderSection(selectedCategory === 'U9' ? "Effectif & Jeunes Talents" : "Joueurs", unassigned)}
+              {/* Dynamic sections ordered by role order (Gardiens de but on top!) */}
+              {sectionsWithPlayers.map(section => (
+                <div key={section.role.id}>
+                  {renderSection(section.role.name, section.players)}
+                </div>
+              ))}
+              {unassigned.length > 0 && renderSection("Autres Joueurs", unassigned)}
             </>
           )}
         </div>

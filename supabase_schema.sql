@@ -491,3 +491,90 @@ END $$;
 
 
 
+
+
+-- =============================================================
+-- NOUVELLES TABLES CRUD : UNITES, ROLES, STAFF, TIMELINE, SITE_CONTENT
+-- =============================================================
+
+CREATE TABLE IF NOT EXISTS units (
+  id TEXT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  "order" INT DEFAULT 1,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+INSERT INTO units (id, name, description, "order", is_active) VALUES
+('unit-1', 'Équipe Première', 'Effectif Senior & Élite', 1, TRUE),
+('unit-2', 'U17', 'Moins de 17 ans (Cadets)', 2, TRUE),
+('unit-3', 'U15', 'Moins de 15 ans (Minimes)', 3, TRUE),
+('unit-4', 'U13', 'Moins de 13 ans (Benjamins)', 4, TRUE),
+('unit-5', 'U9', 'Moins de 9 ans (Poussins / École)', 5, TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS roles (
+  id TEXT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  keywords TEXT,
+  "order" INT DEFAULT 1,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+INSERT INTO roles (id, name, keywords, "order") VALUES
+('role-1', 'Gardiens de but', 'Gardien, Goal, GK, Portier', 1),
+('role-2', 'Défenseurs', 'Défenseur, Arrière, Latéral, Défenseure, Stoppeur, Lateral', 2),
+('role-3', 'Milieux de terrain', 'Milieu, MDF, Relayeur, Meneur, Central, Milieue', 3),
+('role-4', 'Attaquants', 'Attaquant, Ailier, Avant, Pointe, Buteur, Attaquante', 4),
+('role-5', 'Effectif & Autres', 'N/A, Polyvalent, Joueur, Talent', 5)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS staff (
+  id TEXT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  role VARCHAR(255) NOT NULL,
+  img TEXT NOT NULL,
+  "order" INT DEFAULT 1,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+INSERT INTO staff (id, name, role, img, "order") VALUES
+('staff-1', 'Jean-Claude Valme', 'Directeur Technique', '/condor_logo_transparent.png', 1),
+('staff-2', 'Pierre-Richard Guerrier', 'Entraîneur Principal U17', '/player_action_2_1780681894021.png', 2),
+('staff-3', 'Dieudonné Lamothe', 'Préparateur Physique', '/stadium_hero_1780681869623.png', 3),
+('staff-4', 'Marise Lafontant', 'Secrétaire Générale', '/club_hero.png', 4)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS timeline (
+  id TEXT PRIMARY KEY,
+  year VARCHAR(100) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  "order" INT DEFAULT 1,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+INSERT INTO timeline (id, year, title, description, "order") VALUES
+('era-1', 'Mai 2023', 'La Fondation', 'Lancement officiel de Condor École de Football à Delmas 77. L''école est créée pour offrir un encadrement sportif et éducatif structuré aux jeunes de la communauté.', 1),
+('era-2', 'Mai 2025', 'Vice-Champion U13 - Flag Day 12e édition', 'Première distinction majeure pour l''école, démontrant la qualité de la formation dès les plus jeunes catégories.', 2),
+('era-3', 'Septembre 2025', 'Champion U17 - Tournoi Back To School', 'Consécration pour nos aînés U17 qui remportent le titre avec un parcours sans faute.', 3),
+('era-4', 'Décembre 2025', 'Champion U15 - Tournoi Copa Undecima', 'Les U15 s''imposent lors de ce prestigieux tournoi de fin d''année, confirmant la montée en puissance de l''académie.', 4),
+('era-5', 'Avril 2026', 'Triplé Historique - Tournoi Chale Chale 7e édition', 'Une performance historique inégalée : Condor est sacré Champion simultanément dans les catégories U11, U15 et U16.', 5),
+('era-6', 'Mai 2026', 'Vice-Champion U15 - Flag Day 13e édition', 'Les U15 continuent de briller au plus haut niveau en atteignant à nouveau la finale de ce tournoi majeur.', 6)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS site_content (
+  id TEXT PRIMARY KEY DEFAULT 'main',
+  hero_tag TEXT,
+  hero_title TEXT,
+  hero_slogan TEXT,
+  no_match_text TEXT,
+  about_title TEXT,
+  about_text TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+INSERT INTO site_content (id, hero_tag, hero_title, hero_slogan, no_match_text, about_title, about_text) VALUES
+('main', 'CHAQUE ENFANT EST UNIQUE', 'Condor École de Football', '"Plus fort, plus haut dans le score !"', 'Nos équipes sont actuellement en période d''entraînement intensif et de préparation technique. Suivez nos actualités pour être tenus informés des prochaines rencontres officielles !', 'Plus Qu''une École, Une Famille.', 'Depuis Mai 2023, la Condor École de Football est un symbole d''excellence, d''éducation et de passion sportive à Delmas, Haïti. Nous formons les leaders et les champions de demain.')
+ON CONFLICT (id) DO NOTHING;

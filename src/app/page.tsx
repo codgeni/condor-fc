@@ -6,7 +6,11 @@ import HeroSlider from '@/components/HeroSlider';
 import { Play, ArrowRight, Calendar, MapPin, ShoppingBag, Landmark, Heart, Trophy, Tv, ChevronLeft, ChevronRight, Award, Star, Activity } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { playersDB } from '@/lib/playersDB';
-import { fetchCurrentMatch, MatchConfig, fetchVideos, VideoItem } from '@/lib/dataService';
+import { 
+  fetchCurrentMatch, MatchConfig, fetchVideos, VideoItem,
+  fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
+  fetchMergedPlayers
+} from '@/lib/dataService';
 import { supabase } from '@/lib/supabaseClient';
 import { 
   ChaleChaleTripleCup, 
@@ -35,6 +39,7 @@ function renderTrophy(id: string, size = 155, withReflection = false) {
 
 export default function Home() {
   const [activeTrophyIndex, setActiveTrophyIndex] = useState(0);
+  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [matchConfig, setMatchConfig] = useState<MatchConfig>({
     opponent: '',
     home_team: 'Condor FC',
@@ -50,10 +55,19 @@ export default function Home() {
   const [latestNews, setLatestNews] = useState<any[]>([]);
   const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number; s: number } | null>(null);
   const [playerIndex, setPlayerIndex] = useState(0);
+  const [allPlayers, setAllPlayers] = useState<Record<string, any>>(playersDB);
 
-  const spotlightPlayers = Object.values(playersDB).filter(p => p.detailImg || (p.img && !p.img.includes('condor_logo')));
+  const spotlightPlayers = Object.values(allPlayers).filter(p => p.detailImg || (p.img && !p.img.includes('condor_logo')));
 
   useEffect(() => {
+    // 0. Fetch site content & players
+    fetchSiteContent().then(sc => {
+      if (sc) setSiteContent(sc);
+    });
+    fetchMergedPlayers().then(pls => {
+      if (pls && Object.keys(pls).length > 0) setAllPlayers(pls);
+    });
+
     // 1. Fetch current match configuration
     fetchCurrentMatch().then(data => {
       if (data) {
@@ -116,10 +130,14 @@ export default function Home() {
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.85) 100%)', zIndex: 2 }} />
         <div className="container" style={{ position: 'relative', zIndex: 10, textAlign: 'center' }}>
           <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 1, delay: 0.5 }}>
-            <span style={{ color: 'var(--clr-primary)', letterSpacing: '5px', textTransform: 'uppercase', fontWeight: 'bold' }}>CHAQUE ENFANT EST UNIQUE</span>
-            <h1 className="hero-title" style={{ color: 'white', margin: '15px 0', textShadow: '0 10px 30px rgba(0,0,0,0.9)', fontSize: '4.5rem' }}>Condor École de Football</h1>
+            <span style={{ color: 'var(--clr-primary)', letterSpacing: '5px', textTransform: 'uppercase', fontWeight: 'bold' }}>
+              {siteContent.hero_tag || 'CHAQUE ENFANT EST UNIQUE'}
+            </span>
+            <h1 className="hero-title" style={{ color: 'white', margin: '15px 0', textShadow: '0 10px 30px rgba(0,0,0,0.9)', fontSize: '4.5rem' }}>
+              {siteContent.hero_title || 'Condor École de Football'}
+            </h1>
             <p style={{ fontSize: '1.4rem', color: '#eee', maxWidth: '700px', margin: '0 auto 2.5rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
-              "Plus fort, plus haut dans le score !"
+              {siteContent.hero_slogan || '"Plus fort, plus haut dans le score !"'}
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <Link href="/contact" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>Nous Rejoindre / S'inscrire <ArrowRight size={18} /></Link>
@@ -156,7 +174,7 @@ export default function Home() {
                   Aucun match officiel programmé pour le moment
                 </h3>
                 <p style={{ color: 'var(--clr-gray)', margin: '0 auto', maxWidth: '680px', fontSize: '1.05rem', lineHeight: 1.5 }}>
-                  Nos équipes sont actuellement en période d'entraînement intensif et de préparation technique. Suivez nos actualités pour être tenus informés des prochaines rencontres officielles !
+                  {siteContent.no_match_text || "Nos équipes sont actuellement en période d'entraînement intensif et de préparation technique. Suivez nos actualités pour être tenus informés des prochaines rencontres officielles !"}
                 </p>
               </div>
             ) : (

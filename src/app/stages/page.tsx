@@ -6,8 +6,10 @@ import { Calendar, Phone, Mail, MapPin, CheckCircle, Clock, User, PhoneCall } fr
 import { supabase } from '@/lib/supabaseClient';
 import { fetchStages, StageSession } from '@/lib/dataService';
 import { sanitizeFormRecord, checkRateLimit } from '@/lib/security';
+import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 
 export default function Stages() {
+  const { showConfirmed } = useConfirmPoster();
   const [stages, setStages] = useState<StageSession[]>([]);
   const [stageFormData, setStageFormData] = useState({
     nom: '', prenom: '', dob: '', tel: '', photo: '', stage: '', note: ''
@@ -63,6 +65,7 @@ export default function Stages() {
     }
 
     setStageSubmitted(true);
+    showConfirmed("Votre pré-inscription au stage a été transmise avec succès au secrétariat !", "CONFIRMÉ");
     setTimeout(() => {
       setStageSubmitted(false);
       setStageFormData({ nom: '', prenom: '', dob: '', tel: '', photo: '', stage: '', note: '' });
@@ -98,6 +101,7 @@ export default function Stages() {
     }
 
     setRdvSubmitted(true);
+    showConfirmed("Votre rendez-vous administratif a été enregistré avec succès !", "CONFIRMÉ");
     setTimeout(() => {
       setRdvSubmitted(false);
       setRdvFormData({ parentNom: '', enfantNom: '', tel: '', date: '', heure: '', raison: 'Inscription académique' });

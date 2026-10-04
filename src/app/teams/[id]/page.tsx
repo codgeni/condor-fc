@@ -8,32 +8,37 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { ChaleChaleTripleCup, FlagDaySilverCup, RealMadridStarShield } from '@/components/Trophies';
+import { fetchMergedPlayers, getDeletedPlayerIds } from '@/lib/dataService';
 
 export default function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
-  const [player, setPlayer] = useState<any>(playersDB[unwrappedParams.id] || null);
+  const [player, setPlayer] = useState<any>(null);
   const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
 
   useEffect(() => {
     const fetchPlayer = async () => {
+      const pid = unwrappedParams.id;
+      const deletedIds = getDeletedPlayerIds();
+      if (deletedIds.includes(String(pid))) {
+        setPlayer(null);
+        setHasAttemptedFetch(true);
+        return;
+      }
+
       try {
-        const { data } = await supabase
-          .from('players')
-          .select('*')
-          .eq('id', unwrappedParams.id)
-          .single();
-        if (data) {
+        const merged = await fetchMergedPlayers();
+        const found = merged[String(pid)];
+        if (found) {
           setPlayer({
-            ...playersDB[unwrappedParams.id],
-            ...data,
-            detailImg: data.detail_img || data.detailImg || playersDB[unwrappedParams.id]?.detailImg || data.img
+            ...found,
+            detailImg: found.detail_img || found.detailImg || found.img
           });
         } else {
-          setPlayer(playersDB[unwrappedParams.id] || null);
+          setPlayer(null);
         }
       } catch (err) {
-        console.warn("Supabase fetch failed, falling back to local DB", err);
-        setPlayer(playersDB[unwrappedParams.id] || null);
+        console.warn("Player fetch failed", err);
+        setPlayer(null);
       } finally {
         setHasAttemptedFetch(true);
       }
