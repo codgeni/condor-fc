@@ -572,9 +572,13 @@ CREATE TABLE IF NOT EXISTS site_content (
   no_match_text TEXT,
   about_title TEXT,
   about_text TEXT,
+  data JSONB DEFAULT '{}'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE site_content ADD COLUMN IF NOT EXISTS data JSONB DEFAULT '{}'::jsonb;
 
 INSERT INTO site_content (id, hero_tag, hero_title, hero_slogan, no_match_text, about_title, about_text) VALUES
 ('main', 'CHAQUE ENFANT EST UNIQUE', 'Condor École de Football', '"Plus fort, plus haut dans le score !"', 'Nos équipes sont actuellement en période d''entraînement intensif et de préparation technique. Suivez nos actualités pour être tenus informés des prochaines rencontres officielles !', 'Plus Qu''une École, Une Famille.', 'Depuis Mai 2023, la Condor École de Football est un symbole d''excellence, d''éducation et de passion sportive à Delmas, Haïti. Nous formons les leaders et les champions de demain.')
 ON CONFLICT (id) DO NOTHING;
+

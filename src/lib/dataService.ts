@@ -123,14 +123,97 @@ export interface TimelineItem {
   created_at?: string;
 }
 
+export interface PillarItem {
+  title: string;
+  subtitle: string;
+  desc: string;
+}
+
 export interface SiteContent {
   id?: string | number;
+  
+  // 1. Accueil & Matchs
   hero_tag?: string;
   hero_title?: string;
   hero_slogan?: string;
   no_match_text?: string;
+  
+  // 2. Club Header
   about_title?: string;
   about_text?: string;
+
+  // 2. Club Philosophie
+  club_philo_tag?: string;
+  club_philo_title?: string;
+  club_philo_intro?: string;
+  club_philo_objectives?: string[];
+
+  // 2. Club Valeurs
+  club_values_tag?: string;
+  club_values_title?: string;
+  club_values_intro?: string;
+  club_val_god_title?: string;
+  club_val_god_desc?: string;
+  club_val_patrie_title?: string;
+  club_val_patrie_desc?: string;
+  club_val_discipline_title?: string;
+  club_val_discipline_desc?: string;
+  club_pillars?: PillarItem[];
+
+  // 2. Club Staff & Timeline Headings
+  club_staff_tag?: string;
+  club_staff_title?: string;
+  club_staff_desc?: string;
+  club_timeline_title?: string;
+
+  // 2. Club Hymne
+  club_anthem_title?: string;
+  club_anthem_couplet1?: string;
+  club_anthem_refrain?: string;
+  club_anthem_couplet2?: string;
+  club_anthem_pont?: string;
+
+  // 3. Inscription Header
+  inscr_hero_tag?: string;
+  inscr_hero_title?: string;
+  inscr_hero_desc?: string;
+
+  // 3. Inscription Conditions
+  inscr_conditions_title?: string;
+  inscr_conditions_items?: string[];
+
+  // 3. Inscription Uniform Note
+  inscr_uniform_note?: string;
+
+  // 3. Inscription Clauses Financières
+  inscr_payment_title?: string;
+  inscr_payment_bullet1?: string;
+  inscr_payment_bullet2?: string;
+  inscr_payment_bullet3?: string;
+  inscr_payment_modalities?: string;
+  inscr_payment_penalties?: string;
+  inscr_payment_refund?: string;
+  inscr_payment_image_rights?: string;
+
+  // 3. Inscription Clauses Médicales & Urgence
+  inscr_emergency_title?: string;
+  inscr_emergency_clause1?: string;
+  inscr_emergency_clause2?: string;
+  inscr_emergency_clause3?: string;
+
+  // 3. Inscription Consentement Parental
+  inscr_consent_intro?: string;
+  inscr_consent_terms?: string;
+  inscr_consent_fees?: string;
+  inscr_consent_medical?: string;
+  inscr_consent_pickup_label?: string;
+  inscr_consent_alone_label?: string;
+
+  // 3. Boutons & Succès
+  inscr_submit_btn?: string;
+  inscr_success_title?: string;
+  inscr_success_desc?: string;
+
   created_at?: string;
 }
 
@@ -169,13 +252,138 @@ export const DEFAULT_TIMELINE: TimelineItem[] = [
   { id: 'era-6', year: 'Mai 2026', title: 'Vice-Champion U15 - Flag Day 13e édition', description: "Les U15 continuent de briller au plus haut niveau en atteignant à nouveau la finale de ce tournoi majeur.", order: 6 },
 ];
 
+export const DEFAULT_PILLARS: PillarItem[] = [
+  {
+    title: "Courtoisie",
+    subtitle: "être respectueux et gentil",
+    desc: "Le respect est la capacité de voir et d'apprécier notre valeur et celle des autres dans un contexte de diversité sociale."
+  },
+  {
+    title: "Fraternité",
+    subtitle: "être solidaire et se faire des amis",
+    desc: "Le football favorise l'amitié, aide à créer un esprit d'équipe et à comprendre le pouvoir du travail d'équipe."
+  },
+  {
+    title: "Confidence",
+    subtitle: "avoir une confiance tranquille",
+    desc: "La confiance est synonyme de puissance et elle fera passer le jeu au niveau supérieur, tandis que l'arrogance fera de soi une cible."
+  },
+  {
+    title: "Responsabilité",
+    subtitle: "s'engager à son équipe",
+    desc: "La responsabilité est importante car elle donne un sens au but en plus de renforcer la résilience face à l'adversité."
+  },
+  {
+    title: "Excellence",
+    subtitle: "dépasser les attentes",
+    desc: "L'excellence vient d'un travail acharné, de normes élevées et d'un engagement continu dans chaque entraînement."
+  },
+  {
+    title: "Plaisir",
+    subtitle: "s'amuser avec passion",
+    desc: "Le plaisir est toujours au top des raisons pour lesquelles les enfants pratiquent le football."
+  }
+];
+
 export const DEFAULT_SITE_CONTENT: SiteContent = {
+  // 1. Accueil & Matchs
   hero_tag: 'CHAQUE ENFANT EST UNIQUE',
   hero_title: 'Condor École de Football',
   hero_slogan: '"Plus fort, plus haut dans le score !"',
   no_match_text: "Nos équipes sont actuellement en période d'entraînement intensif et de préparation technique. Suivez nos actualités pour être tenus informés des prochaines rencontres officielles !",
+  
+  // 2. Club - Présentation
   about_title: "Plus Qu'une École, Une Famille.",
-  about_text: "Depuis Mai 2023, la Condor École de Football est un symbole d'excellence, d'éducation et de passion sportive à Delmas, Haïti. Nous formons les leaders et les champions de demain."
+  about_text: "Depuis Mai 2023, la Condor École de Football est un symbole d'excellence, d'éducation et de passion sportive à Delmas, Haïti. Nous formons les leaders et les champions de demain.",
+  
+  // 2. Club - Philosophie
+  club_philo_tag: "Notre Philosophie",
+  club_philo_title: "Philosophie de Coaching",
+  club_philo_intro: "Notre philosophie de coaching des joueurs s’articule autour des objectifs fondamentaux suivants :",
+  club_philo_objectives: [
+    "Contribuer au développement et à la pleine maturité de l’étudiant-athlète.",
+    "Former l’athlète au leadership.",
+    "Encourager l’athlète à réussir ses études.",
+    "Rendre l'athlète concerné et conscient de l'importance de sa discipline et de son engagement dans tous les domaines de sa vie.",
+    "Développer, affiner et enseigner des valeurs de l’école.",
+    "Enseigner la pratique de l’excellence en compétition.",
+    "Encourager l'étudiant-athlète à se préoccuper de son attitude dans le processus éducatif global."
+  ],
+
+  // 2. Club - Valeurs & Piliers
+  club_values_tag: "Fondation Morale",
+  club_values_title: "Nos Valeurs & Engagements",
+  club_values_intro: "Nos valeurs influencent nos choix, nos actions ainsi que notre satisfaction de vie parce que notre vie concorde avec les valeurs qui sont des références déterminantes pour notre vie personnelle et professionnelle. Ces valeurs spirituelles, civiques et morales que nous inculquons à nos élèves les canaliseront à prendre des décisions futures qui reflètent des actions et des croyances orientées vers la satisfaction des besoins individuels et collectifs.",
+  
+  club_val_god_title: "Dieu",
+  club_val_god_desc: "Nous plaçons la foi et la reconnaissance au cœur de notre développement. L’humilité devant le Créateur forge le caractère de nos athlètes.",
+  club_val_patrie_title: "Patrie",
+  club_val_patrie_desc: "L'amour de notre pays, Haïti, et la volonté de faire briller notre nation sur l'échiquier sportif international guident notre travail quotidien.",
+  club_val_discipline_title: "Discipline",
+  club_val_discipline_desc: "La rigueur et l'auto-discipline sont les clés pour transformer le talent brut en excellence durable, sur le terrain comme à l'école.",
+  
+  club_pillars: DEFAULT_PILLARS,
+
+  // 2. Club Staff & Timeline Headings
+  club_staff_tag: "L'Équipe d'Encadrement",
+  club_staff_title: "Notre Staff",
+  club_staff_desc: "Découvrez les professionnels dévoués qui encadrent, guident et développent le potentiel de chaque jeune athlète au quotidien.",
+  club_timeline_title: "Notre Parcours & Palmarès",
+
+  // 2. Club - Hymne
+  club_anthem_title: "L'Hymne de Condor",
+  club_anthem_couplet1: "Pas à pas nous traçons notre chemin, Jusqu'à toucher le ciel, notre destin.\nDéployons nos ailes, voguons sans limite, Élargissons nos horizons, vivons l'infini.",
+  club_anthem_refrain: "Travaillons dur pour être des élites, Pensons constructivement, unissons nos passions.\nÉvoluons harmonieusement, sans peur ni frayeur, Ensemble, atteignons les sommets avec grandeur.",
+  club_anthem_couplet2: "N'abandonnons jamais, poursuivons nos rêves, Concrétisons nos aspirations, qu'ils s'élèvent.\nNous sommes le changement, l'avenir de demain, Unis par le cordon, jamais nous ne faisons le vain.",
+  club_anthem_pont: "Les plus forts, les plus hauts dans le score, Unis dans l'effort, nous gravirons les échelons,\nDans l'unité, nous trouvons notre puissance, Porteurs d'espoir, symboles de persévérance.",
+
+  // 3. Inscription - En-tête
+  inscr_hero_tag: "Rejoignez Condor",
+  inscr_hero_title: "Formulaire d'Inscription Complet",
+  inscr_hero_desc: "Veuillez remplir ce formulaire complet pour l'inscription de votre enfant. Toutes les informations sont requises pour valider l'inscription.",
+
+  // 3. Inscription - Conditions d'inscription
+  inscr_conditions_title: "CONDITIONS D'INSCRIPTION",
+  inscr_conditions_items: [
+    "1. L'enfant doit avoir 4 ans ou 16 au 31 août pour être éligible de s'inscrire.",
+    "2. Une forme doit être remplie pour chaque enfant individuellement.",
+    "3. Chaque information doit être cochée lorsque requis.",
+    "4. L'inscription est considérée complète une fois que le formulaire d'inscription a été soumis avec le 1er paiement acquitté intégralement.",
+    "5. Toute inscription devra être réglée dans sa totalité avant la première séance de la rentrée. À défaut, l'inscription sera considérée comme annulée.",
+    "6. Une fois l'inscription effectuée. Les uniformes seront commandés."
+  ],
+
+  // 3. Inscription - Note uniforme
+  inscr_uniform_note: "N.B.: Attention: Une fois la taille choisie, nous ne pourrons pas vous fournir une autre uniforme.",
+
+  // 3. Inscription - Clauses Financières
+  inscr_payment_title: "CONDITIONS DE PAIEMENT :",
+  inscr_payment_bullet1: "Les frais d’admission incluent l’inscription annuelle, 2 uniformes, 1 ballon et une couverture d’assurance accident/blessure /perte de membre.",
+  inscr_payment_bullet2: "Les frais de voyage et uniformes exclusifs lors des compétitions internationales ne sont pas inclus.",
+  inscr_payment_bullet3: "Le tarif comprend les activités sportives, le matériel sportif, l'encadrement ainsi que les équipements standards.",
+  inscr_payment_modalities: "Modalités : Paiements par chèque ou virement bancaire à l'ordre de \"CONDOR ECOLE DE FOOTBALL\", ou cash au bureau sise au # 1, Delmas 77.",
+  inscr_payment_penalties: "Pénalité : Tout retard de paiement de la mensualité entrainera une pénalité de 10% par semaine de retard.",
+  inscr_payment_refund: "Absence/Départ : Aucun montant déjà versé ne sera remboursé. Toute période entamée est due dans son intégralité.",
+  inscr_payment_image_rights: "DROIT A L'IMAGE : Toute inscription autorise l’école à prendre et à utiliser des images et vidéos de mon enfant à des fins pédagogiques, publicitaires ou informatives.",
+
+  // 3. Inscription - Clauses Médicales & Urgence
+  inscr_emergency_title: "En cas d'urgence, d'accident, ou tout autre cas grave :",
+  inscr_emergency_clause1: "Prendre toutes mesures pour la prise en charge de mon enfant selon l'avis du médecin traitant.",
+  inscr_emergency_clause2: "Conduire mon enfant dans un véhicule personnel en cas de besoin médical.",
+  inscr_emergency_clause3: "Donner en mon lieu et à ma place, toute autorisation pour tout acte opérateur ou d'anesthésie qui serait décidé par le corps médical.",
+
+  // 3. Inscription - Consentement Parental
+  inscr_consent_intro: "Je soussigné(e), affirme être le parent / tuteur ou gardien de l'enfant dont le nom figure ci-dessus. En son nom, je consens par la présente à ce qui précède, et adhère mon enfant à participer à toutes les activités organisées par l'école.",
+  inscr_consent_terms: "Je reconnais avoir lu et approuvé toutes les conditions stipulées dans ce document (paiement, doit d'image, suivi médical).",
+  inscr_consent_fees: "Je déclare avoir pris connaissance des tarifs de l'école et m'engage à verser la somme convenue.",
+  inscr_consent_medical: "Je m'engage à fournir un certificat médical datant d'au moins 1 mois le jour de la rentrée.",
+  inscr_consent_pickup_label: "À la fin de chaque entraînement, à defaut de venir personnellement chercher mon enfant, j'autorise :",
+  inscr_consent_alone_label: "Mon enfant mineur à rentrer chez lui/elle par ses propres moyens.",
+
+  // 3. Boutons & Succès
+  inscr_submit_btn: "Envoyer l'inscription complète",
+  inscr_success_title: "Inscription Enregistrée !",
+  inscr_success_desc: "Votre dossier a été transmis avec succès. Notre équipe administrative traitera votre demande dans les plus brefs délais."
 };
 
 export const DEFAULT_PRODUCTS: ShopProduct[] = [
@@ -1009,6 +1217,7 @@ export async function deleteTimeline(id: string | number): Promise<{ success: bo
 // 9. SITE CONTENT / TEXTS SERVICE (Slogan, Textes officiels)
 // =============================================================
 export async function fetchSiteContent(): Promise<SiteContent> {
+  let remoteData: any = null;
   try {
     const { data, error } = await supabase
       .from('site_content')
@@ -1016,14 +1225,22 @@ export async function fetchSiteContent(): Promise<SiteContent> {
       .limit(1);
 
     if (!error && data && data.length > 0) {
-      setLocalItem('site_content', data[0]);
-      return data[0];
+      remoteData = data[0];
     }
   } catch (err) {
     console.warn('Supabase site content fetch note, using local fallback', err);
   }
 
-  return getLocalItem('site_content', DEFAULT_SITE_CONTENT);
+  const localCache = getLocalItem<SiteContent>('site_content', DEFAULT_SITE_CONTENT);
+
+  if (remoteData) {
+    const unpacked = remoteData.data ? { ...DEFAULT_SITE_CONTENT, ...remoteData.data, ...remoteData } : { ...DEFAULT_SITE_CONTENT, ...remoteData };
+    const merged: SiteContent = { ...DEFAULT_SITE_CONTENT, ...unpacked, ...localCache };
+    setLocalItem('site_content', merged);
+    return merged;
+  }
+
+  return localCache ? { ...DEFAULT_SITE_CONTENT, ...localCache } : DEFAULT_SITE_CONTENT;
 }
 
 export async function saveSiteContent(content: SiteContent): Promise<{ success: boolean; data?: SiteContent }> {
@@ -1031,10 +1248,41 @@ export async function saveSiteContent(content: SiteContent): Promise<{ success: 
 
   try {
     const { data: existing } = await supabase.from('site_content').select('id').limit(1);
+    const payload: any = {
+      hero_tag: content.hero_tag,
+      hero_title: content.hero_title,
+      hero_slogan: content.hero_slogan,
+      no_match_text: content.no_match_text,
+      about_title: content.about_title,
+      about_text: content.about_text,
+      data: content
+    };
+
     if (existing && existing.length > 0) {
-      await supabase.from('site_content').update(content).eq('id', existing[0].id);
+      const res = await supabase.from('site_content').update(payload).eq('id', existing[0].id);
+      if (res.error) {
+        await supabase.from('site_content').update({
+          hero_tag: content.hero_tag,
+          hero_title: content.hero_title,
+          hero_slogan: content.hero_slogan,
+          no_match_text: content.no_match_text,
+          about_title: content.about_title,
+          about_text: content.about_text,
+        }).eq('id', existing[0].id);
+      }
     } else {
-      await supabase.from('site_content').insert(content);
+      const res = await supabase.from('site_content').insert(payload);
+      if (res.error) {
+        await supabase.from('site_content').insert({
+          id: 'main',
+          hero_tag: content.hero_tag,
+          hero_title: content.hero_title,
+          hero_slogan: content.hero_slogan,
+          no_match_text: content.no_match_text,
+          about_title: content.about_title,
+          about_text: content.about_text,
+        });
+      }
     }
   } catch (e) {
     console.warn('Supabase save site content note, stored in local cache', e);

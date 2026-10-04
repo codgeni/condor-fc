@@ -1,14 +1,22 @@
 "use client";
  
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Award, Send, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { sanitizeFormRecord, checkRateLimit } from '@/lib/security';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
+import { fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
 
 export default function Contact() {
   const { showConfirmed } = useConfirmPoster();
+  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+
+  useEffect(() => {
+    fetchSiteContent().then(data => {
+      if (data) setSiteContent(data);
+    });
+  }, []);
   const [formData, setFormData] = useState({
     // Connu par
     connuPar: '', connuAutre: '',
@@ -130,10 +138,14 @@ export default function Contact() {
       <section className="section-padding" style={{ textAlign: 'center', padding: '80px 0 40px' }}>
         <div className="container">
           <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }}>
-            <span style={{ color: 'var(--clr-primary)', letterSpacing: '4px', textTransform: 'uppercase', fontWeight: 'bold' }}>Rejoignez Condor</span>
-            <h1 className="hero-title" style={{ color: 'white', fontSize: '3.5rem', marginTop: '10px' }}>Formulaire d'Inscription Complet</h1>
+            <span style={{ color: 'var(--clr-primary)', letterSpacing: '4px', textTransform: 'uppercase', fontWeight: 'bold' }}>
+              {siteContent.inscr_hero_tag || "Rejoignez Condor"}
+            </span>
+            <h1 className="hero-title" style={{ color: 'white', fontSize: '3.5rem', marginTop: '10px' }}>
+              {siteContent.inscr_hero_title || "Formulaire d'Inscription Complet"}
+            </h1>
             <p style={{ fontSize: '1.2rem', color: '#ccc', maxWidth: '800px', margin: '15px auto 0', lineHeight: 1.6 }}>
-              Veuillez remplir ce formulaire complet pour l'inscription de votre enfant. Toutes les informations sont requises pour valider l'inscription.
+              {siteContent.inscr_hero_desc || "Veuillez remplir ce formulaire complet pour l'inscription de votre enfant. Toutes les informations sont requises pour valider l'inscription."}
             </p>
           </motion.div>
         </div>
@@ -157,22 +169,28 @@ export default function Contact() {
                 style={{ background: 'rgba(202, 2, 79, 0.1)', border: '2px dashed var(--clr-primary)', padding: '4rem', borderRadius: '12px', textAlign: 'center' }}
               >
                 <Award size={72} color="var(--clr-primary)" style={{ margin: '0 auto 1.5rem', animation: 'bounce 2s infinite' }} />
-                <h3 style={{ fontSize: '2.5rem', marginBottom: '15px', color: 'var(--clr-primary)' }}>Inscription Enregistrée !</h3>
-                <p style={{ color: '#ccc', fontSize: '1.2rem' }}>Votre dossier a été transmis avec succès. Notre équipe administrative traitera votre demande dans les plus brefs délais.</p>
+                <h3 style={{ fontSize: '2.5rem', marginBottom: '15px', color: 'var(--clr-primary)' }}>
+                  {siteContent.inscr_success_title || "Inscription Enregistrée !"}
+                </h3>
+                <p style={{ color: '#ccc', fontSize: '1.2rem' }}>
+                  {siteContent.inscr_success_desc || "Votre dossier a été transmis avec succès. Notre équipe administrative traitera votre demande dans les plus brefs délais."}
+                </p>
               </motion.div>
             ) : (
               <form onSubmit={handleSubmit}>
 
                 {/* CONDITIONS IMPORTANTES */}
                 <div style={{ background: 'rgba(202, 2, 79, 0.1)', borderLeft: '4px solid var(--clr-primary)', padding: '20px', borderRadius: '4px', marginBottom: '30px' }}>
-                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--clr-primary)', marginBottom: '15px' }}><AlertTriangle size={20} /> CONDITIONS D'INSCRIPTION</h4>
+                  <h4 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--clr-primary)', marginBottom: '15px' }}>
+                    <AlertTriangle size={20} /> {siteContent.inscr_conditions_title || "CONDITIONS D'INSCRIPTION"}
+                  </h4>
                   <ul style={{ paddingLeft: '20px', color: '#ddd', fontSize: '0.95rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <li>1. L'enfant doit avoir 4 ans ou 16 au 31 août pour être éligible de s'inscrire.</li>
-                    <li>2. Une forme doit être remplie pour chaque enfant individuellement.</li>
-                    <li>3. Chaque information doit être cochée lorsque requis.</li>
-                    <li>4. L'inscription est considérée complète une fois que le formulaire d'inscription a été soumis avec le 1er paiement acquitté intégralement.</li>
-                    <li>5. Toute inscription devra être réglée dans sa totalité avant la première séance de la rentrée. À défaut, l'inscription sera considérée comme annulée.</li>
-                    <li>6. Une fois l'inscription effectuée. Les uniformes seront commandés.</li>
+                    {(siteContent.inscr_conditions_items && siteContent.inscr_conditions_items.length > 0 
+                      ? siteContent.inscr_conditions_items 
+                      : DEFAULT_SITE_CONTENT.inscr_conditions_items || []
+                    ).map((cond, idx) => (
+                      <li key={idx}>{cond}</li>
+                    ))}
                   </ul>
                 </div>
                 
@@ -248,7 +266,9 @@ export default function Contact() {
 
                 {/* 5. UNIFORMES */}
                 <h3 style={sectionTitleStyle}>DIMENSION DES UNIFORMES</h3>
-                <p style={{ color: 'var(--clr-primary)', marginBottom: '15px', fontStyle: 'italic', fontSize: '0.9rem' }}>N.B.: Attention: Une fois la taille choisie, nous ne pourrons pas vous fournir une autre uniforme.</p>
+                <p style={{ color: 'var(--clr-primary)', marginBottom: '15px', fontStyle: 'italic', fontSize: '0.9rem' }}>
+                  {siteContent.inscr_uniform_note || "N.B.: Attention: Une fois la taille choisie, nous ne pourrons pas vous fournir une autre uniforme."}
+                </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '1rem' }}>
                   <div><label style={labelStyle}>Maillot</label><input type="text" name="tailleMaillot" value={formData.tailleMaillot} onChange={handleChange} style={inputStyle} /></div>
                   <div><label style={labelStyle}>Short</label><input type="text" name="tailleShort" value={formData.tailleShort} onChange={handleChange} style={inputStyle} /></div>
@@ -281,16 +301,16 @@ export default function Contact() {
                 
                 {/* CONDITIONS FINANCIERES */}
                 <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '8px', marginBottom: '2rem', fontSize: '0.9rem', color: '#ccc', lineHeight: '1.5' }}>
-                  <p><strong>CONDITIONS DE PAIEMENT :</strong></p>
+                  <p><strong>{siteContent.inscr_payment_title || "CONDITIONS DE PAIEMENT :"}</strong></p>
                   <ul style={{ paddingLeft: '20px', marginBottom: '10px' }}>
-                    <li>Les frais d’admission incluent l’inscription annuelle, 2 uniformes, 1 ballon et une couverture d’assurance accident/blessure /perte de membre.</li>
-                    <li>Les frais de voyage et uniformes exclusifs lors des compétitions internationales ne sont pas inclus.</li>
-                    <li>Le tarif comprend les activités sportives, le matériel sportif, l'encadrement ainsi que les équipements standards.</li>
+                    <li>{siteContent.inscr_payment_bullet1 || "Les frais d’admission incluent l’inscription annuelle, 2 uniformes, 1 ballon et une couverture d’assurance accident/blessure /perte de membre."}</li>
+                    <li>{siteContent.inscr_payment_bullet2 || "Les frais de voyage et uniformes exclusifs lors des compétitions internationales ne sont pas inclus."}</li>
+                    <li>{siteContent.inscr_payment_bullet3 || "Le tarif comprend les activités sportives, le matériel sportif, l'encadrement ainsi que les équipements standards."}</li>
                   </ul>
-                  <p><strong>Modalités :</strong> Paiements par chèque ou virement bancaire à l'ordre de "CONDOR ECOLE DE FOOTBALL", ou cash au bureau sise au # 1, Delmas 77.</p>
-                  <p><strong>Pénalité :</strong> Tout retard de paiement de la mensualité entrainera une pénalité de 10% par semaine de retard.</p>
-                  <p><strong>Absence/Départ :</strong> Aucun montant déjà versé ne sera remboursé. Toute période entamée est due dans son intégralité.</p>
-                  <p><strong>DROIT A L'IMAGE :</strong> Toute inscription autorise l’école à prendre et à utiliser des images et vidéos de mon enfant à des fins pédagogiques, publicitaires ou informatives.</p>
+                  <p><strong>Modalités : </strong>{siteContent.inscr_payment_modalities?.replace(/^Modalités\s*:\s*/i, '') || "Paiements par chèque ou virement bancaire à l'ordre de \"CONDOR ECOLE DE FOOTBALL\", ou cash au bureau sise au # 1, Delmas 77."}</p>
+                  <p><strong>Pénalité : </strong>{siteContent.inscr_payment_penalties?.replace(/^Pénalité\s*:\s*/i, '') || "Tout retard de paiement de la mensualité entrainera une pénalité de 10% par semaine de retard."}</p>
+                  <p><strong>Absence/Départ : </strong>{siteContent.inscr_payment_refund?.replace(/^Absence\/Départ\s*:\s*/i, '') || "Aucun montant déjà versé ne sera remboursé. Toute période entamée est due dans son intégralité."}</p>
+                  <p><strong>DROIT A L'IMAGE : </strong>{siteContent.inscr_payment_image_rights?.replace(/^DROIT A L'IMAGE\s*:\s*/i, '') || "Toute inscription autorise l’école à prendre et à utiliser des images et vidéos de mon enfant à des fins pédagogiques, publicitaires ou informatives."}</p>
                 </div>
 
                 {/* 7. MEDICAL */}
@@ -307,7 +327,9 @@ export default function Contact() {
                 </div>
 
                 <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '8px', marginTop: '10px' }}>
-                  <p style={{ marginBottom: '15px', fontWeight: 'bold' }}>En cas d'urgence, d'accident, ou tout autre cas grave :</p>
+                  <p style={{ marginBottom: '15px', fontWeight: 'bold' }}>
+                    {siteContent.inscr_emergency_title || "En cas d'urgence, d'accident, ou tout autre cas grave :"}
+                  </p>
                   <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                       <input type="radio" name="autorisationUrgence" value="J'autorise l'école à" required onChange={handleChange} style={checkboxInputStyle} />
@@ -319,33 +341,37 @@ export default function Contact() {
                     </label>
                   </div>
                   <ul style={{ paddingLeft: '20px', fontSize: '0.9rem', color: '#ccc', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <li>Prendre toutes mesures pour la prise en charge de mon enfant selon l'avis du médecin traitant.</li>
-                    <li>Conduire mon enfant dans un véhicule personnel en cas de besoin médical.</li>
-                    <li>Donner en mon lieu et à ma place, toute autorisation pour tout acte opérateur ou d'anesthésie qui serait décidé par le corps médical.</li>
+                    <li>{siteContent.inscr_emergency_clause1 || "Prendre toutes mesures pour la prise en charge de mon enfant selon l'avis du médecin traitant."}</li>
+                    <li>{siteContent.inscr_emergency_clause2 || "Conduire mon enfant dans un véhicule personnel en cas de besoin médical."}</li>
+                    <li>{siteContent.inscr_emergency_clause3 || "Donner en mon lieu et à ma place, toute autorisation pour tout acte opérateur ou d'anesthésie qui serait décidé par le corps médical."}</li>
                   </ul>
                 </div>
 
                 {/* 8. CONSENTEMENT PARENTAL */}
                 <h3 style={sectionTitleStyle}>CONSENTEMENT PARENTAL</h3>
-                <p style={{ marginBottom: '20px', fontSize: '0.95rem', color: '#eee' }}>Je soussigné(e), affirme être le parent / tuteur ou gardien de l'enfant dont le nom figure ci-dessus. En son nom, je consens par la présente à ce qui précède, et adhère mon enfant à participer à toutes les activités organisées par l'école.</p>
+                <p style={{ marginBottom: '20px', fontSize: '0.95rem', color: '#eee' }}>
+                  {siteContent.inscr_consent_intro || "Je soussigné(e), affirme être le parent / tuteur ou gardien de l'enfant dont le nom figure ci-dessus. En son nom, je consens par la présente à ce qui précède, et adhère mon enfant à participer à toutes les activités organisées par l'école."}
+                </p>
                 
                 <label style={checkboxRowStyle}>
                   <input type="checkbox" name="consentementLuApprouve" checked={formData.consentementLuApprouve} onChange={handleCheckboxChange} required style={checkboxInputStyle} />
-                  <span>Je reconnais avoir lu et approuvé toutes les conditions stipulées dans ce document (paiement, doit d'image, suivi médical).</span>
+                  <span>{siteContent.inscr_consent_terms || "Je reconnais avoir lu et approuvé toutes les conditions stipulées dans ce document (paiement, doit d'image, suivi médical)."}</span>
                 </label>
                 
                 <label style={checkboxRowStyle}>
                   <input type="checkbox" name="consentementTarifs" checked={formData.consentementTarifs} onChange={handleCheckboxChange} required style={checkboxInputStyle} />
-                  <span>Je déclare avoir pris connaissance des tarifs de l'école et m'engage à verser la somme convenue.</span>
+                  <span>{siteContent.inscr_consent_fees || "Je déclare avoir pris connaissance des tarifs de l'école et m'engage à verser la somme convenue."}</span>
                 </label>
 
                 <label style={checkboxRowStyle}>
                   <input type="checkbox" name="consentementCertificat" checked={formData.consentementCertificat} onChange={handleCheckboxChange} required style={checkboxInputStyle} />
-                  <span>Je m'engage à fournir un certificat médical datant d'au moins 1 mois le jour de la rentrée.</span>
+                  <span>{siteContent.inscr_consent_medical || "Je m'engage à fournir un certificat médical datant d'au moins 1 mois le jour de la rentrée."}</span>
                 </label>
 
                 <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '8px', marginTop: '20px', marginBottom: '20px' }}>
-                  <p style={{ marginBottom: '15px' }}>À la fin de chaque entraînement, à defaut de venir personnellement chercher mon enfant, j'autorise :</p>
+                  <p style={{ marginBottom: '15px' }}>
+                    {siteContent.inscr_consent_pickup_label || "À la fin de chaque entraînement, à defaut de venir personnellement chercher mon enfant, j'autorise :"}
+                  </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'center', marginBottom: '15px' }}>
                     <span>M. ou Mme.</span>
                     <input type="text" name="autoriseRecuperer" value={formData.autoriseRecuperer} onChange={handleChange} style={{...inputStyle, width: 'auto', flex: 1, marginBottom: 0}} placeholder="Nom de la personne" />
@@ -355,7 +381,7 @@ export default function Contact() {
                   </div>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <input type="checkbox" name="rentrerSeul" checked={formData.rentrerSeul} onChange={handleCheckboxChange} style={checkboxInputStyle} />
-                    <span>Mon enfant mineur à rentrer chez lui/elle par ses propres moyens.</span>
+                    <span>{siteContent.inscr_consent_alone_label || "Mon enfant mineur à rentrer chez lui/elle par ses propres moyens."}</span>
                   </label>
                 </div>
 
@@ -376,7 +402,7 @@ export default function Contact() {
                   className="btn btn-primary"
                   style={{ width: '100%', padding: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '2rem', fontSize: '1.25rem', letterSpacing: '1px', textTransform: 'uppercase' }}
                 >
-                  Envoyer l'inscription complète <Send size={24} />
+                  {siteContent.inscr_submit_btn || "Envoyer l'inscription complète"} <Send size={24} />
                 </button>
 
               </form>

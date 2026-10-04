@@ -601,7 +601,7 @@ export default function AdminPanel() {
           { id: 'players', label: 'Équipe & Joueurs', icon: <Users size={18} /> },
           { id: 'staff', label: 'Staff & Encadrement', icon: <UserCheck size={18} /> },
           { id: 'timeline', label: 'Palmarès & Parcours', icon: <History size={18} /> },
-          { id: 'site_texts', label: 'Textes du Site', icon: <Type size={18} /> },
+          { id: 'site_texts', label: 'Textes & Clauses du Site', icon: <Type size={18} /> },
           { id: 'news', label: 'Actualités', icon: <BookOpen size={18} /> },
           { id: 'tv', label: 'Condor TV (Vidéos)', icon: <Tv size={18} /> },
           { id: 'stages', label: 'Stages & RDV', icon: <Calendar size={18} /> },

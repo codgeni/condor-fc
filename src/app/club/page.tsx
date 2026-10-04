@@ -5,7 +5,8 @@ import { useState, useEffect } from 'react';
 import { 
   fetchStaff, StaffMember, DEFAULT_STAFF,
   fetchTimeline, TimelineItem, DEFAULT_TIMELINE,
-  fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT
+  fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
+  DEFAULT_PILLARS
 } from '@/lib/dataService';
 
 export default function Club() {
@@ -52,32 +53,33 @@ export default function Club() {
       <section className="section-padding" style={{ background: '#fdfdfd', borderBottom: '1px solid #eee' }}>
         <div className="container" style={{ maxWidth: '900px' }}>
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-            <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Notre Philosophie</span>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', margin: '5px 0' }}>Philosophie de Coaching</h2>
-            <p style={{ color: 'var(--clr-gray)', fontSize: '1.1rem', marginTop: '10px' }}>Notre philosophie de coaching des joueurs s’articule autour des objectifs fondamentaux suivants :</p>
+            <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>
+              {siteContent.club_philo_tag || "Notre Philosophie"}
+            </span>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', margin: '5px 0' }}>
+              {siteContent.club_philo_title || "Philosophie de Coaching"}
+            </h2>
+            <p style={{ color: 'var(--clr-gray)', fontSize: '1.1rem', marginTop: '10px' }}>
+              {siteContent.club_philo_intro || "Notre philosophie de coaching des joueurs s’articule autour des objectifs fondamentaux suivants :"}
+            </p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {[
-              { num: "1", text: "Contribuer au développement et à la pleine maturité de l’étudiant-athlète." },
-              { num: "2", text: "Former l’athlète au leadership." },
-              { num: "3", text: "Encourager l’athlète à réussir ses études." },
-              { num: "4", text: "Rendre l'athlète concerné et conscient de l'importance de sa discipline et de son engagement dans tous les domaines de sa vie." },
-              { num: "5", text: "Développer, affiner et enseigner des valeurs de l’école." },
-              { num: "6", text: "Enseigner la pratique de l’excellence en compétition." },
-              { num: "7", text: "Encourager l'étudiant-athlète à se préoccuper de son attitude dans le processus éducatif global." }
-            ].map((obj) => (
+            {(siteContent.club_philo_objectives && siteContent.club_philo_objectives.length > 0 
+              ? siteContent.club_philo_objectives 
+              : DEFAULT_SITE_CONTENT.club_philo_objectives || []
+            ).map((objText, idx) => (
               <motion.div 
-                key={obj.num}
+                key={idx}
                 initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 style={{ display: 'flex', gap: '20px', alignItems: 'flex-start', background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', border: '1px solid #f0f0f0' }}
               >
                 <div style={{ width: '40px', height: '40px', background: 'var(--clr-primary)', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', flexShrink: 0 }}>
-                  {obj.num}
+                  {idx + 1}
                 </div>
-                <p style={{ fontSize: '1.15rem', color: '#333', margin: '8px 0 0', lineHeight: 1.5 }}>{obj.text}</p>
+                <p style={{ fontSize: '1.15rem', color: '#333', margin: '8px 0 0', lineHeight: 1.5 }}>{objText}</p>
               </motion.div>
             ))}
           </div>
@@ -88,10 +90,14 @@ export default function Club() {
       <section className="section-padding" style={{ background: '#f5f7fa' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Fondation Morale</span>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', margin: '5px 0' }}>Nos Valeurs & Engagements</h2>
+            <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>
+              {siteContent.club_values_tag || "Fondation Morale"}
+            </span>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', margin: '5px 0' }}>
+              {siteContent.club_values_title || "Nos Valeurs & Engagements"}
+            </h2>
             <p style={{ color: 'var(--clr-gray)', maxWidth: '800px', margin: '15px auto 0', fontSize: '1.15rem', lineHeight: 1.6 }}>
-              Nos valeurs influencent nos choix, nos actions ainsi que notre satisfaction de vie parce que notre vie concorde avec les valeurs qui sont des références déterminantes pour notre vie personnelle et professionnelle. Ces valeurs spirituelles, civiques et morales que nous inculquons à nos élèves les canaliseront à prendre des décisions futures qui reflètent des actions et des croyances orientées vers la satisfaction des besoins individuels et collectifs.
+              {siteContent.club_values_intro || "Nos valeurs influencent nos choix, nos actions ainsi que notre satisfaction de vie parce que notre vie concorde avec les valeurs qui sont des références déterminantes pour notre vie personnelle et professionnelle. Ces valeurs spirituelles, civiques et morales que nous inculquons à nos élèves les canaliseront à prendre des décisions futures qui reflètent des actions et des croyances orientées vers la satisfaction des besoins individuels et collectifs."}
             </p>
           </div>
 
@@ -101,64 +107,45 @@ export default function Club() {
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #eee', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '1.5rem' }}>
                 <div style={{ width: '50px', height: '50px', background: 'rgba(224, 30, 38, 0.1)', color: 'var(--clr-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>✝</div>
-                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', margin: 0 }}>Dieu</h3>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', margin: 0 }}>
+                  {siteContent.club_val_god_title || "Dieu"}
+                </h3>
               </div>
-              <p style={{ color: '#555', lineHeight: 1.6 }}>Nous plaçons la foi et la reconnaissance au cœur de notre développement. L’humilité devant le Créateur forge le caractère de nos athlètes.</p>
+              <p style={{ color: '#555', lineHeight: 1.6 }}>
+                {siteContent.club_val_god_desc || "Nous plaçons la foi et la reconnaissance au cœur de notre développement. L’humilité devant le Créateur forge le caractère de nos athlètes."}
+              </p>
             </motion.div>
 
             {/* Patrie */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #eee', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '1.5rem' }}>
                 <div style={{ width: '50px', height: '50px', background: 'rgba(224, 30, 38, 0.1)', color: 'var(--clr-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>🇭🇹</div>
-                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', margin: 0 }}>Patrie</h3>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', margin: 0 }}>
+                  {siteContent.club_val_patrie_title || "Patrie"}
+                </h3>
               </div>
-              <p style={{ color: '#555', lineHeight: 1.6 }}>L'amour de notre pays, Haïti, et la volonté de faire briller notre nation sur l'échiquier sportif international guident notre travail quotidien.</p>
+              <p style={{ color: '#555', lineHeight: 1.6 }}>
+                {siteContent.club_val_patrie_desc || "L'amour de notre pays, Haïti, et la volonté de faire briller notre nation sur l'échiquier sportif international guident notre travail quotidien."}
+              </p>
             </motion.div>
 
             {/* Discipline */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #eee', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '1.5rem' }}>
                 <div style={{ width: '50px', height: '50px', background: 'rgba(224, 30, 38, 0.1)', color: 'var(--clr-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>⚡</div>
-                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', margin: 0 }}>Discipline</h3>
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', margin: 0 }}>
+                  {siteContent.club_val_discipline_title || "Discipline"}
+                </h3>
               </div>
-              <p style={{ color: '#555', lineHeight: 1.6 }}>La rigueur et l'auto-discipline sont les clés pour transformer le talent brut en excellence durable, sur le terrain comme à l'école.</p>
+              <p style={{ color: '#555', lineHeight: 1.6 }}>
+                {siteContent.club_val_discipline_desc || "La rigueur et l'auto-discipline sont les clés pour transformer le talent brut en excellence durable, sur le terrain comme à l'école."}
+              </p>
             </motion.div>
           </div>
 
           {/* Grille des 6 Piliers Fondamentaux */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
-            {[
-              {
-                title: "Courtoisie",
-                subtitle: "être respectueux et gentil",
-                desc: "Le respect est la capacité de voir et d'apprécier notre valeur et celle des autres dans un contexte de diversité sociale."
-              },
-              {
-                title: "Fraternité",
-                subtitle: "être solidaire et se faire des amis",
-                desc: "Le football favorise l'amitié, aide à créer un esprit d'équipe et à comprendre le pouvoir du travail d'équipe."
-              },
-              {
-                title: "Confidence",
-                subtitle: "avoir une confiance tranquille",
-                desc: "La confiance est synonyme de puissance et elle fera passer le jeu au niveau supérieur, tandis que l'arrogance fera de soi une cible."
-              },
-              {
-                title: "Responsabilité",
-                subtitle: "s'engager à son équipe",
-                desc: "La responsabilité est importante car elle donne un sens au but en plus de renforcer la résilience face à l'adversité."
-              },
-              {
-                title: "Excellence",
-                subtitle: "dépasser les attentes",
-                desc: "L'excellence vient d'un travail acharné, de normes élevées et d'un engagement continu dans chaque entraînement."
-              },
-              {
-                title: "Plaisir",
-                subtitle: "s'amuser avec passion",
-                desc: "Le plaisir est toujours au top des raisons pour lesquelles les enfants pratiquent le football."
-              }
-            ].map((val, idx) => (
+            {(siteContent.club_pillars && siteContent.club_pillars.length > 0 ? siteContent.club_pillars : DEFAULT_PILLARS).map((val, idx) => (
               <motion.div 
                 key={idx}
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -179,7 +166,9 @@ export default function Club() {
       {/* 2. Timeline Historique Dynamique */}
       <section className="section-padding bg-gray">
         <div className="container">
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', marginBottom: '3rem', textAlign: 'center' }}>Notre Parcours & Palmarès</h2>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', marginBottom: '3rem', textAlign: 'center' }}>
+            {siteContent.club_timeline_title || "Notre Parcours & Palmarès"}
+          </h2>
           <div style={{ position: 'relative', borderLeft: '4px solid var(--clr-primary)', marginLeft: '20px', paddingLeft: '40px', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
             {[...timeline].sort((a, b) => (a.order || 0) - (b.order || 0)).map((era, i) => (
               <motion.div key={era.id || i} initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} style={{ position: 'relative' }}>
@@ -197,9 +186,15 @@ export default function Club() {
       <section className="section-padding" style={{ background: 'var(--clr-white)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>L'Équipe d'Encadrement</span>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', margin: '5px 0' }}>Notre Staff</h2>
-            <p style={{ color: 'var(--clr-gray)', maxWidth: '600px', margin: '10px auto 0' }}>Découvrez les professionnels dévoués qui encadrent, guident et développent le potentiel de chaque jeune athlète au quotidien.</p>
+            <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>
+              {siteContent.club_staff_tag || "L'Équipe d'Encadrement"}
+            </span>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', margin: '5px 0' }}>
+              {siteContent.club_staff_title || "Notre Staff"}
+            </h2>
+            <p style={{ color: 'var(--clr-gray)', maxWidth: '600px', margin: '10px auto 0' }}>
+              {siteContent.club_staff_desc || "Découvrez les professionnels dévoués qui encadrent, guident et développent le potentiel de chaque jeune athlète au quotidien."}
+            </p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2.5rem' }}>
@@ -235,27 +230,25 @@ export default function Club() {
       {/* 4. L'Hymne de Condor */}
       <section className="section-padding" style={{ background: 'linear-gradient(rgba(224, 30, 38, 0.9), rgba(224, 30, 38, 0.95)), url(/club_hero.png) center/cover', color: 'white' }}>
         <div className="container" style={{ textAlign: 'center', maxWidth: '800px' }}>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', marginBottom: '2rem', color: 'white' }}>L'Hymne de Condor</h2>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', marginBottom: '2rem', color: 'white' }}>
+            {siteContent.club_anthem_title || "L'Hymne de Condor"}
+          </h2>
           <div style={{ fontSize: '1.2rem', lineHeight: 1.8, fontStyle: 'italic', background: 'rgba(0,0,0,0.2)', padding: '3rem', borderRadius: '16px' }}>
-            <p style={{ marginBottom: '1.5rem' }}>
+            <p style={{ marginBottom: '1.5rem', whiteSpace: 'pre-line' }}>
               <strong style={{ color: 'black' }}>(Couplet 1)</strong><br />
-              Pas à pas nous traçons notre chemin, Jusqu'à toucher le ciel, notre destin.<br />
-              Déployons nos ailes, voguons sans limite, Élargissons nos horizons, vivons l'infini.
+              {siteContent.club_anthem_couplet1 || "Pas à pas nous traçons notre chemin, Jusqu'à toucher le ciel, notre destin.\nDéployons nos ailes, voguons sans limite, Élargissons nos horizons, vivons l'infini."}
             </p>
-            <p style={{ marginBottom: '1.5rem', fontWeight: 'bold' }}>
+            <p style={{ marginBottom: '1.5rem', fontWeight: 'bold', whiteSpace: 'pre-line' }}>
               <strong style={{ color: 'black' }}>(Refrain)</strong><br />
-              Travaillons dur pour être des élites, Pensons constructivement, unissons nos passions.<br />
-              Évoluons harmonieusement, sans peur ni frayeur, Ensemble, atteignons les sommets avec grandeur.
+              {siteContent.club_anthem_refrain || "Travaillons dur pour être des élites, Pensons constructivement, unissons nos passions.\nÉvoluons harmonieusement, sans peur ni frayeur, Ensemble, atteignons les sommets avec grandeur."}
             </p>
-            <p style={{ marginBottom: '1.5rem' }}>
+            <p style={{ marginBottom: '1.5rem', whiteSpace: 'pre-line' }}>
               <strong style={{ color: 'black' }}>(Couplet 2)</strong><br />
-              N'abandonnons jamais, poursuivons nos rêves, Concrétisons nos aspirations, qu'ils s'élèvent.<br />
-              Nous sommes le changement, l'avenir de demain, Unis par le cordon, jamais nous ne faisons le vain.
+              {siteContent.club_anthem_couplet2 || "N'abandonnons jamais, poursuivons nos rêves, Concrétisons nos aspirations, qu'ils s'élèvent.\nNous sommes le changement, l'avenir de demain, Unis par le cordon, jamais nous ne faisons le vain."}
             </p>
-            <p style={{ marginBottom: '1.5rem' }}>
+            <p style={{ marginBottom: '1.5rem', whiteSpace: 'pre-line' }}>
               <strong style={{ color: 'black' }}>(Pont)</strong><br />
-              Les plus forts, les plus hauts dans le score, Unis dans l'effort, nous gravirons les échelons,<br />
-              Dans l'unité, nous trouvons notre puissance, Porteurs d'espoir, symboles de persévérance.
+              {siteContent.club_anthem_pont || "Les plus forts, les plus hauts dans le score, Unis dans l'effort, nous gravirons les échelons,\nDans l'unité, nous trouvons notre puissance, Porteurs d'espoir, symboles de persévérance."}
             </p>
           </div>
         </div>
