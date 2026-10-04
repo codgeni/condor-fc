@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, X, Calendar, Layers, Eye } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
 
@@ -12,6 +12,26 @@ export default function News() {
   const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [loading, setLoading] = useState(true);
+  const modalOverlayRef = useRef<HTMLDivElement | null>(null);
+
+  // Lock background scrolling on PC and Mobile when article modal is open
+  useEffect(() => {
+    if (selectedArticle) {
+      const originalOverflow = document.body.style.overflow;
+      const originalTouchAction = document.body.style.touchAction;
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+
+      if (modalOverlayRef.current) {
+        modalOverlayRef.current.scrollTop = 0;
+      }
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.touchAction = originalTouchAction;
+      };
+    }
+  }, [selectedArticle]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -126,6 +146,7 @@ export default function News() {
                 <motion.div 
                   key={news.id || i} 
                   onClick={() => setSelectedArticle(news)}
+                  className="condor-news-card"
                   style={{ 
                     background: 'white', 
                     borderRadius: '14px', 
@@ -135,14 +156,12 @@ export default function News() {
                     border: '1px solid #e5e7eb',
                     display: 'flex',
                     flexDirection: 'column',
-                    position: 'relative',
-                    transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease'
+                    position: 'relative'
                   }}
-                  initial={{ opacity: 0, y: 25 }} 
+                  initial={{ opacity: 0, y: 20 }} 
                   whileInView={{ opacity: 1, y: 0 }} 
-                  viewport={{ once: true }} 
-                  transition={{ duration: 0.4, delay: (i % 4) * 0.08 }}
-                  whileHover={{ y: -8, boxShadow: '0 18px 38px rgba(0,0,0,0.12)' }}
+                  viewport={{ once: true, margin: "100px" }} 
+                  transition={{ duration: 0.35, delay: (i % 4) * 0.06 }}
                 >
                   {/* Photo de l'article au format Carré (1:1 comme les fiches joueurs) */}
                   <div 
@@ -163,8 +182,7 @@ export default function News() {
                       style={{ 
                         width: '100%', 
                         height: '100%', 
-                        objectFit: 'cover',
-                        transition: 'transform 0.4s ease'
+                        objectFit: 'cover'
                       }} 
                     />
                     
@@ -232,7 +250,7 @@ export default function News() {
                     </div>
 
                     {/* Bouton "En savoir plus" / "Voir plus" */}
-                    <div style={{ paddingTop: '1.2rem', marginTop: '1.2rem', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ paddingTop: '1.2rem', marginTop: '1.2rem', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -258,10 +276,6 @@ export default function News() {
                         <span>En savoir plus</span>
                         <ArrowRight size={14} />
                       </button>
-
-                      <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '500' }}>
-                        Lire l'article
-                      </span>
                     </div>
 
                   </div>
@@ -273,63 +287,69 @@ export default function News() {
         </div>
       </section>
 
-      {/* 4. Modal Lecture Article Complet — Image et texte défilent ensemble naturellement */}
+      {/* 4. Modal Lecture Article Complet — Alignement fluide depuis le haut et défilement continu */}
       {selectedArticle && (
         <div 
+          ref={modalOverlayRef}
           onClick={() => setSelectedArticle(null)}
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
+            inset: 0,
             width: '100vw',
-            height: '100vh',
-            background: 'rgba(0,0,0,0.88)',
-            backdropFilter: 'blur(6px)',
-            zIndex: 10000,
+            height: '100dvh',
+            background: 'rgba(0, 0, 0, 0.88)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 999999,
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1.5rem',
-            overflowY: 'auto'
+            justifyContent: 'flex-start',
+            padding: '24px 16px 48px 16px'
           }}
         >
           <div 
             onClick={e => e.stopPropagation()}
             style={{
-              background: 'white',
+              background: '#ffffff',
               maxWidth: '820px',
               width: '100%',
               borderRadius: '20px',
               overflow: 'hidden',
-              boxShadow: '0 30px 80px rgba(0,0,0,0.5)',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              position: 'relative'
+              boxShadow: '0 25px 70px rgba(0, 0, 0, 0.6)',
+              position: 'relative',
+              margin: '0 auto',
+              flexShrink: 0
             }}
           >
             {/* Bouton Fermer flottant sticky en haut à droite */}
-            <div style={{ position: 'sticky', top: 0, zIndex: 30, display: 'flex', justifyContent: 'flex-end', height: 0, padding: '16px 16px 0 0', pointerEvents: 'none' }}>
+            <div style={{ position: 'sticky', top: '12px', zIndex: 60, width: '100%', display: 'flex', justifyContent: 'flex-end', height: 0, pointerEvents: 'none' }}>
               <button 
+                type="button"
                 onClick={() => setSelectedArticle(null)}
                 style={{
                   pointerEvents: 'auto',
-                  background: 'rgba(0,0,0,0.75)',
-                  color: 'white',
-                  border: '1px solid rgba(255,255,255,0.3)',
+                  marginRight: '12px',
+                  background: 'rgba(0, 0, 0, 0.8)',
+                  color: '#ffffff',
+                  border: '1.5px solid rgba(255, 255, 255, 0.35)',
                   borderRadius: '50%',
-                  width: '40px',
-                  height: '40px',
+                  width: '42px',
+                  height: '42px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  backdropFilter: 'blur(6px)',
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
-                  transition: 'background 0.2s'
+                  backdropFilter: 'blur(8px)',
+                  boxShadow: '0 4px 18px rgba(0, 0, 0, 0.6)',
+                  transition: 'background 0.2s, transform 0.2s'
                 }}
-                aria-label="Fermer"
+                aria-label="Fermer la fenêtre"
               >
-                <X size={20} />
+                <X size={22} strokeWidth={2.5} />
               </button>
             </div>
 
@@ -342,7 +362,7 @@ export default function News() {
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                 minHeight: '260px'
               }}
             >
@@ -372,7 +392,7 @@ export default function News() {
                   fontWeight: '800', 
                   textTransform: 'uppercase', 
                   borderRadius: '6px',
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.6)'
+                  boxShadow: '0 4px 15px rgba(0, 0, 0, 0.6)'
                 }}
               >
                 {selectedArticle.cat || 'Club'}
@@ -410,7 +430,7 @@ export default function News() {
               </div>
 
               {/* Pied de l'article avec bouton fermer */}
-              <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                 <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Condor École de Football — Communication Officielle</span>
                 <button
                   type="button"
