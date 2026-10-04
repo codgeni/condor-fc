@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Hammer, Shield, Phone, Mail, MapPin, Clock, Lock } from 'lucide-react';
+import { Mail, MapPin, Lock } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Site en Maintenance | École de Football Condor',
-  description: "Le site officiel de l'École de Football Condor est actuellement en cours de maintenance et de finalisation. Nous revenons très prochainement.",
+  title: 'Condor École de Football',
+  description: "Le site officiel de Condor École de Football est actuellement en cours de préparation et de finalisation. Nous revenons très prochainement.",
   robots: {
     index: false,
     follow: false,
@@ -66,17 +66,17 @@ export default function MaintenancePage() {
           />
         </div>
         <div style={{
-          fontSize: '0.85rem',
+          fontSize: '0.9rem',
           letterSpacing: '3px',
           textTransform: 'uppercase',
           color: 'var(--clr-primary, #ca024f)',
-          fontWeight: '700'
+          fontWeight: '800'
         }}>
-          École de Football Condor • Haïti
+          Condor École de Football
         </div>
       </header>
 
-      {/* Bloc Central de Maintenance */}
+      {/* Bloc Central */}
       <main style={{
         maxWidth: '720px',
         width: '100%',
@@ -84,32 +84,12 @@ export default function MaintenancePage() {
         background: 'rgba(18, 18, 24, 0.75)',
         border: '1px solid rgba(255, 255, 255, 0.08)',
         borderRadius: '24px',
-        padding: '3rem 2rem',
+        padding: '3.5rem 2rem 3rem',
         margin: '2rem 0',
         boxShadow: '0 25px 60px rgba(0, 0, 0, 0.6)',
         backdropFilter: 'blur(16px)',
         zIndex: 1
       }}>
-        {/* Badge Travaux */}
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '8px',
-          background: 'rgba(202, 2, 79, 0.15)',
-          border: '1px solid rgba(202, 2, 79, 0.4)',
-          borderRadius: '999px',
-          padding: '6px 16px',
-          fontSize: '0.85rem',
-          fontWeight: '600',
-          color: '#ff6b8b',
-          marginBottom: '1.8rem',
-          textTransform: 'uppercase',
-          letterSpacing: '1px'
-        }}>
-          <Hammer size={16} />
-          <span>Site en cours de maintenance</span>
-        </div>
-
         <h1 style={{
           fontFamily: 'var(--font-heading, "Montserrat", sans-serif)',
           fontSize: 'clamp(2rem, 5vw, 3.2rem)',
@@ -129,7 +109,7 @@ export default function MaintenancePage() {
           margin: '0 auto 2.5rem',
           maxWidth: '580px'
         }}>
-          La plateforme officielle de l'École de Football Condor est actuellement en cours de préparation et de finalisation. Nos équipes travaillent pour vous offrir une expérience complète avec l'effectif des joueurs, les actualités, la boutique officielle et les inscriptions aux stages.
+          La plateforme officielle de Condor École de Football est actuellement en cours de préparation et de finalisation. Nos équipes travaillent pour vous offrir une expérience complète avec l'effectif des joueurs, les actualités, la boutique officielle et les inscriptions aux stages.
         </p>
 
         {/* Section Contact Rapide */}
@@ -199,7 +179,7 @@ export default function MaintenancePage() {
         gap: '8px'
       }}>
         <div>
-          © {new Date().getFullYear()} École de Football Condor. Tous droits réservés.
+          © {new Date().getFullYear()} Condor École de Football. Tous droits réservés.
         </div>
         <Link 
           href="/admin" 
