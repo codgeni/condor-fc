@@ -48,8 +48,8 @@ export function middleware(request: NextRequest) {
 
   // 3. Redirection canonique 301 & Désindexation des domaines temporaires Vercel (*.vercel.app)
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || request.nextUrl.hostname || '';
-  if (host.includes('.vercel.app')) {
-    const targetDomain = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.condor-ecoledefootball.com';
+  if (host.includes('.vercel.app') || host.includes('condor-ecoledefootball.com')) {
+    const targetDomain = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.condorecoledefootball.com';
     const redirectUrl = new URL(pathname + search, targetDomain);
 
     const redirectResponse = NextResponse.redirect(redirectUrl, 301);
