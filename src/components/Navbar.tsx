@@ -1,13 +1,20 @@
 "use client";
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+
+  // Masquer la Navbar sur la page de maintenance et dans l'administration
+  if (pathname?.startsWith('/maintenance') || pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   useEffect(() => {
     // Check if there is an active session on load

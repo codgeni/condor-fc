@@ -847,6 +847,68 @@ export default function AdminPanel() {
       {/* Main Content Area */}
       <main className="admin-main-content" style={{ flex: 1, padding: '2.5rem 3rem', height: 'calc(100vh - 80px)', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
 
+        {/* Bandeau d'information Mode Maintenance */}
+        <div style={{
+          background: 'linear-gradient(135deg, #1e1b2e 0%, #16161d 100%)',
+          border: '1px solid rgba(202, 2, 79, 0.4)',
+          borderRadius: '12px',
+          padding: '1rem 1.4rem',
+          marginBottom: '2rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '10px',
+              background: 'rgba(202, 2, 79, 0.2)',
+              color: 'var(--clr-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <ShieldAlert size={22} />
+            </div>
+            <div>
+              <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>MODE MAINTENANCE ACTIF</span>
+                <span style={{ fontSize: '0.72rem', background: 'var(--clr-primary)', color: '#fff', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Site fermé au public
+                </span>
+              </div>
+              <p style={{ margin: '3px 0 0', color: '#94a3b8', fontSize: '0.85rem' }}>
+                Tous les visiteurs arrivant sur n'importe quel lien du site sont redirigés vers la page "Site en cours de maintenance". Vous pouvez administrer le site ici en toute sécurité.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <a 
+              href="/?preview=condor" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+              style={{
+                fontSize: '0.85rem',
+                padding: '8px 16px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                textDecoration: 'none'
+              }}
+            >
+              <Eye size={15} />
+              <span>Aperçu du site (Bypass)</span>
+            </a>
+          </div>
+        </div>
+
         {/* ==============================================================
             TAB 1: ACCUEIL & MATCHS
         ============================================================== */}

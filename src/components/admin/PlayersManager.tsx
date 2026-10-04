@@ -98,8 +98,6 @@ export default function PlayersManager({
       role: 'Attaquants',
       category: defaultUnit,
       categories: [defaultUnit],
-      height: '1.75m',
-      weight: '68kg',
       foot: 'Droit',
       dob: '',
       nationality: 'Haïtienne',
@@ -529,18 +527,10 @@ export default function PlayersManager({
             3. Profil Physique & Biographie
           </h4>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>Date de naissance</label>
               <input type="text" placeholder="JJ/MM/AAAA" value={editingPlayer.dob || ''} onChange={e => setEditingPlayer({ ...editingPlayer, dob: e.target.value })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>Taille</label>
-              <input type="text" placeholder="1.75m" value={editingPlayer.height || ''} onChange={e => setEditingPlayer({ ...editingPlayer, height: e.target.value })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>Poids</label>
-              <input type="text" placeholder="68kg" value={editingPlayer.weight || ''} onChange={e => setEditingPlayer({ ...editingPlayer, weight: e.target.value })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>Pied Fort</label>

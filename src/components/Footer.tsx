@@ -7,8 +7,8 @@ import { MapPin, Phone, Mail, MessageSquare } from 'lucide-react';
 export default function Footer() {
   const pathname = usePathname();
 
-  // Hide public footer in admin dashboard to prevent body scrolling
-  if (pathname?.startsWith('/admin')) {
+  // Hide public footer in admin dashboard and maintenance screen
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/maintenance')) {
     return null;
   }
 

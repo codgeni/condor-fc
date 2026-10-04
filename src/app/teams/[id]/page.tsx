@@ -163,18 +163,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                   <span className="player-info-label">Lieu de naissance</span>
                   <span className="player-info-val">{pob}</span>
                 </div>
-                {player.height ? (
-                  <div className="player-info-row">
-                    <span className="player-info-label">Taille</span>
-                    <span className="player-info-val">{player.height}</span>
-                  </div>
-                ) : null}
-                {player.weight ? (
-                  <div className="player-info-row">
-                    <span className="player-info-label">Poids</span>
-                    <span className="player-info-val">{player.weight}</span>
-                  </div>
-                ) : null}
+
                 <div className="player-info-row">
                   <span className="player-info-label">Pied fort</span>
                   <span className="player-info-val">{foot}</span>
