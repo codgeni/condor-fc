@@ -2483,11 +2483,7 @@ function AdminLoginGate({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     <div style={{ flex: 1, marginTop: '80px', background: '#f8f9fa', minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
       <div style={{ background: 'white', borderRadius: '16px', padding: '3rem', boxShadow: '0 15px 35px rgba(0,0,0,0.08)', maxWidth: '450px', width: '100%', border: '1px solid #eee', color: 'black' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(202, 2, 79, 0.1)', color: 'var(--clr-primary)', marginBottom: '1rem', justifyContent: 'center' }}>
-            <Award size={32} />
-          </div>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.2rem', margin: 0, color: 'var(--clr-primary)' }}>PORTAIL ADMIN</h2>
-          <p style={{ color: 'var(--clr-gray)', marginTop: '5px' }}>Connexion sécurisée</p>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.2rem', margin: 0, color: 'var(--clr-primary)' }}>PORTAIL</h2>
         </div>
 
         {error && (
@@ -2498,14 +2494,14 @@ function AdminLoginGate({ onLoginSuccess }: { onLoginSuccess: () => void }) {
 
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px', color: 'var(--clr-gray)' }}>Adresse E-mail Administrateur</label>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px', color: 'var(--clr-gray)' }}>Adresse E-mail</label>
             <input 
               type="email" 
               value={email} 
               onChange={e => setEmail(e.target.value)} 
               required 
               style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.03)', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} 
-              placeholder="admin@gmail.com" 
+              placeholder="john.doe@gemini.com" 
             />
           </div>
 
