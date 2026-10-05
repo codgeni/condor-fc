@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { Play, Tv, X, Video } from 'lucide-react';
+import { Play, Tv, X, Video, Clock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { fetchVideos, VideoItem, parseVideoUrl, fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
+import { formatRelativeTime } from '@/lib/timeUtils';
 
 export default function CondorTV() {
   const [videos, setVideos] = useState<VideoItem[]>([]);
@@ -185,7 +186,14 @@ export default function CondorTV() {
                   </div>
                   
                   <div style={{ padding: '1.2rem' }}>
-                    <h3 style={{ fontSize: '1.2rem', margin: '0 0 6px', lineHeight: 1.3, color: 'white' }}>{video.title}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
+                      <h3 style={{ fontSize: '1.2rem', margin: 0, lineHeight: 1.3, color: 'white', flex: 1 }}>{video.title}</h3>
+                      {video.created_at && (
+                        <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                          <Clock size={12} /> {formatRelativeTime(video.created_at)}
+                        </span>
+                      )}
+                    </div>
                     {video.description && (
                       <p style={{ color: '#aaa', fontSize: '0.85rem', margin: 0, lineClamp: 2, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         {video.description}

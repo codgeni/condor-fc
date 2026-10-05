@@ -54,6 +54,8 @@ export default function Contact() {
     rentrerSeul: false,
     signatureParent: '',
     dateSignature: '',
+    dateSoumission: '',
+    submittedAt: '',
   });
 
   const [submitted, setSubmitted] = useState(false);
@@ -173,8 +175,9 @@ export default function Contact() {
     const vSig = validateRequired(formData.signatureParent, "Signature du parent (nom complet)", 3);
     if (!vSig.valid && vSig.error) errors.push(vSig.error);
 
+    // Enregistrement automatique de la date de signature si non spécifiée
     if (!formData.dateSignature) {
-      errors.push("La date de signature est obligatoire.");
+      formData.dateSignature = new Date().toLocaleDateString('fr-FR');
     }
 
     // En cas d'erreurs, interrompre et afficher le bandeau
@@ -196,8 +199,17 @@ export default function Contact() {
     setIsSubmitting(true);
 
     try {
-      // 3. Assainissement strict de toutes les données du formulaire (Anti-XSS & Null-byte clean)
+      // 3. Assainissement strict et horodatage certifié de la signature et de l'envoi
+      const now = new Date();
+      const nowIso = now.toISOString();
+      const dateSignatureFormatted = formData.dateSignature || now.toLocaleDateString('fr-FR');
+      const dateSoumissionFormatted = now.toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'medium' });
+
+      formData.dateSignature = dateSignatureFormatted;
       const sanitizedData = sanitizeFormRecord(formData);
+      sanitizedData.dateSignature = dateSignatureFormatted;
+      sanitizedData.dateSoumission = dateSoumissionFormatted;
+      sanitizedData.submittedAt = nowIso;
 
       // 4. Enregistrement sécurisé dans Supabase
       const { error } = await supabase.from('inscriptions').insert({
@@ -208,6 +220,7 @@ export default function Contact() {
         parent_prenom: sanitizedData.parentPrenom,
         parent_tel: sanitizedData.parentTelephones,
         parent_email: sanitizedData.parentCourriel,
+        created_at: nowIso,
         form_data: sanitizedData
       });
 
@@ -240,6 +253,8 @@ export default function Contact() {
           rentrerSeul: false,
           signatureParent: '',
           dateSignature: '',
+          dateSoumission: '',
+          submittedAt: '',
         });
       }, 5000);
     } catch (err: any) {

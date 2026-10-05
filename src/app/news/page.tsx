@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, X, Calendar, Layers, Eye } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
+import { formatRelativeTime } from '@/lib/timeUtils';
 
 export default function News() {
   const [allNews, setAllNews] = useState<any[]>([]);
@@ -212,7 +213,7 @@ export default function News() {
                     <div>
                       {/* Date de publication */}
                       <span style={{ color: '#888', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px', fontWeight: 'bold' }}>
-                        <Calendar size={13} style={{ color: 'var(--clr-primary)' }} /> {news.date || "Récemment"}
+                        <Calendar size={13} style={{ color: 'var(--clr-primary)' }} /> {formatRelativeTime(news.created_at || news.date)}
                       </span>
 
                       {/* Titre concis (2 lignes max) */}
@@ -402,7 +403,7 @@ export default function News() {
             {/* Corps de l'Article (défile avec l'image) */}
             <div style={{ padding: '2rem 2.2rem' }}>
               <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <Calendar size={14} style={{ color: 'var(--clr-primary)' }} /> Publié : {selectedArticle.date || "Récemment"}
+                <Calendar size={14} style={{ color: 'var(--clr-primary)' }} /> Publié : {formatRelativeTime(selectedArticle.created_at || selectedArticle.date)}
               </span>
 
               <h2 

@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import HeroSlider from '@/components/HeroSlider';
-import { Play, ArrowRight, Calendar, MapPin, ShoppingBag, Landmark, Heart, Trophy, Tv, ChevronLeft, ChevronRight, Award, Star, Activity, X } from 'lucide-react';
+import { Play, ArrowRight, Calendar, MapPin, ShoppingBag, Landmark, Heart, Trophy, Tv, ChevronLeft, ChevronRight, Award, Star, Activity, X, Clock } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { playersDB } from '@/lib/playersDB';
 import { 
@@ -12,6 +12,7 @@ import {
   fetchMergedPlayers
 } from '@/lib/dataService';
 import { supabase } from '@/lib/supabaseClient';
+import { formatRelativeTime } from '@/lib/timeUtils';
 import { 
   ChaleChaleTripleCup, 
   BackToSchoolNationalCup, 
@@ -344,7 +345,7 @@ export default function Home() {
                     <div style={{ padding: '1.4rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div>
                         <span style={{ color: '#888', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px', fontWeight: 'bold' }}>
-                          <Calendar size={13} style={{ color: 'var(--clr-primary)' }} /> {news.date || "Récemment"}
+                          <Calendar size={13} style={{ color: 'var(--clr-primary)' }} /> {formatRelativeTime(news.created_at || news.date)}
                         </span>
                         <h3 
                           style={{ 
@@ -504,9 +505,16 @@ export default function Home() {
                     />
                   </div>
                   <div style={{ padding: '1.5rem' }}>
-                    <span style={{ background: 'var(--clr-primary)', padding: '4px 8px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '4px' }}>
-                      {vid.category}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
+                      <span style={{ background: 'var(--clr-primary)', padding: '4px 8px', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: '4px' }}>
+                        {vid.category}
+                      </span>
+                      {vid.created_at && (
+                        <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={12} /> {formatRelativeTime(vid.created_at)}
+                        </span>
+                      )}
+                    </div>
                     <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.5rem', margin: '10px 0 5px' }}>{vid.title}</h3>
                     <p style={{ color: '#aaa', fontSize: '0.9rem', margin: 0 }}>{vid.description || 'Découvrez cette vidéo exclusive Condor TV.'}</p>
                   </div>
@@ -1101,7 +1109,7 @@ export default function Home() {
             {/* Corps de l'Article (défile harmonieusement avec l'image) */}
             <div style={{ padding: '2rem 2.2rem' }}>
               <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <Calendar size={14} style={{ color: 'var(--clr-primary)' }} /> Publié : {selectedArticle.date || "Récemment"}
+                <Calendar size={14} style={{ color: 'var(--clr-primary)' }} /> Publié : {formatRelativeTime(selectedArticle.created_at || selectedArticle.date)}
               </span>
 
               <h2 

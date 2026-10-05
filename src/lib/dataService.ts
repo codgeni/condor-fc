@@ -769,7 +769,8 @@ export async function saveVideo(video: VideoItem): Promise<{ success: boolean; e
   const formattedVideo: VideoItem = {
     ...video,
     url: embedUrl || video.url,
-    thumbnail: video.thumbnail || thumbnail
+    thumbnail: video.thumbnail || thumbnail,
+    created_at: video.created_at || new Date().toISOString()
   };
 
   try {

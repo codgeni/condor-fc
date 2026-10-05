@@ -11,20 +11,28 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  // Masquer la Navbar sur la page de maintenance et dans l'administration
-  if (pathname?.startsWith('/maintenance') || pathname?.startsWith('/admin')) {
+  // Masquer la Navbar uniquement sur la page dédiée de maintenance
+  if (pathname?.startsWith('/maintenance')) {
     return null;
   }
 
   useEffect(() => {
     // Check if there is an active session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u?.email === 'admin@gmail.com') {
+        document.cookie = "condor_bypass_maintenance=true; path=/; max-age=604800; SameSite=Lax";
+      }
     });
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u?.email === 'admin@gmail.com') {
+        document.cookie = "condor_bypass_maintenance=true; path=/; max-age=604800; SameSite=Lax";
+      }
     });
 
     // Automatically close mobile menu if resized back to desktop

@@ -36,6 +36,8 @@ import SiteTextsManager from '@/components/admin/SiteTextsManager';
 import PlayersManager from '@/components/admin/PlayersManager';
 import ShopManager from '@/components/admin/ShopManager';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
+import { printInscriptionDossier } from '@/lib/pdfPrintService';
+import { formatRelativeTime, formatFullDateTime } from '@/lib/timeUtils';
 
 const convertToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -200,6 +202,7 @@ export default function AdminPanel() {
       if (session?.user) {
         setUser(session.user);
         if (session.user.email === 'admin@gmail.com') {
+          document.cookie = "condor_bypass_maintenance=true; path=/; max-age=604800; SameSite=Lax";
           fetchData();
         }
       }
@@ -210,6 +213,7 @@ export default function AdminPanel() {
       if (session?.user) {
         setUser(session.user);
         if (session.user.email === 'admin@gmail.com') {
+          document.cookie = "condor_bypass_maintenance=true; path=/; max-age=604800; SameSite=Lax";
           fetchData();
         }
       } else {
@@ -517,12 +521,14 @@ export default function AdminPanel() {
   // -------------------------------------------------------------
   const handleSaveNews = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = {
+    const nowIso = new Date().toISOString();
+    const payload: any = {
       cat: editingNews.cat || 'Club',
       title: editingNews.title,
       desc_text: editingNews.desc_text || editingNews.desc || '',
       img: editingNews.img || '/player_action_1_1780681882713.png',
-      date: editingNews.date || "À l'instant"
+      date: editingNews.date && !editingNews.date.includes("À l'instant") ? editingNews.date : new Date().toLocaleDateString('fr-FR'),
+      created_at: editingNews.created_at || nowIso
     };
 
     const isEdit = !!editingNews.id;
@@ -1351,6 +1357,7 @@ export default function AdminPanel() {
                       <th style={{ padding: '15px' }}>Titre</th>
                       <th style={{ padding: '15px' }}>Catégorie</th>
                       <th style={{ padding: '15px' }}>Durée</th>
+                      <th style={{ padding: '15px' }}>Date Ajout</th>
                       <th style={{ padding: '15px', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
@@ -1371,6 +1378,7 @@ export default function AdminPanel() {
                           </span>
                         </td>
                         <td style={{ padding: '15px', color: '#666' }}>{video.duration || 'N/A'}</td>
+                        <td style={{ padding: '15px', color: '#666', fontSize: '0.85rem' }}>{formatRelativeTime(video.created_at)}</td>
                         <td style={{ padding: '15px', textAlign: 'right' }}>
                           <button onClick={() => setEditingVideo(video)} style={{ background: 'none', border: 'none', color: 'blue', marginRight: '12px', cursor: 'pointer' }}><Edit2 size={16} /></button>
                           <button onClick={() => handleDeleteVideo(video.id!)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer' }}><Trash2 size={16} /></button>
@@ -1850,7 +1858,7 @@ export default function AdminPanel() {
                       <td style={{ padding: '15px' }}><img src={news.img} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} alt="news" /></td>
                       <td style={{ padding: '15px', fontWeight: 'bold' }}>{news.title}</td>
                       <td style={{ padding: '15px' }}><span style={{ background: '#eee', padding: '3px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>{news.cat}</span></td>
-                      <td style={{ padding: '15px', color: '#666' }}>{news.date}</td>
+                      <td style={{ padding: '15px', color: '#666' }}>{formatRelativeTime(news.created_at || news.date)}</td>
                       <td style={{ padding: '15px', textAlign: 'right' }}>
                         <button onClick={() => setEditingNews(news)} style={{ background: 'none', border: 'none', color: 'blue', marginRight: '10px', cursor: 'pointer' }}><Edit2 size={16} /></button>
                         <button onClick={() => handleDeleteNews(news.id)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer' }}><Trash2 size={16} /></button>
@@ -1993,23 +2001,23 @@ export default function AdminPanel() {
                           {fd.planAdhesion?.split(':')[0] || 'Plan Standard'}
                         </span>
                       </div>
-                      <p style={{ margin: '8px 0 0', color: '#666', fontSize: '0.9rem' }}>
-                        Enregistré le {selectedInscription.created_at ? new Date(selectedInscription.created_at).toLocaleString('fr-FR') : 'N/A'} • Dossier intégral certifié et conforme aux normes 2026
+                      <p style={{ margin: '8px 0 0', color: '#475569', fontSize: '0.9rem' }}>
+                        📅 <strong>Formulaire envoyé le :</strong> {formatFullDateTime(selectedInscription.created_at || fd.submittedAt)} • ✍️ <strong>Signature déclarée :</strong> {fd.dateSignature || 'N/A'}
                       </p>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                       <button 
-                        onClick={() => window.print()} 
-                        className="btn btn-outline" 
-                        style={{ color: '#111', borderColor: '#ccc', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}
+                        onClick={() => printInscriptionDossier(selectedInscription)} 
+                        className="btn btn-primary" 
+                        style={{ padding: '9px 18px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(202, 2, 79, 0.3)' }}
                       >
-                        <Printer size={16} /> Imprimer Dossier (PDF)
+                        <Printer size={18} /> Télécharger en PDF / Imprimer (Signature Physique)
                       </button>
                       <button 
                         onClick={() => setSelectedInscription(null)} 
-                        className="btn btn-primary" 
-                        style={{ padding: '8px 18px', fontSize: '0.9rem' }}
+                        className="btn btn-outline" 
+                        style={{ padding: '8px 18px', fontSize: '0.9rem', color: '#111', borderColor: '#ccc' }}
                       >
                         Fermer le Dossier
                       </button>
@@ -2284,6 +2292,14 @@ export default function AdminPanel() {
                           <p style={{ fontSize: '0.85rem', color: '#666', margin: 0 }}>
                             Signé le : <strong>{fd.dateSignature || 'N/A'}</strong>
                           </p>
+                          <button
+                            type="button"
+                            onClick={() => printInscriptionDossier(selectedInscription)}
+                            className="btn btn-primary"
+                            style={{ marginTop: '12px', width: '100%', padding: '8px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                          >
+                            <Printer size={15} /> Imprimer / PDF pour Signature Manuscrite
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -2341,8 +2357,9 @@ export default function AdminPanel() {
                         })
                         .map((ins) => (
                           <tr key={ins.id} style={{ borderBottom: '1px solid #eee' }}>
-                            <td style={{ padding: '12px 15px', color: '#666', fontSize: '0.85rem' }}>
-                              {ins.created_at ? new Date(ins.created_at).toLocaleDateString('fr-FR') : 'N/A'}
+                            <td style={{ padding: '12px 15px', color: '#475569', fontSize: '0.85rem' }}>
+                              <div style={{ fontWeight: '600' }}>{ins.created_at ? new Date(ins.created_at).toLocaleDateString('fr-FR') : 'N/A'}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{ins.created_at ? new Date(ins.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}</div>
                             </td>
                             <td style={{ padding: '12px 15px', fontWeight: 'bold' }}>{ins.enfant_nom} {ins.enfant_prenom}</td>
                             <td style={{ padding: '12px 15px' }}>{ins.enfant_dob}</td>
@@ -2355,11 +2372,19 @@ export default function AdminPanel() {
                                 {ins.form_data?.planAdhesion?.split(':')[0] || 'Standard'}
                               </span>
                             </td>
-                            <td style={{ padding: '12px 15px', textAlign: 'right' }}>
+                            <td style={{ padding: '12px 15px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              <button 
+                                onClick={() => printInscriptionDossier(ins)} 
+                                className="btn btn-primary" 
+                                style={{ padding: '6px 12px', fontSize: '0.82rem', marginRight: '8px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                                title="Télécharger en PDF pour faire signer physiquement"
+                              >
+                                <Printer size={14} /> PDF
+                              </button>
                               <button 
                                 onClick={() => { setSelectedInscription(ins); window.scrollTo({ top: 0, behavior: 'smooth' }); }} 
                                 className="btn btn-outline" 
-                                style={{ padding: '6px 12px', fontSize: '0.85rem', marginRight: '10px', color: 'black', borderColor: '#ccc' }}
+                                style={{ padding: '6px 12px', fontSize: '0.82rem', marginRight: '8px', color: 'black', borderColor: '#ccc' }}
                               >
                                 Dossier Complet
                               </button>
