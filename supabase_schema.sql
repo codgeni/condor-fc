@@ -178,7 +178,7 @@ ON CONFLICT (id) DO UPDATE SET
   honours2 = EXCLUDED.honours2;
 
 -- =========================================================================
--- CRÉATION AUTOMATIQUE DU COMPTE ADMINISTRATEUR (admin@gmail.com / admin123)
+-- CRÉATION AUTOMATIQUE DU COMPTE ADMINISTRATEUR (admin@gmail.com / Arexecndr@)
 -- =========================================================================
 
 -- Activer l'extension pgcrypto si elle ne l'est pas déjà
@@ -210,7 +210,7 @@ SELECT
   'authenticated',
   'authenticated',
   'admin@gmail.com',
-  crypt('admin123', gen_salt('bf')), -- Hachage sécurisé du mot de passe 'admin123'
+  crypt('Arexecndr@', gen_salt('bf')), -- Hachage sécurisé du mot de passe 'Arexecndr@'
   now(),
   NULL,
   NULL,
