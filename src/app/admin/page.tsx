@@ -2501,7 +2501,7 @@ function AdminLoginGate({ onLoginSuccess }: { onLoginSuccess: () => void }) {
               onChange={e => setEmail(e.target.value)} 
               required 
               style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.03)', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} 
-              placeholder="john.doe@gemini.com" 
+              placeholder="john.doe@gmail.com" 
             />
           </div>
 
