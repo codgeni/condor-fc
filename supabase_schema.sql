@@ -506,16 +506,26 @@ CREATE TABLE IF NOT EXISTS units (
   description TEXT,
   "order" INT DEFAULT 1,
   is_active BOOLEAN DEFAULT TRUE,
+  image TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-INSERT INTO units (id, name, description, "order", is_active) VALUES
-('unit-1', 'Équipe Première', 'Effectif Senior & Élite', 1, TRUE),
-('unit-2', 'U17', 'Moins de 17 ans (Cadets)', 2, TRUE),
-('unit-3', 'U15', 'Moins de 15 ans (Minimes)', 3, TRUE),
-('unit-4', 'U13', 'Moins de 13 ans (Benjamins)', 4, TRUE),
-('unit-5', 'U9', 'Moins de 9 ans (Poussins / École)', 5, TRUE)
-ON CONFLICT (id) DO NOTHING;
+ALTER TABLE units ADD COLUMN IF NOT EXISTS image TEXT;
+
+INSERT INTO units (id, name, description, "order", is_active, image) VALUES
+('unit-1', 'Équipe Première', 'Effectif Senior & Élite', 1, TRUE, '/stadium_hero_1780681869623.png'),
+('unit-2', 'U17', 'Moins de 17 ans (Cadets)', 2, TRUE, '/kick_hero.png'),
+('unit-3', 'U15', 'Moins de 15 ans (Minimes)', 3, TRUE, '/player_action_1_1780681882713.png'),
+('unit-4', 'U13', 'Moins de 13 ans (Benjamins)', 4, TRUE, '/trophy_moment_1780681956500.png'),
+('unit-5', 'U9', 'Moins de 9 ans (Poussins / École)', 5, TRUE, '/player_action_2_1780681894021.png'),
+('unit-6', 'U8', 'Moins de 8 ans (Poussins)', 6, TRUE, '/club_hero.png'),
+('unit-7', 'U7', 'Moins de 7 ans (Débutants / École de Football)', 7, TRUE, '/soccer.png')
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  description = EXCLUDED.description,
+  "order" = EXCLUDED."order",
+  is_active = EXCLUDED.is_active,
+  image = EXCLUDED.image;
 
 CREATE TABLE IF NOT EXISTS roles (
   id TEXT PRIMARY KEY,

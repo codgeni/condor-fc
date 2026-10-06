@@ -94,6 +94,7 @@ export interface UnitItem {
   description?: string;
   order: number;
   is_active?: boolean;
+  image?: string;
   created_at?: string;
 }
 
@@ -230,11 +231,13 @@ export interface SiteContent {
 // DEFAULTS
 // -------------------------------------------------------------
 export const DEFAULT_UNITS: UnitItem[] = [
-  { id: 'unit-1', name: 'Équipe Première', description: 'Effectif Senior & Élite', order: 1, is_active: true },
-  { id: 'unit-2', name: 'U17', description: 'Moins de 17 ans (Cadets)', order: 2, is_active: true },
-  { id: 'unit-3', name: 'U15', description: 'Moins de 15 ans (Minimes)', order: 3, is_active: true },
-  { id: 'unit-4', name: 'U13', description: 'Moins de 13 ans (Benjamins)', order: 4, is_active: true },
-  { id: 'unit-5', name: 'U9', description: 'Moins de 9 ans (Poussins / École)', order: 5, is_active: true },
+  { id: 'unit-1', name: 'Équipe Première', description: 'Effectif Senior & Élite', order: 1, is_active: true, image: '/stadium_hero_1780681869623.png' },
+  { id: 'unit-2', name: 'U17', description: 'Moins de 17 ans (Cadets)', order: 2, is_active: true, image: '/kick_hero.png' },
+  { id: 'unit-3', name: 'U15', description: 'Moins de 15 ans (Minimes)', order: 3, is_active: true, image: '/player_action_1_1780681882713.png' },
+  { id: 'unit-4', name: 'U13', description: 'Moins de 13 ans (Benjamins)', order: 4, is_active: true, image: '/trophy_moment_1780681956500.png' },
+  { id: 'unit-5', name: 'U9', description: 'Moins de 9 ans (Poussins / École)', order: 5, is_active: true, image: '/player_action_2_1780681894021.png' },
+  { id: 'unit-6', name: 'U8', description: 'Moins de 8 ans (Poussins)', order: 6, is_active: true, image: '/club_hero.png' },
+  { id: 'unit-7', name: 'U7', description: 'Moins de 7 ans (Débutants / École de Football)', order: 7, is_active: true, image: '/soccer.png' },
 ];
 
 export const DEFAULT_ROLES: RoleItem[] = [

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from 'react';
-import { Shield, Plus, Edit2, Trash2, Check, X, Users, AlertCircle } from 'lucide-react';
+import { Shield, Plus, Edit2, Trash2, Check, X, Users, AlertCircle, Upload, Image as ImageIcon } from 'lucide-react';
 import { UnitItem, saveUnit, deleteUnit } from '@/lib/dataService';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
+import { validateUploadFile } from '@/lib/security';
 
 interface UnitsManagerProps {
   units: UnitItem[];
@@ -17,6 +18,21 @@ export default function UnitsManager({ units, players, onRefresh, showToast }: U
   const [editingUnit, setEditingUnit] = useState<UnitItem | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  const convertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const validation = validateUploadFile(file);
+      if (!validation.valid) {
+        showToast(validation.error || 'Fichier non valide.');
+        reject(new Error(validation.error || 'Fichier non valide.'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = error => reject(error);
+    });
+  };
 
   // Calculate players count for each unit
   const getPlayerCount = (unitName: string) => {
@@ -34,7 +50,8 @@ export default function UnitsManager({ units, players, onRefresh, showToast }: U
       name: '',
       description: '',
       order: units.length + 1,
-      is_active: true
+      is_active: true,
+      image: '/kick_hero.png'
     });
   };
 
@@ -200,6 +217,60 @@ export default function UnitsManager({ units, players, onRefresh, showToast }: U
             </div>
           </div>
 
+          <div style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1.2rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px', color: '#0f172a' }}>
+              Photo d'accueil de la section / Image de l'unité (Ex: U17, U9, Équipe Première)
+            </label>
+            <p style={{ margin: '0 0 10px', fontSize: '0.82rem', color: '#64748b' }}>
+              Cette image apparaîtra en haut de la page de la section (Landing Page). Vous pouvez coller un lien d'image ou téléverser une photo depuis votre ordinateur.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input 
+                type="text" 
+                value={editingUnit.image || ''} 
+                onChange={e => setEditingUnit({ ...editingUnit, image: e.target.value })} 
+                placeholder="Ex: /kick_hero.png ou https://..." 
+                style={{ flex: 1, minWidth: '240px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '0.95rem' }} 
+              />
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 14px', fontSize: '0.85rem', cursor: 'pointer' }}
+                >
+                  <Upload size={16} /> Choisir un fichier...
+                </button>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        const base64 = await convertToBase64(file);
+                        setEditingUnit({ ...editingUnit, image: base64 });
+                        showToast("Image d'unité chargée !");
+                      } catch (err) {
+                        showToast("Erreur lors de la lecture de l'image.");
+                      }
+                    }
+                  }}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                />
+              </div>
+            </div>
+            {editingUnit.image && (
+              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <img 
+                  src={editingUnit.image} 
+                  alt="Aperçu unité" 
+                  style={{ width: '120px', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }} 
+                />
+                <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 'bold' }}>✓ Image d'accueil configurée pour {editingUnit.name || 'cette unité'}</span>
+              </div>
+            )}
+          </div>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}>
             <input 
               type="checkbox" 
@@ -230,9 +301,10 @@ export default function UnitsManager({ units, players, onRefresh, showToast }: U
       )}
 
       {/* Grille des Unités Actuelles */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
         {sortedUnits.map(unit => {
           const count = getPlayerCount(unit.name);
+          const unitImg = unit.image || '/kick_hero.png';
           return (
             <div 
               key={unit.id}
@@ -245,10 +317,18 @@ export default function UnitsManager({ units, players, onRefresh, showToast }: U
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                position: 'relative'
+                position: 'relative',
+                overflow: 'hidden'
               }}
             >
               <div>
+                <div style={{ position: 'relative', height: '120px', borderRadius: '8px', overflow: 'hidden', marginBottom: '12px', background: '#0f172a' }}>
+                  <img src={unitImg} alt={unit.name} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }} />
+                  <div style={{ position: 'absolute', top: '8px', left: '8px', background: 'rgba(0,0,0,0.65)', color: 'white', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                    Affiche Landing Page
+                  </div>
+                </div>
+
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: 'rgba(224, 30, 38, 0.1)', color: 'var(--clr-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
