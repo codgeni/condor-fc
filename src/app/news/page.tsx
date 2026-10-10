@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, X, Calendar, Layers, Eye } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
+import { fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT, fetchNews } from '@/lib/dataService';
 import { formatRelativeTime } from '@/lib/timeUtils';
 
 export default function News() {
@@ -37,13 +37,13 @@ export default function News() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [newsRes, contentData] = await Promise.all([
-          supabase.from('news').select('*').order('created_at', { ascending: false }),
+        const [newsList, contentData] = await Promise.all([
+          fetchNews(),
           fetchSiteContent()
         ]);
 
-        if (!newsRes.error && newsRes.data) {
-          setAllNews(newsRes.data);
+        if (newsList) {
+          setAllNews(newsList);
         }
         if (contentData) {
           setSiteContent(contentData);

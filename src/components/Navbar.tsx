@@ -11,11 +11,6 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
 
-  // Masquer la Navbar uniquement sur la page dédiée de maintenance
-  if (pathname?.startsWith('/maintenance')) {
-    return null;
-  }
-
   useEffect(() => {
     // Check if there is an active session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -64,6 +59,11 @@ export default function Navbar() {
     setMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
+
+  // Masquer la Navbar uniquement sur la page dédiée de maintenance
+  if (pathname?.startsWith('/maintenance')) {
+    return null;
+  }
 
   return (
     <header className="header">

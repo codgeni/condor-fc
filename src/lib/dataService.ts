@@ -249,10 +249,25 @@ export const DEFAULT_ROLES: RoleItem[] = [
 ];
 
 export const DEFAULT_STAFF: StaffMember[] = [
-  { id: 'staff-1', name: 'Jean-Claude Valme', role: 'Directeur Technique', img: '/condor_logo_transparent.png', order: 1 },
-  { id: 'staff-2', name: 'Pierre-Richard Guerrier', role: 'Entraîneur Principal U17', img: '/player_action_2_1780681894021.png', order: 2 },
-  { id: 'staff-3', name: 'Dieudonné Lamothe', role: 'Préparateur Physique', img: '/stadium_hero_1780681869623.png', order: 3 },
-  { id: 'staff-4', name: 'Marise Lafontant', role: 'Secrétaire Générale', img: '/club_hero.png', order: 4 },
+  { id: 'staff-jean-claude-pierrot', name: 'Jean Claude Pierrot', role: 'Conseiller Technique', img: '/staff/jean-claude-pierrot.jpg', order: 1 },
+  { id: 'staff-jean-marc-junior-ferdinand', name: 'Jean Marc Junior Ferdinand', role: 'Conseiller Technique', img: '/staff/jean-marc-junior-ferdinand.jpg', order: 2 },
+  { id: 'staff-benson-pierre', name: 'Benson Pierre', role: 'Planificateur de Match & Tournoi', img: '/staff/benson-pierre.jpg', order: 3 },
+  { id: 'staff-diego-charles', name: 'Diego Charles', role: 'Formateur', img: '/staff/diego-charles.jpg', order: 4 },
+  { id: 'staff-handalson-dejean', name: 'Handalson Dejean', role: 'Formateur', img: '/staff/handalson-dejean.jpg', order: 5 },
+  { id: 'staff-joy-mickenley-cadet', name: 'Joy Mickenley Cadet', role: 'Formateur', img: '/staff/joy-mickenley-cadet.jpg', order: 6 },
+  { id: 'staff-patrick-pierre-louis', name: 'Patrick Pierre Louis', role: 'Formateur', img: '/staff/patrick-pierre-louis.jpg', order: 7 },
+  { id: 'staff-ronald-claude', name: 'Ronald Claude', role: 'Formateur', img: '/staff/ronald-claude.jpg', order: 8 },
+  { id: 'staff-cindy-vernet', name: 'Cindy Vernet', role: 'Formatrice Adjointe', img: '/staff/cindy-vernet.jpg', order: 9 },
+  { id: 'staff-guerline-guerrier', name: 'Guerline Guerrier', role: 'Formatrice Adjointe', img: '/staff/guerline-guerrier.jpg', order: 10 },
+  { id: 'staff-jacklin-pierre', name: 'Jacklin Pierre', role: 'Formateur Adjoint', img: '/staff/jacklin-pierre.jpg', order: 11 },
+  { id: 'staff-mayico-franck', name: 'Mayico Franck', role: 'Formateur Adjoint', img: '/staff/mayico-franck.jpg', order: 12 },
+  { id: 'staff-christina-similien', name: 'Christina Similien', role: 'Assistante Administrative', img: '/staff/christina-similien.jpg', order: 13 },
+  { id: 'staff-wesnide-victor', name: 'Wesnide Victor', role: 'Réceptionniste', img: '/staff/wesnide-victor.jpg', order: 14 },
+  { id: 'staff-kimberline-chery', name: 'Kimberline Chery', role: 'Massothérapeute', img: '/staff/kimberline-chery.jpg', order: 15 },
+  { id: 'staff-valdyrsen-deris', name: 'Valdyrsen Deris', role: 'Responsable Journal', img: '/staff/valdyrsen-deris.jpg', order: 16 },
+  { id: 'staff-jameson-cassamajor', name: 'Jameson Cassamajor', role: 'Assistant Logistique', img: '/staff/jameson-cassamajor.jpg', order: 17 },
+  { id: 'staff-erncon-justin', name: 'Erncon Justin', role: 'Outilleur', img: '/staff/erncon-justin.jpg', order: 18 },
+  { id: 'staff-jetson-devallon', name: 'Jetson Devallon', role: 'Outilleur', img: '/staff/jetson-devallon.jpg', order: 19 },
 ];
 
 export const DEFAULT_TIMELINE: TimelineItem[] = [
@@ -1119,7 +1134,13 @@ export async function fetchStaff(): Promise<StaffMember[]> {
     console.warn('Supabase staff fetch note, using local fallback', err);
   }
 
-  return getLocalItem('staff_list', DEFAULT_STAFF);
+  const cached = getLocalItem<StaffMember[]>('staff_list', DEFAULT_STAFF);
+  // Auto-upgrade legacy cache if it contains dummy placeholder data
+  if (!cached || cached.length <= 4 || cached.some(m => m.id === 'staff-1' || m.name === 'Jean-Claude Valme')) {
+    setLocalItem('staff_list', DEFAULT_STAFF);
+    return DEFAULT_STAFF;
+  }
+  return cached;
 }
 
 export async function saveStaff(member: StaffMember): Promise<{ success: boolean; data?: StaffMember }> {
@@ -1447,3 +1468,43 @@ export async function transferPlayerCategory(
 
   return await savePlayerRecord(updated);
 }
+
+// =============================================================
+// 12. NEWS / ACTUALITÉS SERVICE
+// =============================================================
+export function isRealNews(item: any): boolean {
+  if (!item || !item.title) return false;
+  const t = (item.title || '').trim().toLowerCase();
+  // Filter out dummy/template test news
+  if (
+    t.includes('décroche une victoire') || 
+    t.includes('decroche une victoire') || 
+    t.includes('nouvelle recrue officiellement') || 
+    t.includes('arène') || 
+    t.includes('arene')
+  ) {
+    return false;
+  }
+  return true;
+}
+
+export async function fetchNews(): Promise<any[]> {
+  try {
+    const { data, error } = await supabase
+      .from('news')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      const real = data.filter(isRealNews);
+      setLocalItem('news_list', real);
+      return real;
+    }
+  } catch (err) {
+    console.warn('Supabase fetch news note', err);
+  }
+
+  const cached = getLocalItem<any[]>('news_list', []);
+  return cached.filter(isRealNews);
+}
+

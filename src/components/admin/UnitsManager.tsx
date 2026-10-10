@@ -218,11 +218,11 @@ export default function UnitsManager({ units, players, onRefresh, showToast }: U
           </div>
 
           <div style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1.2rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px', color: '#0f172a' }}>
-              Photo d'accueil de la section / Image de l'unité (Ex: U17, U9, Équipe Première)
+            <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 'bold', marginBottom: '6px', color: '#0f172a' }}>
+              Photo de la bannière du haut (Hero Banner pour {editingUnit.name || 'cette catégorie'})
             </label>
             <p style={{ margin: '0 0 10px', fontSize: '0.82rem', color: '#64748b' }}>
-              Cette image apparaîtra en haut de la page de la section (Landing Page). Vous pouvez coller un lien d'image ou téléverser une photo depuis votre ordinateur.
+              Cette image s'affiche en grand dans la bannière principale tout en haut de la page Équipes lorsque l'utilisateur sélectionne cette catégorie.
             </p>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <input 

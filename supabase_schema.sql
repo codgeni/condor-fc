@@ -130,13 +130,8 @@ SELECT s.url FROM (VALUES
 ) AS s(url)
 WHERE NOT EXISTS (SELECT 1 FROM slides WHERE slides.url = s.url);
 
--- Insérer les actualités par défaut (si non existantes)
-INSERT INTO news (cat, date, title, desc_text, img)
-SELECT n.cat, n.date, n.title, n.desc_text, n.img FROM (VALUES
-  ('Match', 'Il y a 2 heures', 'Le Condor FC décroche une victoire cruciale à l''extérieur', 'Une performance époustouflante en seconde période assure les trois points sur la route.', '/player_action_1_1780681882713.png'),
-  ('Transferts', 'Il y a 5 heures', 'Nouvelle recrue officiellement dévoilée à l''Arène', 'Le club renforce sa ligne offensive avec l''arrivée d''un jeune international prometteur.', '/condor_jersey_1780681923538.png')
-) AS n(cat, date, title, desc_text, img)
-WHERE NOT EXISTS (SELECT 1 FROM news WHERE news.title = n.title);
+-- Nettoyer les actualités modèles/fictives
+DELETE FROM news WHERE title ILIKE '%décroche une victoire%' OR title ILIKE '%Nouvelle recrue%';
 
 -- Nettoyer le doublon joueur 71 s'il existe
 DELETE FROM players WHERE id = '71';
@@ -553,11 +548,26 @@ CREATE TABLE IF NOT EXISTS staff (
 );
 
 INSERT INTO staff (id, name, role, img, "order") VALUES
-('staff-1', 'Jean-Claude Valme', 'Directeur Technique', '/condor_logo_transparent.png', 1),
-('staff-2', 'Pierre-Richard Guerrier', 'Entraîneur Principal U17', '/player_action_2_1780681894021.png', 2),
-('staff-3', 'Dieudonné Lamothe', 'Préparateur Physique', '/stadium_hero_1780681869623.png', 3),
-('staff-4', 'Marise Lafontant', 'Secrétaire Générale', '/club_hero.png', 4)
-ON CONFLICT (id) DO NOTHING;
+('staff-jean-claude-pierrot', 'Jean Claude Pierrot', 'Conseiller Technique', '/staff/jean-claude-pierrot.jpg', 1),
+('staff-jean-marc-junior-ferdinand', 'Jean Marc Junior Ferdinand', 'Conseiller Technique', '/staff/jean-marc-junior-ferdinand.jpg', 2),
+('staff-benson-pierre', 'Benson Pierre', 'Planificateur de Match & Tournoi', '/staff/benson-pierre.jpg', 3),
+('staff-diego-charles', 'Diego Charles', 'Formateur', '/staff/diego-charles.jpg', 4),
+('staff-handalson-dejean', 'Handalson Dejean', 'Formateur', '/staff/handalson-dejean.jpg', 5),
+('staff-joy-mickenley-cadet', 'Joy Mickenley Cadet', 'Formateur', '/staff/joy-mickenley-cadet.jpg', 6),
+('staff-patrick-pierre-louis', 'Patrick Pierre Louis', 'Formateur', '/staff/patrick-pierre-louis.jpg', 7),
+('staff-ronald-claude', 'Ronald Claude', 'Formateur', '/staff/ronald-claude.jpg', 8),
+('staff-cindy-vernet', 'Cindy Vernet', 'Formatrice Adjointe', '/staff/cindy-vernet.jpg', 9),
+('staff-guerline-guerrier', 'Guerline Guerrier', 'Formatrice Adjointe', '/staff/guerline-guerrier.jpg', 10),
+('staff-jacklin-pierre', 'Jacklin Pierre', 'Formateur Adjoint', '/staff/jacklin-pierre.jpg', 11),
+('staff-mayico-franck', 'Mayico Franck', 'Formateur Adjoint', '/staff/mayico-franck.jpg', 12),
+('staff-christina-similien', 'Christina Similien', 'Assistante Administrative', '/staff/christina-similien.jpg', 13),
+('staff-wesnide-victor', 'Wesnide Victor', 'Réceptionniste', '/staff/wesnide-victor.jpg', 14),
+('staff-kimberline-chery', 'Kimberline Chery', 'Massothérapeute', '/staff/kimberline-chery.jpg', 15),
+('staff-valdyrsen-deris', 'Valdyrsen Deris', 'Responsable Journal', '/staff/valdyrsen-deris.jpg', 16),
+('staff-jameson-cassamajor', 'Jameson Cassamajor', 'Assistant Logistique', '/staff/jameson-cassamajor.jpg', 17),
+('staff-erncon-justin', 'Erncon Justin', 'Outilleur', '/staff/erncon-justin.jpg', 18),
+('staff-jetson-devallon', 'Jetson Devallon', 'Outilleur', '/staff/jetson-devallon.jpg', 19)
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, role = EXCLUDED.role, img = EXCLUDED.img, "order" = EXCLUDED."order";
 
 CREATE TABLE IF NOT EXISTS timeline (
   id TEXT PRIMARY KEY,

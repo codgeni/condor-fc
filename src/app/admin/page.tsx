@@ -24,7 +24,7 @@ import {
   fetchStaff, StaffMember,
   fetchTimeline, TimelineItem,
   fetchSiteContent, saveSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
-  fetchMergedPlayers
+  fetchMergedPlayers, fetchNews, isRealNews
 } from '@/lib/dataService';
 import { validateUploadFile, sanitizeFormRecord } from '@/lib/security';
 
@@ -167,7 +167,7 @@ export default function AdminPanel() {
     if (productsData) setProducts(productsData);
 
     // 5. Fetch News
-    const { data: newsData } = await supabase.from('news').select('*').order('created_at', { ascending: false });
+    const newsData = await fetchNews();
     if (newsData) setNewsList(newsData);
 
     // 6. Fetch Players (Merged with Supabase & local cache, excluding deleted players)

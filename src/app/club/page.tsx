@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { ShieldCheck, Search, X, Users, Sparkles } from 'lucide-react';
 import { 
   fetchStaff, StaffMember, DEFAULT_STAFF,
   fetchTimeline, TimelineItem, DEFAULT_TIMELINE,
@@ -13,6 +14,9 @@ export default function Club() {
   const [staff, setStaff] = useState<StaffMember[]>(DEFAULT_STAFF);
   const [timeline, setTimeline] = useState<TimelineItem[]>(DEFAULT_TIMELINE);
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+  const [selectedStaffCat, setSelectedStaffCat] = useState<string>('all');
+  const [staffSearch, setStaffSearch] = useState<string>('');
+  const [activeModalMember, setActiveModalMember] = useState<StaffMember | null>(null);
 
   useEffect(() => {
     fetchStaff().then(data => {
@@ -25,6 +29,33 @@ export default function Club() {
       if (data) setSiteContent(data);
     });
   }, []);
+
+  const getStaffCategory = (role: string) => {
+    const r = (role || '').toLowerCase();
+    if (r.includes('conseiller') || r.includes('planificateur') || r.includes('directeur')) {
+      return 'Direction & Conseil';
+    }
+    if (r.includes('formateur') || r.includes('formatrice') || r.includes('entraîneur')) {
+      return 'Formateurs & Staff Technique';
+    }
+    if (r.includes('logistique') || r.includes('outilleur') || r.includes('outillero')) {
+      return 'Logistique & Matériel';
+    }
+    return 'Administration & Médical';
+  };
+
+  const sortedStaff = [...staff].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const filteredStaff = sortedStaff.filter(member => {
+    const matchesCat = 
+      selectedStaffCat === 'all' || 
+      getStaffCategory(member.role) === selectedStaffCat;
+    const matchesSearch = 
+      !staffSearch.trim() ||
+      member.name.toLowerCase().includes(staffSearch.toLowerCase()) ||
+      member.role.toLowerCase().includes(staffSearch.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
 
   return (
     <div style={{ flex: 1, marginTop: '80px', overflowX: 'hidden' }}>
@@ -183,48 +214,304 @@ export default function Club() {
       </section>
 
       {/* 3. Section Staff Dynamique */}
-      <section className="section-padding" style={{ background: 'var(--clr-white)' }}>
+      <section className="section-padding" style={{ background: '#f8fafc', position: 'relative' }}>
         <div className="container">
-          <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>
-              {siteContent.club_staff_tag || "L'Équipe d'Encadrement"}
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <Users size={18} /> {siteContent.club_staff_tag || "L'Équipe d'Encadrement"}
             </span>
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', margin: '5px 0' }}>
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3.2rem', margin: '8px 0 12px' }}>
               {siteContent.club_staff_title || "Notre Staff"}
             </h2>
-            <p style={{ color: 'var(--clr-gray)', maxWidth: '600px', margin: '10px auto 0' }}>
+            <p style={{ color: 'var(--clr-gray)', maxWidth: '650px', margin: '0 auto', fontSize: '1.15rem', lineHeight: 1.6 }}>
               {siteContent.club_staff_desc || "Découvrez les professionnels dévoués qui encadrent, guident et développent le potentiel de chaque jeune athlète au quotidien."}
             </p>
+
+            {/* Barre de Recherche & Filtres par catégorie */}
+            <div style={{ marginTop: '2.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.2rem' }}>
+              
+              {/* Champ Recherche */}
+              <div style={{ position: 'relative', width: '100%', maxWidth: '460px' }}>
+                <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#888' }} />
+                <input 
+                  type="text"
+                  placeholder="Rechercher par nom ou fonction..."
+                  value={staffSearch}
+                  onChange={e => setStaffSearch(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 18px 12px 45px',
+                    borderRadius: '30px',
+                    border: '1px solid #ddd',
+                    background: 'white',
+                    fontSize: '0.95rem',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.03)',
+                    outline: 'none'
+                  }}
+                />
+                {staffSearch && (
+                  <button 
+                    onClick={() => setStaffSearch('')}
+                    style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#999' }}
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+
+              {/* Filtres par Catégorie */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px' }}>
+                {[
+                  { id: 'all', label: `Tous (${sortedStaff.length})` },
+                  { id: 'Direction & Conseil', label: `Direction & Conseil (${sortedStaff.filter(s => getStaffCategory(s.role) === 'Direction & Conseil').length})` },
+                  { id: 'Formateurs & Staff Technique', label: `Formateurs & Technique (${sortedStaff.filter(s => getStaffCategory(s.role) === 'Formateurs & Staff Technique').length})` },
+                  { id: 'Administration & Médical', label: `Administration & Médical (${sortedStaff.filter(s => getStaffCategory(s.role) === 'Administration & Médical').length})` },
+                  { id: 'Logistique & Matériel', label: `Logistique & Matériel (${sortedStaff.filter(s => getStaffCategory(s.role) === 'Logistique & Matériel').length})` }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setSelectedStaffCat(tab.id)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '25px',
+                      border: selectedStaffCat === tab.id ? '2px solid var(--clr-primary)' : '1px solid #e2e8f0',
+                      background: selectedStaffCat === tab.id ? 'var(--clr-primary)' : 'white',
+                      color: selectedStaffCat === tab.id ? 'white' : '#475569',
+                      fontWeight: selectedStaffCat === tab.id ? '700' : '500',
+                      fontSize: '0.88rem',
+                      cursor: 'pointer',
+                      boxShadow: selectedStaffCat === tab.id ? '0 4px 12px rgba(224, 30, 38, 0.25)' : 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2.5rem' }}>
-            {[...staff].sort((a, b) => (a.order || 0) - (b.order || 0)).map((member, i) => (
-              <motion.div
-                key={member.id || i}
+          {/* Grille du Staff */}
+          {filteredStaff.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '4rem 1rem', background: 'white', borderRadius: '16px', border: '1px solid #eee' }}>
+              <Users size={48} color="#ccc" style={{ margin: '0 auto 1rem' }} />
+              <h3 style={{ fontSize: '1.4rem', color: '#444' }}>Aucun membre du staff trouvé</h3>
+              <p style={{ color: '#888', marginTop: '6px' }}>Essayez de modifier votre recherche ou sélectionnez une autre catégorie.</p>
+              <button 
+                onClick={() => { setStaffSearch(''); setSelectedStaffCat('all'); }}
+                className="btn btn-outline"
+                style={{ marginTop: '1rem' }}
+              >
+                Réinitialiser les filtres
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '2rem' }}>
+              {filteredStaff.map((member, i) => (
+                <motion.div
+                  key={member.id || i}
+                  onClick={() => setActiveModalMember(member)}
+                  style={{
+                    background: 'white',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    boxShadow: '0 6px 20px rgba(0,0,0,0.03)',
+                    border: '1px solid #eef2f6',
+                    textAlign: 'center',
+                    padding: '2rem 1.4rem 1.6rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    position: 'relative'
+                  }}
+                  initial={{ opacity: 0, y: 25 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.35, delay: (i % 6) * 0.05 }}
+                  whileHover={{ y: -7, boxShadow: '0 16px 35px rgba(224, 30, 38, 0.12)', borderColor: 'rgba(224, 30, 38, 0.35)' }}
+                >
+                  <div style={{ position: 'relative', width: '130px', height: '130px', margin: '0 auto 1.3rem' }}>
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      border: '3px solid var(--clr-primary)',
+                      boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
+                      background: '#f8f9fa'
+                    }}>
+                      <img 
+                        src={member.img || '/condor_logo_transparent.png'} 
+                        alt={member.name} 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 15%' }} 
+                      />
+                    </div>
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '2px',
+                      right: '4px',
+                      background: 'var(--clr-primary)',
+                      color: 'white',
+                      width: '26px',
+                      height: '26px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '2px solid white',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+                    }}>
+                      <ShieldCheck size={14} />
+                    </div>
+                  </div>
+
+                  <span style={{
+                    fontSize: '0.72rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.8px',
+                    fontWeight: '700',
+                    color: '#64748b',
+                    background: '#f1f5f9',
+                    padding: '3px 10px',
+                    borderRadius: '20px',
+                    marginBottom: '10px'
+                  }}>
+                    {getStaffCategory(member.role)}
+                  </span>
+
+                  <h3 style={{ fontSize: '1.3rem', margin: '0 0 6px', color: 'var(--clr-black)', fontFamily: 'var(--font-heading)', fontWeight: 'bold' }}>
+                    {member.name}
+                  </h3>
+                  
+                  <span style={{ 
+                    color: 'var(--clr-primary)', 
+                    fontSize: '0.95rem', 
+                    fontWeight: '700', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.5px',
+                    lineHeight: 1.3
+                  }}>
+                    {member.role}
+                  </span>
+
+                  <div style={{ 
+                    marginTop: '1.2rem', 
+                    paddingTop: '0.8rem', 
+                    borderTop: '1px dashed #e2e8f0', 
+                    width: '100%', 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    color: '#94a3b8', 
+                    fontSize: '0.82rem',
+                    fontWeight: '500'
+                  }}>
+                    <span>Agrandir la photo</span>
+                    <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold' }}>→</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Modal Lightbox Photo Haute Résolution */}
+        <AnimatePresence>
+          {activeModalMember && (
+            <div 
+              onClick={() => setActiveModalMember(null)}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(0,0,0,0.8)',
+                backdropFilter: 'blur(6px)',
+                zIndex: 9999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '20px'
+              }}
+            >
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
                 style={{
                   background: 'white',
-                  borderRadius: '12px',
+                  borderRadius: '20px',
+                  maxWidth: '440px',
+                  width: '100%',
                   overflow: 'hidden',
-                  boxShadow: '0 8px 25px rgba(0,0,0,0.04)',
-                  border: '1px solid #eee',
-                  textAlign: 'center',
-                  padding: '2rem 1.5rem'
+                  boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+                  position: 'relative'
                 }}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
-                whileHover={{ y: -5, boxShadow: '0 12px 30px rgba(0,0,0,0.08)' }}
               >
-                <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', margin: '0 auto 1.5rem', border: '3px solid var(--clr-primary)' }}>
-                  <img src={member.img || '/condor_logo_transparent.png'} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <button
+                  onClick={() => setActiveModalMember(null)}
+                  style={{
+                    position: 'absolute',
+                    top: '14px',
+                    right: '14px',
+                    background: 'rgba(0,0,0,0.6)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '36px',
+                    height: '36px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 10
+                  }}
+                >
+                  <X size={20} />
+                </button>
+
+                <div style={{ position: 'relative', width: '100%', paddingTop: '100%', background: '#0a0a0a', overflow: 'hidden' }}>
+                  <img 
+                    src={activeModalMember.img || '/condor_logo_transparent.png'} 
+                    alt={activeModalMember.name} 
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 15%' }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%)',
+                    padding: '25px 20px 15px',
+                    color: 'white'
+                  }}>
+                    <span style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '1.5px', background: 'var(--clr-primary)', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                      Condor École de Football
+                    </span>
+                  </div>
                 </div>
-                <h3 style={{ fontSize: '1.4rem', margin: '0 0 5px', color: 'var(--clr-black)', fontFamily: 'var(--font-body)', fontWeight: 'bold' }}>{member.name}</h3>
-                <span style={{ color: 'var(--clr-primary)', fontSize: '1rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>{member.role}</span>
+
+                <div style={{ padding: '2rem 1.5rem', textAlign: 'center' }}>
+                  <h3 style={{ fontSize: '1.75rem', fontFamily: 'var(--font-heading)', margin: '0 0 6px', color: '#111' }}>
+                    {activeModalMember.name}
+                  </h3>
+                  <p style={{ color: 'var(--clr-primary)', fontSize: '1.1rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 1rem' }}>
+                    {activeModalMember.role}
+                  </p>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', padding: '6px 16px', borderRadius: '20px', fontSize: '0.88rem', color: '#475569' }}>
+                    <ShieldCheck size={16} color="var(--clr-primary)" />
+                    <span>Membre officiel de l'encadrement Condor FC</span>
+                  </div>
+                </div>
               </motion.div>
-            ))}
-          </div>
-        </div>
+            </div>
+          )}
+        </AnimatePresence>
       </section>
 
       {/* 4. L'Hymne de Condor */}

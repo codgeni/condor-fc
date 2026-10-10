@@ -9,7 +9,7 @@ import { playersDB } from '@/lib/playersDB';
 import { 
   fetchCurrentMatch, MatchConfig, fetchVideos, VideoItem,
   fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
-  fetchMergedPlayers
+  fetchMergedPlayers, fetchNews
 } from '@/lib/dataService';
 import { supabase } from '@/lib/supabaseClient';
 import { formatRelativeTime } from '@/lib/timeUtils';
@@ -106,9 +106,11 @@ export default function Home() {
     });
 
     // 3. Fetch latest news
-    supabase.from('news').select('*').order('created_at', { ascending: false }).limit(3).then(({ data }) => {
+    fetchNews().then(data => {
       if (data && data.length > 0) {
-        setLatestNews(data);
+        setLatestNews(data.slice(0, 3));
+      } else {
+        setLatestNews([]);
       }
     });
   }, []);
