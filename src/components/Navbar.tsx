@@ -14,20 +14,12 @@ export default function Navbar() {
   useEffect(() => {
     // Check if there is an active session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u?.email === 'admin@gmail.com') {
-        document.cookie = "condor_bypass_maintenance=true; path=/; max-age=604800; SameSite=Lax";
-      }
+      setUser(session?.user ?? null);
     });
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u?.email === 'admin@gmail.com') {
-        document.cookie = "condor_bypass_maintenance=true; path=/; max-age=604800; SameSite=Lax";
-      }
+      setUser(session?.user ?? null);
     });
 
     // Automatically close mobile menu if resized back to desktop
@@ -59,11 +51,6 @@ export default function Navbar() {
     setMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
-
-  // Masquer la Navbar uniquement sur la page dédiée de maintenance
-  if (pathname?.startsWith('/maintenance')) {
-    return null;
-  }
 
   return (
     <header className="header">

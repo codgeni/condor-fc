@@ -7,8 +7,8 @@ import { MapPin, Phone, Mail, MessageSquare } from 'lucide-react';
 export default function Footer() {
   const pathname = usePathname();
 
-  // Hide public footer in admin dashboard and maintenance screen
-  if (pathname?.startsWith('/admin') || pathname?.startsWith('/maintenance')) {
+  // Hide public footer in admin dashboard
+  if (pathname?.startsWith('/admin')) {
     return null;
   }
 

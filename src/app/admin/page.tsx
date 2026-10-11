@@ -202,7 +202,8 @@ export default function AdminPanel() {
       if (session?.user) {
         setUser(session.user);
         if (session.user.email === 'admin@gmail.com') {
-          document.cookie = "condor_bypass_maintenance=true; path=/; max-age=604800; SameSite=Lax";
+          // Nettoyage de l'ancien cookie de bypass si présent
+          document.cookie = "condor_bypass_maintenance=; path=/; max-age=0";
           fetchData();
         }
       }
@@ -213,7 +214,7 @@ export default function AdminPanel() {
       if (session?.user) {
         setUser(session.user);
         if (session.user.email === 'admin@gmail.com') {
-          document.cookie = "condor_bypass_maintenance=true; path=/; max-age=604800; SameSite=Lax";
+          document.cookie = "condor_bypass_maintenance=; path=/; max-age=0";
           fetchData();
         }
       } else {
@@ -853,10 +854,10 @@ export default function AdminPanel() {
       {/* Main Content Area */}
       <main className="admin-main-content" style={{ flex: 1, padding: '2.5rem 3rem', height: 'calc(100vh - 80px)', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
 
-        {/* Bandeau d'information Mode Maintenance */}
+        {/* Bandeau d'information Site Officiel En Ligne */}
         <div style={{
-          background: 'linear-gradient(135deg, #1e1b2e 0%, #16161d 100%)',
-          border: '1px solid rgba(202, 2, 79, 0.4)',
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e1b2e 100%)',
+          border: '1px solid rgba(16, 185, 129, 0.4)',
           borderRadius: '12px',
           padding: '1rem 1.4rem',
           marginBottom: '2rem',
@@ -872,31 +873,31 @@ export default function AdminPanel() {
               width: '42px',
               height: '42px',
               borderRadius: '10px',
-              background: 'rgba(202, 2, 79, 0.2)',
-              color: 'var(--clr-primary)',
+              background: 'rgba(16, 185, 129, 0.15)',
+              color: '#10b981',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0
             }}>
-              <ShieldAlert size={22} />
+              <CheckCircle size={22} />
             </div>
             <div>
               <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>MODE MAINTENANCE ACTIF</span>
-                <span style={{ fontSize: '0.72rem', background: 'var(--clr-primary)', color: '#fff', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Site fermé au public
+                <span>SITE OFFICIEL EN LIGNE</span>
+                <span style={{ fontSize: '0.72rem', background: '#10b981', color: '#fff', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Ouvert au public
                 </span>
               </div>
               <p style={{ margin: '3px 0 0', color: '#94a3b8', fontSize: '0.85rem' }}>
-                Tous les visiteurs arrivant sur n'importe quel lien du site sont redirigés vers la page "Site en cours de maintenance". Vous pouvez administrer le site ici en toute sécurité.
+                La plateforme Condor École de Football est accessible et opérationnelle en temps réel pour tous les visiteurs.
               </p>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <a 
-              href="/?preview=condor" 
+              href="/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="btn btn-primary"
@@ -909,8 +910,8 @@ export default function AdminPanel() {
                 textDecoration: 'none'
               }}
             >
-              <Eye size={15} />
-              <span>Aperçu du site (Bypass)</span>
+              <ExternalLink size={15} />
+              <span>Voir le site en direct</span>
             </a>
           </div>
         </div>
