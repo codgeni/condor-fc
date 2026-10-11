@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { ShieldCheck, Search, X, Users, Sparkles } from 'lucide-react';
+import { ShieldCheck, Search, X, Users, Sparkles, Heart, Flag, Zap } from 'lucide-react';
 import { 
   fetchStaff, StaffMember, DEFAULT_STAFF,
   fetchTimeline, TimelineItem, DEFAULT_TIMELINE,
@@ -73,8 +73,8 @@ export default function Club() {
       >
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }} style={{ position: 'relative', zIndex: 10 }}>
           <img src="/condor_logo_transparent.png" alt="Condor FC" style={{ width: '150px', margin: '0 auto 2rem', borderRadius: '50%' }} />
-          <h1 className="hero-title" style={{ color: 'white' }}>{siteContent.about_title || "Plus Qu'une École, Une Famille."}</h1>
-          <p style={{ fontSize: '1.5rem', color: 'var(--clr-gray)', maxWidth: '800px', margin: '0 auto', lineHeight: 1.6 }}>
+          <h1 className="hero-title" style={{ color: 'white', fontSize: 'clamp(2.2rem, 4vw, 3.2rem)', marginBottom: '1.2rem' }}>{siteContent.about_title || "Plus Qu'une École, Une Famille."}</h1>
+          <p style={{ fontSize: '1.15rem', color: 'rgba(255, 255, 255, 0.85)', maxWidth: '780px', margin: '0 auto', lineHeight: 1.65, fontWeight: 400 }}>
             {siteContent.about_text || "Depuis Mai 2023, la Condor École de Football est un symbole d'excellence, d'éducation et de passion sportive à Delmas, Haïti. Nous formons les leaders et les champions de demain."}
           </p>
         </motion.div>
@@ -137,7 +137,9 @@ export default function Club() {
             {/* Dieu */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #eee', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '1.5rem' }}>
-                <div style={{ width: '50px', height: '50px', background: 'rgba(224, 30, 38, 0.1)', color: 'var(--clr-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>✝</div>
+                <div style={{ width: '50px', height: '50px', background: 'rgba(224, 30, 38, 0.08)', color: 'var(--clr-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Heart size={24} />
+                </div>
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', margin: 0 }}>
                   {siteContent.club_val_god_title || "Dieu"}
                 </h3>
@@ -150,7 +152,9 @@ export default function Club() {
             {/* Patrie */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #eee', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '1.5rem' }}>
-                <div style={{ width: '50px', height: '50px', background: 'rgba(224, 30, 38, 0.1)', color: 'var(--clr-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>🇭🇹</div>
+                <div style={{ width: '50px', height: '50px', background: 'rgba(224, 30, 38, 0.08)', color: 'var(--clr-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Flag size={24} />
+                </div>
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', margin: 0 }}>
                   {siteContent.club_val_patrie_title || "Patrie"}
                 </h3>
@@ -163,7 +167,9 @@ export default function Club() {
             {/* Discipline */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', border: '1px solid #eee', boxShadow: '0 8px 30px rgba(0,0,0,0.02)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '1.5rem' }}>
-                <div style={{ width: '50px', height: '50px', background: 'rgba(224, 30, 38, 0.1)', color: 'var(--clr-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>⚡</div>
+                <div style={{ width: '50px', height: '50px', background: 'rgba(224, 30, 38, 0.08)', color: 'var(--clr-primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Zap size={24} />
+                </div>
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2rem', margin: 0 }}>
                   {siteContent.club_val_discipline_title || "Discipline"}
                 </h3>

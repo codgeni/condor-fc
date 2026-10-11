@@ -119,16 +119,19 @@ CREATE TABLE IF NOT EXISTS inscriptions (
 
 -- INSERER LES DONNEES INITIALES (EXEMPLES)
 
--- Insérer les slides par défaut (si non existants)
+-- Nettoyer les slides obsolètes ou fictives
+DELETE FROM slides WHERE url LIKE '%stadium_hero%' OR url LIKE '%trophy_moment%' OR url LIKE '%soccer.png%' OR url LIKE '%universe_bg%';
+
+-- Insérer les slides réelles du Condor FC par défaut (si non existants)
 INSERT INTO slides (url)
 SELECT s.url FROM (VALUES
-  ('/stadium_hero_1780681869623.png'),
-  ('/club_hero.png'),
-  ('/kick_hero.png'),
-  ('/news_hero.png'),
-  ('/trophy_moment_1780681956500.png'),
-  ('/soccer.png'),
-  ('/universe_bg.png')
+  ('/slides/slide_1.jpg'),
+  ('/slides/slide_2.jpg'),
+  ('/slides/slide_3.jpg'),
+  ('/slides/slide_4.jpg'),
+  ('/slides/slide_5.jpg'),
+  ('/slides/slide_6.jpg'),
+  ('/slides/slide_7.jpg')
 ) AS s(url)
 WHERE NOT EXISTS (SELECT 1 FROM slides WHERE slides.url = s.url);
 

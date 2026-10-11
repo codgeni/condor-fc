@@ -5,20 +5,32 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 
 const DEFAULT_SLIDES = [
-  '/stadium_hero_1780681869623.png',
-  '/club_hero.png',
-  '/kick_hero.png',
-  '/news_hero.png',
-  '/trophy_moment_1780681956500.png',
-  '/soccer.png',
-  '/universe_bg.png'
+  '/slides/slide_1.jpg',
+  '/slides/slide_2.jpg',
+  '/slides/slide_3.jpg',
+  '/slides/slide_4.jpg',
+  '/slides/slide_5.jpg',
+  '/slides/slide_6.jpg',
+  '/slides/slide_7.jpg'
 ];
 
 export default function HeroSlider() {
-  const [slides, setSlides] = useState<string[]>([]);
+  const [slides, setSlides] = useState<string[]>(DEFAULT_SLIDES);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
+    // 1. Check local cache first for instant load
+    try {
+      const cached = localStorage.getItem('condor_home_slides');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSlides(parsed);
+        }
+      }
+    } catch {}
+
+    // 2. Fetch slides from Supabase, filtering out any unwanted random AI images
     const fetchSlides = async () => {
       try {
         const { data } = await supabase
@@ -26,12 +38,28 @@ export default function HeroSlider() {
           .select('url')
           .order('created_at', { ascending: true });
         if (data && data.length > 0) {
-          setSlides(data.map(s => s.url));
+          const validUrls = data
+            .map(s => s.url)
+            .filter(url => 
+              url && 
+              !url.includes('universe_bg') && 
+              !url.includes('soccer.png') && 
+              !url.includes('trophy_moment') && 
+              !url.includes('stadium_hero')
+            );
+
+          if (validUrls.length > 0) {
+            setSlides(validUrls);
+            try {
+              localStorage.setItem('condor_home_slides', JSON.stringify(validUrls));
+            } catch {}
+          } else {
+            setSlides(DEFAULT_SLIDES);
+          }
         } else {
           setSlides(DEFAULT_SLIDES);
         }
       } catch (err) {
-        console.warn("Supabase fetch failed, falling back to default slides", err);
         setSlides(DEFAULT_SLIDES);
       }
     };

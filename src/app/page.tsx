@@ -81,12 +81,7 @@ export default function Home() {
   const [allPlayers, setAllPlayers] = useState<Record<string, any>>(playersDB);
 
   const spotlightPlayers = useMemo(() => {
-    const list = Object.values(allPlayers);
-    const explicitlyStarred = list.filter(p => p.is_spotlight || p.spotlight);
-    if (explicitlyStarred.length > 0) {
-      return explicitlyStarred;
-    }
-    return list.filter(p => p.detailImg || (p.img && !p.img.includes('condor_logo')));
+    return Object.values(allPlayers).filter(p => Boolean(p.is_spotlight || p.spotlight));
   }, [allPlayers]);
 
   useEffect(() => {
@@ -179,7 +174,7 @@ export default function Home() {
       </section>
 
       {/* 2. Next Match / Session Widget */}
-      <section style={{ marginTop: '-50px', position: 'relative', zIndex: 20 }}>
+      <section style={{ marginTop: '-50px', marginBottom: '4.5rem', position: 'relative', zIndex: 20 }}>
         <div className="container">
           <motion.div 
             initial={{ y: 50, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }}
@@ -263,7 +258,7 @@ export default function Home() {
       </section>
 
       {/* 3. Section À la Une (Actualités Réelles au Format Carré Joueurs) */}
-      <section className="section-padding" style={{ paddingTop: 0 }}>
+      <section className="section-padding" style={{ paddingTop: '2.5rem' }}>
         <div className="container" style={{ maxWidth: '1240px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
@@ -429,64 +424,66 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. Joueurs mis en avant */}
-      <section className="section-padding bg-gray">
-        <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
-              <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Distinctions</span>
-              <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', margin: '5px 0 0' }}>Joueurs Mis en Avant</h2>
-            </div>
-            
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <button 
-                onClick={() => setPlayerIndex(prev => Math.max(0, prev - 1))}
-                disabled={playerIndex === 0}
-                className="btn btn-outline"
-                style={{ padding: '10px 15px', color: 'var(--clr-black)', borderColor: 'var(--clr-black)', opacity: playerIndex === 0 ? 0.3 : 1, cursor: playerIndex === 0 ? 'not-allowed' : 'pointer', background: 'transparent' }}
-              >
-                &larr; Préc.
-              </button>
-              <button 
-                onClick={() => setPlayerIndex(prev => Math.min(spotlightPlayers.length - 4, prev + 1))}
-                disabled={playerIndex >= spotlightPlayers.length - 4}
-                className="btn btn-outline"
-                style={{ padding: '10px 15px', color: 'var(--clr-black)', borderColor: 'var(--clr-black)', opacity: playerIndex >= spotlightPlayers.length - 4 ? 0.3 : 1, cursor: playerIndex >= spotlightPlayers.length - 4 ? 'not-allowed' : 'pointer', background: 'transparent' }}
-              >
-                Suiv. &rarr;
-              </button>
-              <Link href="/teams" className="btn btn-primary" style={{ padding: '10px 20px', textDecoration: 'none', marginLeft: '10px' }}>Voir tous les Joueurs</Link>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
-            {spotlightPlayers.slice(playerIndex, playerIndex + 4).map((player, i) => (
-              <Link href={`/teams/${player.id}`} key={player.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <motion.div 
-                  className="player-card"
-                  initial={{ opacity: 0, scale: 0.95 }} 
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3, delay: i * 0.05 }}
-                  whileHover={{ y: -10, boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}
+      {/* 4. Joueurs mis en avant (affiché uniquement si au moins un joueur est sélectionné) */}
+      {spotlightPlayers.length > 0 && (
+        <section className="section-padding bg-gray">
+          <div className="container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>Distinctions</span>
+                <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', margin: '5px 0 0' }}>Joueurs Mis en Avant</h2>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <button 
+                  onClick={() => setPlayerIndex(prev => Math.max(0, prev - 1))}
+                  disabled={playerIndex === 0}
+                  className="btn btn-outline"
+                  style={{ padding: '10px 15px', color: 'var(--clr-black)', borderColor: 'var(--clr-black)', opacity: playerIndex === 0 ? 0.3 : 1, cursor: playerIndex === 0 ? 'not-allowed' : 'pointer', background: 'transparent' }}
                 >
-                  {player.img && !player.img.includes('condor_logo') ? (
-                    <img src={player.img} className="player-img" style={{ filter: player.filter, height: '320px' }} alt={player.name} />
-                  ) : (
-                    <div style={{ height: '320px', background: 'radial-gradient(circle at center, #23232c 0%, #0e0e13 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '30px' }}>
-                      <img src={player.img || '/condor_logo_transparent.png'} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', opacity: 0.85, filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.6))' }} alt={player.name} />
+                  &larr; Préc.
+                </button>
+                <button 
+                  onClick={() => setPlayerIndex(prev => Math.min(spotlightPlayers.length - 4, prev + 1))}
+                  disabled={playerIndex >= spotlightPlayers.length - 4}
+                  className="btn btn-outline"
+                  style={{ padding: '10px 15px', color: 'var(--clr-black)', borderColor: 'var(--clr-black)', opacity: playerIndex >= spotlightPlayers.length - 4 ? 0.3 : 1, cursor: playerIndex >= spotlightPlayers.length - 4 ? 'not-allowed' : 'pointer', background: 'transparent' }}
+                >
+                  Suiv. &rarr;
+                </button>
+                <Link href="/teams" className="btn btn-primary" style={{ padding: '10px 20px', textDecoration: 'none', marginLeft: '10px' }}>Voir tous les Joueurs</Link>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem' }}>
+              {spotlightPlayers.slice(playerIndex, playerIndex + 4).map((player, i) => (
+                <Link href={`/teams/${player.id}`} key={player.id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <motion.div 
+                    className="player-card"
+                    initial={{ opacity: 0, scale: 0.95 }} 
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3, delay: i * 0.05 }}
+                    whileHover={{ y: -10, boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}
+                  >
+                    {player.img && !player.img.includes('condor_logo') ? (
+                      <img src={player.img} className="player-img" style={{ filter: player.filter, height: '320px' }} alt={player.name} />
+                    ) : (
+                      <div style={{ height: '320px', background: 'radial-gradient(circle at center, #23232c 0%, #0e0e13 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '30px' }}>
+                        <img src={player.img || '/condor_logo_transparent.png'} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', opacity: 0.85, filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.6))' }} alt={player.name} />
+                      </div>
+                    )}
+                    <span className="player-number">{player.num}</span>
+                    <div className="player-info">
+                      <h3 className="player-name" style={{ fontSize: '1.3rem' }}>{player.name}</h3>
+                      <span className="player-position" style={{ fontSize: '0.8rem' }}>{player.pos}</span>
                     </div>
-                  )}
-                  <span className="player-number">{player.num}</span>
-                  <div className="player-info">
-                    <h3 className="player-name" style={{ fontSize: '1.3rem' }}>{player.name}</h3>
-                    <span className="player-position" style={{ fontSize: '0.8rem' }}>{player.pos}</span>
-                  </div>
-                </motion.div>
-              </Link>
-            ))}
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* 5. Vidéos & Highlights (Connecté à Condor TV) */}
       <section className="section-padding" style={{ background: 'var(--clr-black)', color: 'white' }}>
