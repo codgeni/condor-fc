@@ -1360,7 +1360,10 @@ export async function fetchMergedPlayers(): Promise<Record<string, any>> {
   // 1. Initial base from playersDB
   for (const [id, player] of Object.entries(playersDB)) {
     if (!deletedIds.has(String(id))) {
-      merged[id] = { ...player };
+      merged[id] = {
+        ...player,
+        categories: (player as any).categories || (player.category ? [player.category] : ['U17'])
+      };
     }
   }
 
@@ -1371,10 +1374,13 @@ export async function fetchMergedPlayers(): Promise<Record<string, any>> {
       data.forEach((player: any) => {
         const strId = String(player.id);
         if (!deletedIds.has(strId)) {
+          const supCats = Array.isArray(player.categories) && player.categories.length > 0
+            ? player.categories
+            : (player.category ? [player.category] : ['U17']);
           merged[strId] = {
             ...(merged[strId] || {}),
             ...player,
-            categories: merged[strId]?.categories || (player.category ? [player.category] : ['U17'])
+            categories: supCats
           };
         }
       });
@@ -1390,7 +1396,10 @@ export async function fetchMergedPlayers(): Promise<Record<string, any>> {
     if (!deletedIds.has(strId)) {
       merged[strId] = {
         ...(merged[strId] || {}),
-        ...player
+        ...player,
+        categories: Array.isArray(player.categories) && player.categories.length > 0
+          ? player.categories
+          : (player.category ? [player.category] : (merged[strId]?.categories || ['U17']))
       };
     }
   }
@@ -1402,25 +1411,44 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
   const strId = String(player.id);
   unmarkPlayerDeleted(strId);
 
+  const rawCats = Array.isArray(player.categories) && player.categories.length > 0
+    ? player.categories
+    : (player.category ? [player.category] : ['U17']);
+  const categories = Array.from(new Set(rawCats.filter(Boolean)));
+  const primaryCategory = player.category && categories.includes(player.category)
+    ? player.category
+    : (categories[0] || 'U17');
+
+  const fullPlayer: PlayerData = {
+    ...player,
+    category: primaryCategory,
+    categories: categories
+  };
+
   // Update local cache
   const localCache = getLocalItem<Record<string, any>>('players_custom', {});
-  localCache[strId] = {
-    ...player,
-    categories: player.categories || [player.category || 'U17']
-  };
+  localCache[strId] = fullPlayer;
   setLocalItem('players_custom', localCache);
 
   try {
     const { data: existing } = await supabase.from('players').select('id').eq('id', strId);
     let res;
     if (existing && existing.length > 0) {
-      res = await supabase.from('players').update(player).eq('id', strId);
+      res = await supabase.from('players').update(fullPlayer).eq('id', strId);
     } else {
-      res = await supabase.from('players').insert(player);
+      res = await supabase.from('players').insert(fullPlayer);
     }
 
     if (res?.error) {
       console.warn('Supabase save player note:', res.error.message);
+      if (res.error.message?.includes('categories')) {
+        const { categories: _discard, ...withoutCategories } = fullPlayer as any;
+        if (existing && existing.length > 0) {
+          await supabase.from('players').update(withoutCategories).eq('id', strId);
+        } else {
+          await supabase.from('players').insert(withoutCategories);
+        }
+      }
       return { success: true };
     }
     return { success: true };
@@ -1451,6 +1479,77 @@ export async function deletePlayerRecord(id: string): Promise<{ success: boolean
   return { success: true };
 }
 
+export async function addPlayerCategory(
+  id: string,
+  newUnit: string,
+  existingPlayer?: any
+): Promise<{ success: boolean }> {
+  const strId = String(id);
+  const player = existingPlayer || (await fetchMergedPlayers())[strId] || { id: strId };
+  const currentCats: string[] = Array.isArray(player.categories) && player.categories.length > 0
+    ? [...player.categories]
+    : [player.category || 'U17'];
+
+  if (!currentCats.includes(newUnit)) {
+    currentCats.push(newUnit);
+  }
+
+  const updated: PlayerData = {
+    ...player,
+    id: strId,
+    category: player.category || currentCats[0],
+    categories: currentCats
+  };
+  return await savePlayerRecord(updated);
+}
+
+export async function removePlayerCategory(
+  id: string,
+  unitToRemove: string,
+  existingPlayer?: any
+): Promise<{ success: boolean; error?: string }> {
+  const strId = String(id);
+  const player = existingPlayer || (await fetchMergedPlayers())[strId] || { id: strId };
+  let currentCats: string[] = Array.isArray(player.categories) && player.categories.length > 0
+    ? [...player.categories]
+    : [player.category || 'U17'];
+
+  if (currentCats.length <= 1) {
+    return { success: false, error: "Un joueur doit avoir au moins une unité." };
+  }
+
+  currentCats = currentCats.filter(c => c !== unitToRemove);
+  const newPrimary = currentCats.includes(player.category) ? player.category : currentCats[0];
+
+  const updated: PlayerData = {
+    ...player,
+    id: strId,
+    category: newPrimary,
+    categories: currentCats
+  };
+  return await savePlayerRecord(updated);
+}
+
+export async function setPlayerCategories(
+  id: string,
+  categories: string[],
+  existingPlayer?: any
+): Promise<{ success: boolean }> {
+  const strId = String(id);
+  const player = existingPlayer || (await fetchMergedPlayers())[strId] || { id: strId };
+  const validCats = Array.from(new Set(categories.filter(Boolean)));
+  if (validCats.length === 0) return { success: false };
+
+  const newPrimary = validCats.includes(player.category) ? player.category : validCats[0];
+  const updated: PlayerData = {
+    ...player,
+    id: strId,
+    category: newPrimary,
+    categories: validCats
+  };
+  return await savePlayerRecord(updated);
+}
+
 export async function transferPlayerCategory(
   id: string,
   newCategory: string,
@@ -1459,11 +1558,19 @@ export async function transferPlayerCategory(
   const strId = String(id);
   const player = existingPlayer || (await fetchMergedPlayers())[strId] || { id: strId };
 
+  const currentCats: string[] = Array.isArray(player.categories) && player.categories.length > 0
+    ? [...player.categories]
+    : [player.category || 'U17'];
+
+  if (!currentCats.includes(newCategory)) {
+    currentCats.unshift(newCategory);
+  }
+
   const updated: PlayerData = {
     ...player,
     id: strId,
     category: newCategory,
-    categories: [newCategory]
+    categories: currentCats
   };
 
   return await savePlayerRecord(updated);

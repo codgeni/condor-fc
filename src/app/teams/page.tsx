@@ -184,8 +184,19 @@ export default function Teams() {
 
                   {/* Informations du joueur */}
                   <div style={{ padding: '1.2rem 1.4rem', background: '#ffffff' }}>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>
-                      {player.pos || player.role || 'Joueur'}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap', gap: '4px' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                        {player.pos || player.role || 'Joueur'}
+                      </div>
+                      {Array.isArray(player.categories) && player.categories.length > 1 && (
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                          {player.categories.filter((c: string) => c !== selectedCategory).map((c: string) => (
+                            <span key={c} style={{ fontSize: '0.68rem', background: 'rgba(224, 30, 38, 0.08)', color: 'var(--clr-primary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                              + {c}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <h3 style={{ fontSize: '1.3rem', margin: '0 0 10px', color: '#0f172a', fontFamily: 'var(--font-heading)', fontWeight: 'bold' }}>
                       {player.name}

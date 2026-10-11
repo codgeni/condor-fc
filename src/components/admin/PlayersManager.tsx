@@ -3,11 +3,12 @@
 import { useState, useMemo } from 'react';
 import { 
   Users, Plus, Edit2, Trash2, Check, X, Search, 
-  ArrowRightLeft, Shield, Award, Upload, Image, RefreshCw, AlertTriangle
+  ArrowRightLeft, Shield, Award, Upload, Image, RefreshCw, AlertTriangle, Star
 } from 'lucide-react';
 import { 
   PlayerData, UnitItem, RoleItem, 
-  savePlayerRecord, deletePlayerRecord, transferPlayerCategory 
+  savePlayerRecord, deletePlayerRecord, transferPlayerCategory,
+  addPlayerCategory, removePlayerCategory
 } from '@/lib/dataService';
 import { validateUploadFile } from '@/lib/security';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
@@ -99,7 +100,6 @@ export default function PlayersManager({
       category: defaultUnit,
       categories: [defaultUnit],
       foot: 'Droit',
-      dob: '',
       nationality: 'Haïtienne',
       pob: 'Haïti',
       bio: '',
@@ -118,20 +118,117 @@ export default function PlayersManager({
   // Open edit modal
   const handleOpenEdit = (player: any) => {
     setIsCreating(false);
+    const existingCats = Array.isArray(player.categories) && player.categories.length > 0
+      ? player.categories
+      : [player.category || 'U17'];
+    const existingPrimary = player.category && existingCats.includes(player.category)
+      ? player.category
+      : existingCats[0];
+
     setEditingPlayer({
       ...player,
       detail_img: player.detail_img || player.detailImg || player.img || '/condor_logo_transparent.png',
-      category: player.category || (Array.isArray(player.categories) ? player.categories[0] : 'U17'),
-      categories: Array.isArray(player.categories) ? player.categories : [player.category || 'U17']
+      category: existingPrimary,
+      categories: existingCats
     });
   };
 
-  // Quick transfer player
+  // Toggle category in create/edit form
+  const handleToggleCategoryInForm = (unitName: string) => {
+    if (!editingPlayer) return;
+    const currentCats: string[] = Array.isArray(editingPlayer.categories) && editingPlayer.categories.length > 0
+      ? [...editingPlayer.categories]
+      : [editingPlayer.category || 'U17'];
+
+    if (currentCats.includes(unitName)) {
+      if (currentCats.length <= 1) {
+        showToast("Le joueur doit obligatoirement avoir au moins une unité affectée.");
+        return;
+      }
+      const newCats = currentCats.filter(c => c !== unitName);
+      const newPrimary = editingPlayer.category === unitName ? newCats[0] : editingPlayer.category;
+      setEditingPlayer({
+        ...editingPlayer,
+        categories: newCats,
+        category: newPrimary
+      });
+    } else {
+      const newCats = [...currentCats, unitName];
+      setEditingPlayer({
+        ...editingPlayer,
+        categories: newCats,
+        category: editingPlayer.category || unitName
+      });
+    }
+  };
+
+  // Set primary category in create/edit form
+  const handleSetPrimaryInForm = (unitName: string) => {
+    if (!editingPlayer) return;
+    setEditingPlayer({
+      ...editingPlayer,
+      category: unitName
+    });
+  };
+
+  // Quick add player to another unit
+  const handleQuickAddUnit = async (playerId: string, unitName: string, player: any) => {
+    try {
+      const res = await addPlayerCategory(playerId, unitName, player);
+      if (res.success) {
+        showToast(`${player.name} ajouté à l'unité "${unitName}" avec succès !`);
+        onRefresh();
+      } else {
+        showToast("Erreur lors de l'ajout à l'unité.");
+      }
+    } catch (err) {
+      showToast("Erreur lors de l'ajout.");
+    }
+  };
+
+  // Quick remove player from a secondary unit
+  const handleQuickRemoveUnit = (playerId: string, unitName: string, player: any) => {
+    const playerCats: string[] = Array.isArray(player.categories) && player.categories.length > 0
+      ? player.categories
+      : [player.category || 'U17'];
+
+    if (playerCats.length <= 1) {
+      showToast("Impossible : le joueur doit avoir au moins une unité.");
+      return;
+    }
+
+    askConfirm({
+      title: "RETIRER DE L'UNITÉ",
+      message: `Voulez-vous retirer ${player.name} de l'unité "${unitName}" ?\nIl restera inscrit dans : ${playerCats.filter(c => c !== unitName).join(', ')}.`,
+      confirmLabel: "OUI, RETIRER",
+      itemDetails: {
+        type: 'Modification',
+        title: player.name,
+        subtitle: `Retrait de l'unité ${unitName}`,
+        badge: unitName
+      },
+      onConfirm: async () => {
+        try {
+          const res = await removePlayerCategory(playerId, unitName, player);
+          if (res.success) {
+            showToast(`${player.name} retiré de l'unité "${unitName}".`);
+            onRefresh();
+          } else {
+            showToast(res.error || "Erreur lors du retrait de l'unité.");
+          }
+        } catch (err) {
+          showToast("Erreur lors du retrait.");
+        }
+      }
+    });
+  };
+
+  // Quick transfer player (change primary unit)
   const handleQuickTransfer = async (playerId: string, newUnit: string, player: any) => {
     try {
       const res = await transferPlayerCategory(playerId, newUnit, player);
       if (res.success) {
-        showToast(`Joueur ${player.name} transféré vers "${newUnit}" avec succès !`);
+        showToast(`Joueur ${player.name} assigné à "${newUnit}" !`);
         onRefresh();
       } else {
         showToast("Erreur lors du transfert du joueur.");
@@ -149,14 +246,22 @@ export default function PlayersManager({
       return;
     }
 
+    const rawCats = Array.isArray(editingPlayer.categories) && editingPlayer.categories.length > 0
+      ? editingPlayer.categories
+      : [editingPlayer.category || 'U17'];
+    const finalCats = Array.from(new Set(rawCats.filter(Boolean)));
+    const finalPrimary = editingPlayer.category && finalCats.includes(editingPlayer.category)
+      ? editingPlayer.category
+      : (finalCats[0] || 'U17');
+
     const payload: PlayerData = {
       ...editingPlayer,
       id: String(editingPlayer.id || Date.now()),
       num: parseInt(editingPlayer.num) || 0,
       name: editingPlayer.name.trim(),
       pos: editingPlayer.pos || 'Joueur',
-      category: editingPlayer.category || 'U17',
-      categories: [editingPlayer.category || 'U17'],
+      category: finalPrimary,
+      categories: finalCats,
       img: editingPlayer.img || '/condor_logo_transparent.png',
       detail_img: editingPlayer.detail_img || editingPlayer.img || '/condor_logo_transparent.png'
     };
@@ -164,7 +269,7 @@ export default function PlayersManager({
     askConfirm({
       title: isCreating ? 'AJOUTER LE JOUEUR' : 'MODIFIER LE JOUEUR',
       message: isCreating 
-        ? `Confirmez-vous l'ajout de ${payload.name} à l'effectif ?` 
+        ? `Confirmez-vous l'ajout de ${payload.name} à l'effectif (${payload.categories?.join(', ')}) ?` 
         : `Confirmez-vous la modification de la fiche de ${payload.name} ?`,
       confirmLabel: isCreating ? 'OUI, AJOUTER' : 'OUI, ENREGISTRER',
       itemDetails: {
@@ -172,7 +277,7 @@ export default function PlayersManager({
         title: payload.name,
         subtitle: `Dossard #${payload.num} • ${payload.pos}`,
         image: payload.img,
-        badge: payload.category
+        badge: payload.categories?.join(' • ') || payload.category
       },
       onConfirm: async () => {
         setSaving(true);
@@ -373,21 +478,79 @@ export default function PlayersManager({
                 style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }} 
               />
             </div>
+          </div>
 
-            {/* Unité / Catégorie Dynamique */}
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>
-                Unité / Catégorie d'affectation *
+          {/* Unités & Catégories d'affectation Multiples */}
+          <div style={{ background: '#f8fafc', padding: '1.2rem', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '1.8rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
+              <label style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#0f172a' }}>
+                Unités & Catégories d'affectation * (Sélection multiple possible)
               </label>
-              <select 
-                value={editingPlayer.category} 
-                onChange={e => setEditingPlayer({ ...editingPlayer, category: e.target.value, categories: [e.target.value] })}
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc', background: 'white' }}
-              >
-                {units.map(unit => (
-                  <option key={unit.id} value={unit.name}>{unit.name}</option>
-                ))}
-              </select>
+              <span style={{ fontSize: '0.78rem', color: 'var(--clr-primary)', fontWeight: 'bold' }}>
+                ⭐ Cliquez sur l'étoile pour définir l'unité principale
+              </span>
+            </div>
+            <p style={{ margin: '0 0 12px', fontSize: '0.82rem', color: '#64748b' }}>
+              Cochez toutes les unités où le joueur est inscrit (ex: un joueur de U15 peut aussi être ajouté à U17 et à l'Équipe Première).
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '10px' }}>
+              {units.map(unit => {
+                const isChecked = Array.isArray(editingPlayer.categories) && editingPlayer.categories.includes(unit.name);
+                const isPrimary = editingPlayer.category === unit.name;
+                return (
+                  <div
+                    key={unit.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: isChecked ? '2px solid var(--clr-primary)' : '1px solid #cbd5e1',
+                      background: isChecked ? 'rgba(224, 30, 38, 0.05)' : 'white',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <label 
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1, margin: 0 }}
+                      onClick={() => handleToggleCategoryInForm(unit.name)}
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={isChecked} 
+                        onChange={() => handleToggleCategoryInForm(unit.name)}
+                        style={{ width: '16px', height: '16px', cursor: 'pointer' }} 
+                      />
+                      <span style={{ fontWeight: isChecked ? 'bold' : 'normal', fontSize: '0.9rem', color: isChecked ? '#0f172a' : '#475569' }}>
+                        {unit.name}
+                      </span>
+                    </label>
+
+                    {isChecked && (
+                      <button
+                        type="button"
+                        onClick={() => handleSetPrimaryInForm(unit.name)}
+                        title={isPrimary ? "Unité principale du joueur" : "Définir comme unité principale"}
+                        style={{
+                          background: isPrimary ? 'var(--clr-primary)' : 'transparent',
+                          color: isPrimary ? 'white' : '#94a3b8',
+                          border: isPrimary ? 'none' : '1px solid #cbd5e1',
+                          borderRadius: '6px',
+                          padding: '3px 7px',
+                          fontSize: '0.72rem',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}
+                      >
+                        ★ {isPrimary ? 'Principale' : 'Définir'}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -522,16 +685,12 @@ export default function PlayersManager({
 
           </div>
 
-          {/* 3. Données Physiques & Biographie */}
+          {/* 3. Profil Sportif & Biographie */}
           <h4 style={{ fontSize: '1rem', color: 'var(--clr-primary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1rem' }}>
-            3. Profil Physique & Biographie
+            3. Profil Sportif & Biographie
           </h4>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>Date de naissance</label>
-              <input type="text" placeholder="JJ/MM/AAAA" value={editingPlayer.dob || ''} onChange={e => setEditingPlayer({ ...editingPlayer, dob: e.target.value })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }} />
-            </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>Pied Fort</label>
               <select value={editingPlayer.foot || 'Droit'} onChange={e => setEditingPlayer({ ...editingPlayer, foot: e.target.value })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', background: 'white' }}>
@@ -592,62 +751,123 @@ export default function PlayersManager({
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-          {filteredPlayers.map(player => (
-            <div 
-              key={player.id} 
-              style={{ 
-                background: 'white', 
-                borderRadius: '12px', 
-                border: '1px solid #e5e7eb', 
-                padding: '1.2rem', 
-                display: 'flex', 
-                flexDirection: 'column', 
-                justifyContent: 'space-between',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', gap: '14px', alignItems: 'center', marginBottom: '12px' }}>
-                  <img 
-                    src={player.img || '/condor_logo_transparent.png'} 
-                    style={{ width: '55px', height: '55px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #f3f4f6' }} 
-                    alt={player.name} 
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h4 style={{ margin: '0 0 2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', fontSize: '1.1rem' }}>
-                      {player.name}
-                    </h4>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--clr-primary)', fontWeight: 'bold' }}>
-                      #{player.num} • {player.pos || 'Joueur'}
-                    </span>
+          {filteredPlayers.map(player => {
+            const playerCats: string[] = Array.isArray(player.categories) && player.categories.length > 0
+              ? player.categories
+              : [player.category || 'U17'];
+            const primaryCat = player.category || playerCats[0];
+            const unassignedUnits = units.filter(u => !playerCats.includes(u.name));
+
+            return (
+              <div 
+                key={player.id} 
+                style={{ 
+                  background: 'white', 
+                  borderRadius: '12px', 
+                  border: '1px solid #e5e7eb', 
+                  padding: '1.2rem', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'space-between',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', gap: '14px', alignItems: 'center', marginBottom: '12px' }}>
+                    <img 
+                      src={player.img || '/condor_logo_transparent.png'} 
+                      style={{ width: '55px', height: '55px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #f3f4f6' }} 
+                      alt={player.name} 
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h4 style={{ margin: '0 0 2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', fontSize: '1.1rem' }}>
+                        {player.name}
+                      </h4>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--clr-primary)', fontWeight: 'bold' }}>
+                        #{player.num} • {player.pos || 'Joueur'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Multi-Unit Badges & Quick Add */}
+                  <div style={{ background: '#f9fafb', padding: '10px 12px', borderRadius: '8px', border: '1px solid #f1f5f9', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '4px' }}>
+                      <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Shield size={13} color="var(--clr-primary)" /> Unités ({playerCats.length}) :
+                      </span>
+                      {unassignedUnits.length > 0 && (
+                        <select 
+                          value="" 
+                          onChange={e => {
+                            if (e.target.value) {
+                              handleQuickAddUnit(player.id, e.target.value, player);
+                            }
+                          }}
+                          style={{ 
+                            fontSize: '0.75rem', 
+                            padding: '3px 8px', 
+                            borderRadius: '6px', 
+                            border: '1px dashed #cbd5e1', 
+                            background: 'white',
+                            color: 'var(--clr-primary)',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="">+ Ajouter à une unité...</option>
+                          {unassignedUnits.map(u => (
+                            <option key={u.id} value={u.name}>+ {u.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {playerCats.map(cat => {
+                        const isPrimary = cat === primaryCat;
+                        return (
+                          <span 
+                            key={cat}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              background: isPrimary ? 'rgba(224, 30, 38, 0.1)' : '#f1f5f9',
+                              color: isPrimary ? 'var(--clr-primary)' : '#334155',
+                              border: isPrimary ? '1px solid rgba(224, 30, 38, 0.3)' : '1px solid #e2e8f0',
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              fontSize: '0.78rem',
+                              fontWeight: '600'
+                            }}
+                          >
+                            {isPrimary && <span title="Unité principale" style={{ fontSize: '0.7rem' }}>⭐</span>}
+                            {cat}
+                            {playerCats.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleQuickRemoveUnit(player.id, cat, player)}
+                                title={`Retirer de ${cat}`}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  padding: 0,
+                                  marginLeft: '2px',
+                                  cursor: 'pointer',
+                                  color: isPrimary ? 'var(--clr-primary)' : '#94a3b8',
+                                  display: 'flex',
+                                  alignItems: 'center'
+                                }}
+                              >
+                                <X size={12} />
+                              </button>
+                            )}
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-
-                {/* Quick Transfer Selector */}
-                <div style={{ background: '#f9fafb', padding: '8px 10px', borderRadius: '8px', border: '1px solid #f3f4f6', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                  <span style={{ fontSize: '0.78rem', color: '#6b7280', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <ArrowRightLeft size={13} /> Unité :
-                  </span>
-                  <select 
-                    value={player.category || 'U17'} 
-                    onChange={e => handleQuickTransfer(player.id, e.target.value, player)}
-                    style={{ 
-                      fontSize: '0.82rem', 
-                      padding: '4px 8px', 
-                      borderRadius: '6px', 
-                      border: '1px solid #d1d5db', 
-                      background: 'white',
-                      fontWeight: 'bold',
-                      color: '#1f2937',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {units.map(u => (
-                      <option key={u.id} value={u.name}>{u.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
 
               {/* Action Buttons */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #f3f4f6', paddingTop: '10px' }}>
@@ -667,7 +887,8 @@ export default function PlayersManager({
                 </button>
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       )}
     </div>
