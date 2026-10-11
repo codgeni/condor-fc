@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import HeroSlider from '@/components/HeroSlider';
 import { Play, ArrowRight, Calendar, MapPin, ShoppingBag, Landmark, Heart, Trophy, Tv, ChevronLeft, ChevronRight, Award, Star, Activity, X, Clock } from 'lucide-react';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { playersDB } from '@/lib/playersDB';
 import { 
   fetchCurrentMatch, MatchConfig, fetchVideos, VideoItem,
@@ -80,7 +80,14 @@ export default function Home() {
   const [playerIndex, setPlayerIndex] = useState(0);
   const [allPlayers, setAllPlayers] = useState<Record<string, any>>(playersDB);
 
-  const spotlightPlayers = Object.values(allPlayers).filter(p => p.detailImg || (p.img && !p.img.includes('condor_logo')));
+  const spotlightPlayers = useMemo(() => {
+    const list = Object.values(allPlayers);
+    const explicitlyStarred = list.filter(p => p.is_spotlight || p.spotlight);
+    if (explicitlyStarred.length > 0) {
+      return explicitlyStarred;
+    }
+    return list.filter(p => p.detailImg || (p.img && !p.img.includes('condor_logo')));
+  }, [allPlayers]);
 
   useEffect(() => {
     // 0. Fetch site content & players

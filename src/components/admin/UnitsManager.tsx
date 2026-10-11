@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { UnitItem, saveUnit, deleteUnit, addPlayerCategory, removePlayerCategory } from '@/lib/dataService';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
-import { validateUploadFile } from '@/lib/security';
+import { validateUploadFile, compressAndOptimizeImage } from '@/lib/security';
 
 interface UnitsManagerProps {
   units: UnitItem[];
@@ -21,25 +21,34 @@ export default function UnitsManager({ units, players, onRefresh, showToast }: U
   const [editingUnit, setEditingUnit] = useState<UnitItem | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [processingImage, setProcessingImage] = useState(false);
 
   // Roster management modal state
   const [activeRosterUnit, setActiveRosterUnit] = useState<UnitItem | null>(null);
   const [rosterSearch, setRosterSearch] = useState('');
   const [playerToAddId, setPlayerToAddId] = useState('');
 
-  const convertToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const validation = validateUploadFile(file);
-      if (!validation.valid) {
-        showToast(validation.error || 'Fichier non valide.');
-        reject(new Error(validation.error || 'Fichier non valide.'));
-        return;
-      }
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
+  const handleBannerFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingUnit) return;
+    const validation = validateUploadFile(file);
+    if (!validation.valid) {
+      showToast(validation.error || 'Fichier non valide.');
+      return;
+    }
+    setProcessingImage(true);
+    try {
+      showToast("Optimisation de la bannière...");
+      const compressed = await compressAndOptimizeImage(file, 1920, 0.85);
+      setEditingUnit(prev => prev ? { ...prev, image: compressed } : null);
+      showToast("Photo de la bannière chargée avec succès !");
+    } catch (err) {
+      showToast("Erreur lors du traitement de l'image.");
+    } finally {
+      setProcessingImage(false);
+      // Reset input value so user can re-select same file if needed
+      e.target.value = '';
+    }
   };
 
   // Calculate players count for each unit
@@ -313,58 +322,80 @@ export default function UnitsManager({ units, players, onRefresh, showToast }: U
             </div>
           </div>
 
-          <div style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1.2rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-            <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 'bold', marginBottom: '6px', color: '#0f172a' }}>
-              Photo de la bannière du haut (Hero Banner pour {editingUnit.name || 'cette catégorie'})
-            </label>
-            <p style={{ margin: '0 0 10px', fontSize: '0.82rem', color: '#64748b' }}>
-              Cette image s'affiche en grand dans la bannière principale tout en haut de la page Équipes lorsque l'utilisateur sélectionne cette catégorie.
-            </p>
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1.4rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.92rem', fontWeight: 'bold', color: '#0f172a' }}>
+                  Photo de la bannière du haut (Hero Banner pour {editingUnit.name || 'cette unité'})
+                </label>
+                <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                  S'affiche en grand en tête de la page Équipes lorsque cette catégorie est consultée. Choisissez directement un fichier depuis votre téléphone (appareil photo ou galerie) ou votre ordinateur.
+                </p>
+              </div>
+            </div>
+
+            {/* Banner Preview Card */}
+            {editingUnit.image && (
+              <div style={{ position: 'relative', height: '140px', borderRadius: '10px', overflow: 'hidden', margin: '14px 0', border: '2px solid #cbd5e1', background: '#0f172a' }}>
+                <img 
+                  src={editingUnit.image} 
+                  alt="Aperçu bannière unité" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)', display: 'flex', alignItems: 'flex-end', padding: '12px 16px', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'white', fontWeight: 'bold', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Check size={16} color="#22c55e" /> Bannière active : {editingUnit.name || 'Unité'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setEditingUnit({ ...editingUnit, image: '/kick_hero.png' })}
+                    style={{ background: 'rgba(0,0,0,0.6)', color: '#fca5a5', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+                  >
+                    Réinitialiser par défaut
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Direct File Picker Controls */}
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
               <input 
-                type="text" 
-                value={editingUnit.image || ''} 
-                onChange={e => setEditingUnit({ ...editingUnit, image: e.target.value })} 
-                placeholder="Ex: /kick_hero.png ou https://..." 
-                style={{ flex: 1, minWidth: '240px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '0.95rem' }} 
+                id="unit-banner-file-input"
+                type="file" 
+                accept="image/*"
+                onChange={handleBannerFileSelect}
+                disabled={processingImage}
+                style={{ display: 'none' }}
               />
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <button 
-                  type="button" 
-                  className="btn btn-outline" 
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 14px', fontSize: '0.85rem', cursor: 'pointer' }}
-                >
-                  <Upload size={16} /> Choisir un fichier...
-                </button>
+
+              <label 
+                htmlFor="unit-banner-file-input"
+                className="btn btn-primary"
+                style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  padding: '10px 18px', 
+                  fontSize: '0.9rem', 
+                  cursor: processingImage ? 'wait' : 'pointer',
+                  opacity: processingImage ? 0.7 : 1,
+                  boxShadow: '0 2px 8px rgba(224, 30, 38, 0.25)'
+                }}
+              >
+                <Upload size={18} />
+                {processingImage ? 'Traitement en cours...' : editingUnit.image ? 'Changer la photo depuis l’appareil' : 'Choisir une photo (Téléphone ou PC)'}
+              </label>
+
+              <div style={{ flex: 1, minWidth: '220px' }}>
                 <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      try {
-                        const base64 = await convertToBase64(file);
-                        setEditingUnit({ ...editingUnit, image: base64 });
-                        showToast("Image d'unité chargée !");
-                      } catch (err) {
-                        showToast("Erreur lors de la lecture de l'image.");
-                      }
-                    }
-                  }}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                  type="text" 
+                  value={editingUnit.image || ''} 
+                  onChange={e => setEditingUnit({ ...editingUnit, image: e.target.value })} 
+                  placeholder="Ou collez un lien URL (ex: /kick_hero.png)" 
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} 
                 />
               </div>
             </div>
-            {editingUnit.image && (
-              <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <img 
-                  src={editingUnit.image} 
-                  alt="Aperçu unité" 
-                  style={{ width: '120px', height: '70px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #cbd5e1' }} 
-                />
-                <span style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 'bold' }}>✓ Image d'accueil configurée pour {editingUnit.name || 'cette unité'}</span>
-              </div>
-            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1.5rem' }}>

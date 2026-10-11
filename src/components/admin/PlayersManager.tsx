@@ -10,7 +10,7 @@ import {
   savePlayerRecord, deletePlayerRecord, transferPlayerCategory,
   addPlayerCategory, removePlayerCategory
 } from '@/lib/dataService';
-import { validateUploadFile } from '@/lib/security';
+import { validateUploadFile, compressAndOptimizeImage } from '@/lib/security';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 
 interface PlayersManagerProps {
@@ -21,19 +21,12 @@ interface PlayersManagerProps {
   showToast: (msg: string) => void;
 }
 
-const convertToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const validation = validateUploadFile(file);
-    if (!validation.valid) {
-      alert(validation.error || 'Fichier non valide.');
-      reject(new Error(validation.error || 'Fichier non valide.'));
-      return;
-    }
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
+const convertToBase64 = async (file: File, maxDim = 1200): Promise<string> => {
+  const validation = validateUploadFile(file);
+  if (!validation.valid) {
+    throw new Error(validation.error || 'Fichier non valide.');
+  }
+  return await compressAndOptimizeImage(file, maxDim, 0.85);
 };
 
 export default function PlayersManager({
@@ -101,7 +94,10 @@ export default function PlayersManager({
       categories: [defaultUnit],
       foot: 'Droit',
       nationality: 'Haïtienne',
-      pob: 'Haïti',
+      pob: 'Port-au-Prince, Haïti',
+      height: '',
+      weight: '',
+      dob: '',
       bio: '',
       matches: 0,
       goals: 0,
@@ -110,6 +106,7 @@ export default function PlayersManager({
       stat2val: 0,
       honours1: 1,
       honours2: 0,
+      is_spotlight: false,
       img: '/condor_logo_transparent.png',
       detail_img: '/condor_logo_transparent.png'
     });
@@ -127,10 +124,75 @@ export default function PlayersManager({
 
     setEditingPlayer({
       ...player,
+      matches: player.matches ?? 0,
+      goals: player.goals ?? 0,
+      assists: player.assists ?? 0,
+      stat2lbl: player.stat2lbl || 'Buts',
+      stat2val: player.stat2val ?? (player.goals ?? 0),
+      honours1: player.honours1 ?? 1,
+      honours2: player.honours2 ?? 0,
+      height: player.height || '',
+      weight: player.weight || '',
+      dob: player.dob || '',
+      pob: player.pob || '',
+      foot: player.foot || 'Droit',
+      nationality: player.nationality || 'Haïtienne',
+      bio: player.bio || '',
+      is_spotlight: Boolean(player.is_spotlight || player.spotlight),
       detail_img: player.detail_img || player.detailImg || player.img || '/condor_logo_transparent.png',
+      img: player.img || '/condor_logo_transparent.png',
       category: existingPrimary,
       categories: existingCats
     });
+  };
+
+  // Quick 1-click spotlight toggle for card
+  const handleToggleSpotlight = async (player: any) => {
+    const nextSpotlight = !(player.is_spotlight || player.spotlight);
+    try {
+      const res = await savePlayerRecord({
+        ...player,
+        is_spotlight: nextSpotlight
+      });
+      if (res.success) {
+        showToast(nextSpotlight ? `⭐ ${player.name} mis en avant sur la page d'accueil !` : `⭐ ${player.name} retiré des joueurs mis en avant.`);
+        onRefresh();
+      } else {
+        showToast("Erreur lors de la mise à jour.");
+      }
+    } catch (err) {
+      showToast("Erreur lors de la mise à jour.");
+    }
+  };
+
+  const handleProfilePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingPlayer) return;
+    try {
+      showToast("Optimisation de la photo de profil...");
+      const compressed = await convertToBase64(file, 1200);
+      setEditingPlayer((prev: any) => ({ ...prev, img: compressed }));
+      showToast("Photo de profil mise à jour !");
+    } catch (err: any) {
+      showToast(err.message || "Erreur lors du chargement de l'image.");
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleDetailPhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingPlayer) return;
+    try {
+      showToast("Optimisation de la photo de célébration...");
+      const compressed = await convertToBase64(file, 1400);
+      setEditingPlayer((prev: any) => ({ ...prev, detail_img: compressed, detailImg: compressed }));
+      showToast("Photo de célébration mise à jour !");
+    } catch (err: any) {
+      showToast(err.message || "Erreur lors du chargement de l'image.");
+    } finally {
+      e.target.value = '';
+    }
   };
 
   // Toggle category in create/edit form
@@ -262,6 +324,21 @@ export default function PlayersManager({
       pos: editingPlayer.pos || 'Joueur',
       category: finalPrimary,
       categories: finalCats,
+      matches: parseInt(editingPlayer.matches) || 0,
+      goals: parseInt(editingPlayer.goals) || 0,
+      assists: parseInt(editingPlayer.assists) || 0,
+      stat2lbl: editingPlayer.stat2lbl || 'Buts',
+      stat2val: parseInt(editingPlayer.stat2val) || 0,
+      honours1: parseInt(editingPlayer.honours1) || 0,
+      honours2: parseInt(editingPlayer.honours2) || 0,
+      height: editingPlayer.height || '',
+      weight: editingPlayer.weight || '',
+      dob: editingPlayer.dob || '',
+      pob: editingPlayer.pob || '',
+      foot: editingPlayer.foot || 'Droit',
+      nationality: editingPlayer.nationality || 'Haïtienne',
+      bio: editingPlayer.bio || '',
+      is_spotlight: Boolean(editingPlayer.is_spotlight),
       img: editingPlayer.img || '/condor_logo_transparent.png',
       detail_img: editingPlayer.detail_img || editingPlayer.img || '/condor_logo_transparent.png'
     };
@@ -592,92 +669,130 @@ export default function PlayersManager({
             </span>
           </div>
 
+          {/* Mise en Avant / Spotlight Toggle */}
+          <div style={{ 
+            background: editingPlayer.is_spotlight ? 'rgba(234, 179, 8, 0.08)' : '#f8fafc', 
+            padding: '1.2rem', 
+            borderRadius: '10px', 
+            border: editingPlayer.is_spotlight ? '2px solid #eab308' : '1px solid #e2e8f0', 
+            marginBottom: '1.8rem', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', color: '#0f172a', margin: 0 }}>
+              <input 
+                type="checkbox"
+                checked={Boolean(editingPlayer.is_spotlight)}
+                onChange={e => setEditingPlayer({ ...editingPlayer, is_spotlight: e.target.checked })}
+                style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#eab308' }}
+              />
+              <span>⭐ Joueur Mis en Avant sur la Page d'Accueil (Spotlight)</span>
+            </label>
+            <span style={{ 
+              fontSize: '0.82rem', 
+              color: editingPlayer.is_spotlight ? '#854d0e' : '#64748b', 
+              fontWeight: editingPlayer.is_spotlight ? 'bold' : 'normal',
+              background: editingPlayer.is_spotlight ? '#fef08a' : '#f1f5f9',
+              padding: '4px 10px',
+              borderRadius: '20px'
+            }}>
+              {editingPlayer.is_spotlight ? '✓ Affiché dans la vitrine vedette du site' : '○ Non affiché en vedette'}
+            </span>
+          </div>
+
           {/* 2. Photos (Profil & Célébration) */}
           <h4 style={{ fontSize: '1rem', color: 'var(--clr-primary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1rem' }}>
             2. Photos du Joueur (Roster & Page de Détail)
           </h4>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
             
             {/* Photo Profil Roster */}
-            <div style={{ background: '#fdfdfd', border: '1px solid #e5e7eb', padding: '1.2rem', borderRadius: '8px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '8px' }}>
-                Photo Profil (Carte du Roster)
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '1.2rem', borderRadius: '10px' }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 'bold', marginBottom: '8px', color: '#0f172a' }}>
+                Photo Profil (Carte du Roster & Équipes)
               </label>
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '12px' }}>
                 <img 
                   src={editingPlayer.img || '/condor_logo_transparent.png'} 
                   alt="Thumb" 
-                  style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #ddd' }} 
+                  style={{ width: '65px', height: '65px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #cbd5e1' }} 
                 />
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <input 
+                    id="player-profile-input"
                     type="file" 
                     accept="image/*" 
-                    onChange={async e => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const base64 = await convertToBase64(file);
-                        setEditingPlayer({ ...editingPlayer, img: base64 });
-                      }
-                    }} 
-                    style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem' }} 
+                    onChange={handleProfilePhotoSelect}
+                    style={{ display: 'none' }}
                   />
+                  <label
+                    htmlFor="player-profile-input"
+                    className="btn btn-primary"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', fontSize: '0.84rem', cursor: 'pointer', alignSelf: 'flex-start' }}
+                  >
+                    <Upload size={15} /> Choisir photo (Téléphone ou PC)
+                  </label>
                   <input 
                     type="text" 
                     placeholder="Ou lien URL (ex: /players/nom.jpg)" 
                     value={editingPlayer.img || ''} 
                     onChange={e => setEditingPlayer({ ...editingPlayer, img: e.target.value })} 
-                    style={{ width: '100%', padding: '6px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.85rem' }} 
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} 
                   />
                 </div>
               </div>
               <button 
                 type="button" 
                 onClick={() => setEditingPlayer({ ...editingPlayer, img: '/condor_logo_transparent.png' })}
-                style={{ fontSize: '0.75rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                style={{ fontSize: '0.75rem', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
               >
-                Réinitialiser avec le logo Condor
+                Réinitialiser avec le logo officiel Condor
               </button>
             </div>
 
             {/* Photo Célébration Détail */}
-            <div style={{ background: '#fdfdfd', border: '1px solid #e5e7eb', padding: '1.2rem', borderRadius: '8px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '8px' }}>
-                Photo Célébration (Page de Détail du Joueur)
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '1.2rem', borderRadius: '10px' }}>
+              <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 'bold', marginBottom: '8px', color: '#0f172a' }}>
+                Photo Célébration (Page de Détail & Grande Affiche)
               </label>
-              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginBottom: '12px' }}>
                 <img 
                   src={editingPlayer.detail_img || editingPlayer.img || '/condor_logo_transparent.png'} 
                   alt="Thumb" 
-                  style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #ddd' }} 
+                  style={{ width: '65px', height: '65px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #cbd5e1' }} 
                 />
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <input 
+                    id="player-detail-input"
                     type="file" 
                     accept="image/*" 
-                    onChange={async e => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const base64 = await convertToBase64(file);
-                        setEditingPlayer({ ...editingPlayer, detail_img: base64, detailImg: base64 });
-                      }
-                    }} 
-                    style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem' }} 
+                    onChange={handleDetailPhotoSelect}
+                    style={{ display: 'none' }}
                   />
+                  <label
+                    htmlFor="player-detail-input"
+                    className="btn btn-primary"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', fontSize: '0.84rem', cursor: 'pointer', alignSelf: 'flex-start' }}
+                  >
+                    <Upload size={15} /> Choisir photo célébration
+                  </label>
                   <input 
                     type="text" 
                     placeholder="Ou lien URL (ex: /players/nom_celebration.jpg)" 
                     value={editingPlayer.detail_img || ''} 
                     onChange={e => setEditingPlayer({ ...editingPlayer, detail_img: e.target.value, detailImg: e.target.value })} 
-                    style={{ width: '100%', padding: '6px 8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '0.85rem' }} 
+                    style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} 
                   />
                 </div>
               </div>
               <button 
                 type="button" 
                 onClick={() => setEditingPlayer({ ...editingPlayer, detail_img: editingPlayer.img, detailImg: editingPlayer.img })}
-                style={{ fontSize: '0.75rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                style={{ fontSize: '0.75rem', color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
               >
                 Utiliser la même que la photo de profil
               </button>
@@ -685,19 +800,167 @@ export default function PlayersManager({
 
           </div>
 
-          {/* 3. Profil Sportif & Biographie */}
+          {/* 3. Statistiques de la Saison & Palmarès */}
           <h4 style={{ fontSize: '1rem', color: 'var(--clr-primary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1rem' }}>
-            3. Profil Sportif & Biographie
+            3. Statistiques de la Saison 2026/27 & Palmarès
           </h4>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div style={{ background: '#f8fafc', padding: '1.4rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>
+            <p style={{ margin: '0 0 14px', fontSize: '0.84rem', color: '#64748b' }}>
+              Mettez à jour les performances individuelles du joueur affichées sur sa fiche publique.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.2rem', marginBottom: '1.2rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Matchs Joués</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  value={editingPlayer.matches ?? 0} 
+                  onChange={e => setEditingPlayer({ ...editingPlayer, matches: parseInt(e.target.value) || 0 })} 
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Buts Marqués</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  value={editingPlayer.goals ?? 0} 
+                  onChange={e => setEditingPlayer({ ...editingPlayer, goals: parseInt(e.target.value) || 0, stat2val: editingPlayer.stat2lbl === 'Buts' ? (parseInt(e.target.value) || 0) : editingPlayer.stat2val })} 
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Passes Décisives</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  value={editingPlayer.assists ?? 0} 
+                  onChange={e => setEditingPlayer({ ...editingPlayer, assists: parseInt(e.target.value) || 0 })} 
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Type Stat Spécifique</label>
+                <select 
+                  value={editingPlayer.stat2lbl || 'Buts'} 
+                  onChange={e => setEditingPlayer({ ...editingPlayer, stat2lbl: e.target.value })}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.9rem' }}
+                >
+                  <option value="Buts">Buts (Attaquant / Milieu)</option>
+                  <option value="Arrêts">Arrêts (Gardien de but)</option>
+                  <option value="Clean Sheets">Clean Sheets (Gardien)</option>
+                  <option value="Tacles">Tacles réussis (Défenseur)</option>
+                  <option value="Interceptions">Interceptions (Défenseur)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Valeur Stat Spécifique</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  value={editingPlayer.stat2val ?? 0} 
+                  onChange={e => setEditingPlayer({ ...editingPlayer, stat2val: parseInt(e.target.value) || 0 })} 
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Titres de Champion (Trophées Or)</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  value={editingPlayer.honours1 ?? 1} 
+                  onChange={e => setEditingPlayer({ ...editingPlayer, honours1: parseInt(e.target.value) || 0 })} 
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Finales / Podiums (Trophées Argent)</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  value={editingPlayer.honours2 ?? 0} 
+                  onChange={e => setEditingPlayer({ ...editingPlayer, honours2: parseInt(e.target.value) || 0 })} 
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Profil Sportif & Informations Personnelles */}
+          <h4 style={{ fontSize: '1rem', color: 'var(--clr-primary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1rem' }}>
+            4. Profil Sportif & Informations Personnelles
+          </h4>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.2rem', marginBottom: '1.5rem' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px' }}>Pied Fort</label>
-              <select value={editingPlayer.foot || 'Droit'} onChange={e => setEditingPlayer({ ...editingPlayer, foot: e.target.value })} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', background: 'white' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Pied Fort</label>
+              <select value={editingPlayer.foot || 'Droit'} onChange={e => setEditingPlayer({ ...editingPlayer, foot: e.target.value })} style={{ width: '100%', padding: '9px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white' }}>
                 <option value="Droit">Droit</option>
                 <option value="Gauche">Gauche</option>
                 <option value="Ambidextre">Ambidextre</option>
               </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Taille (ex: 1.78 m)</label>
+              <input 
+                type="text" 
+                placeholder="Ex: 1.78 m" 
+                value={editingPlayer.height || ''} 
+                onChange={e => setEditingPlayer({ ...editingPlayer, height: e.target.value })} 
+                style={{ width: '100%', padding: '9px', borderRadius: '6px', border: '1px solid #cbd5e1' }} 
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Poids (ex: 72 kg)</label>
+              <input 
+                type="text" 
+                placeholder="Ex: 72 kg" 
+                value={editingPlayer.weight || ''} 
+                onChange={e => setEditingPlayer({ ...editingPlayer, weight: e.target.value })} 
+                style={{ width: '100%', padding: '9px', borderRadius: '6px', border: '1px solid #cbd5e1' }} 
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Lieu de Naissance</label>
+              <input 
+                type="text" 
+                placeholder="Ex: Port-au-Prince, Haïti" 
+                value={editingPlayer.pob || ''} 
+                onChange={e => setEditingPlayer({ ...editingPlayer, pob: e.target.value })} 
+                style={{ width: '100%', padding: '9px', borderRadius: '6px', border: '1px solid #cbd5e1' }} 
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Nationalité</label>
+              <input 
+                type="text" 
+                placeholder="Ex: Haïtienne" 
+                value={editingPlayer.nationality || ''} 
+                onChange={e => setEditingPlayer({ ...editingPlayer, nationality: e.target.value })} 
+                style={{ width: '100%', padding: '9px', borderRadius: '6px', border: '1px solid #cbd5e1' }} 
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Date de Naissance</label>
+              <input 
+                type="text" 
+                placeholder="Ex: 2006-05-14" 
+                value={editingPlayer.dob || ''} 
+                onChange={e => setEditingPlayer({ ...editingPlayer, dob: e.target.value })} 
+                style={{ width: '100%', padding: '9px', borderRadius: '6px', border: '1px solid #cbd5e1' }} 
+              />
             </div>
           </div>
 
@@ -708,7 +971,7 @@ export default function PlayersManager({
               onChange={e => setEditingPlayer({ ...editingPlayer, bio: e.target.value })} 
               rows={4}
               placeholder="Rédigez la biographie, les points forts et le parcours du joueur..."
-              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '0.95rem' }} 
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }} 
             />
           </div>
 
@@ -758,35 +1021,55 @@ export default function PlayersManager({
             const primaryCat = player.category || playerCats[0];
             const unassignedUnits = units.filter(u => !playerCats.includes(u.name));
 
+            const isSpotlight = Boolean(player.is_spotlight || player.spotlight);
+
             return (
               <div 
                 key={player.id} 
                 style={{ 
                   background: 'white', 
                   borderRadius: '12px', 
-                  border: '1px solid #e5e7eb', 
+                  border: isSpotlight ? '2px solid #eab308' : '1px solid #e5e7eb', 
                   padding: '1.2rem', 
                   display: 'flex', 
                   flexDirection: 'column', 
                   justifyContent: 'space-between',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+                  boxShadow: isSpotlight ? '0 6px 20px rgba(234, 179, 8, 0.15)' : '0 4px 12px rgba(0,0,0,0.03)',
+                  position: 'relative'
                 }}
               >
                 <div>
+                  {/* Spotlight Banner Badge if active */}
+                  {isSpotlight && (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fef08a', color: '#854d0e', padding: '3px 10px', borderRadius: '12px', fontSize: '0.74rem', fontWeight: 'bold', marginBottom: '10px' }}>
+                      <Star size={13} fill="#854d0e" /> Mis en avant sur l'accueil
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', gap: '14px', alignItems: 'center', marginBottom: '12px' }}>
                     <img 
                       src={player.img || '/condor_logo_transparent.png'} 
-                      style={{ width: '55px', height: '55px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #f3f4f6' }} 
+                      style={{ width: '58px', height: '58px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #f3f4f6' }} 
                       alt={player.name} 
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <h4 style={{ margin: '0 0 2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', fontSize: '1.1rem' }}>
+                      <h4 style={{ margin: '0 0 2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', fontSize: '1.15rem' }}>
                         {player.name}
                       </h4>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--clr-primary)', fontWeight: 'bold' }}>
-                        #{player.num} • {player.pos || 'Joueur'}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.82rem', color: 'var(--clr-primary)', fontWeight: 'bold' }}>
+                          #{player.num} • {player.pos || 'Joueur'}
+                        </span>
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Statistiques Rapides */}
+                  <div style={{ display: 'flex', gap: '8px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', fontSize: '0.76rem', color: '#475569', marginBottom: '10px', fontWeight: '600', justifyContent: 'space-between' }}>
+                    <span>⚽ {player.matches || 0} matchs</span>
+                    <span>🥅 {player.goals || player.stat2val || 0} {player.stat2lbl === "Arrêts" ? "arrêts" : "buts"}</span>
+                    <span>👟 {player.assists || 0} passes</span>
+                    <span>🏆 {player.honours1 || 0} titres</span>
                   </div>
 
                   {/* Multi-Unit Badges & Quick Add */}
@@ -869,26 +1152,51 @@ export default function PlayersManager({
                   </div>
                 </div>
 
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #f3f4f6', paddingTop: '10px' }}>
-                <button 
-                  onClick={() => handleOpenEdit(player)} 
-                  className="btn btn-outline"
-                  style={{ padding: '6px 12px', fontSize: '0.85rem', color: '#1d4ed8', borderColor: '#bfdbfe', display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <Edit2 size={14} /> Modifier
-                </button>
-                <button 
-                  onClick={() => handleDelete(player.id, player.name)} 
-                  className="btn btn-outline"
-                  style={{ padding: '6px 12px', fontSize: '0.85rem', color: '#b91c1c', borderColor: '#fecaca', display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <Trash2 size={14} /> Supprimer
-                </button>
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', borderTop: '1px solid #f3f4f6', paddingTop: '10px', flexWrap: 'wrap' }}>
+                  {/* 1-Click Spotlight Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleToggleSpotlight(player)}
+                    title={isSpotlight ? "Retirer de l'accueil" : "Mettre en avant sur la page d'accueil"}
+                    style={{
+                      background: isSpotlight ? '#fef08a' : '#f8fafc',
+                      color: isSpotlight ? '#854d0e' : '#64748b',
+                      border: isSpotlight ? '1px solid #eab308' : '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      padding: '5px 10px',
+                      fontSize: '0.8rem',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Star size={13} fill={isSpotlight ? '#854d0e' : 'none'} color={isSpotlight ? '#854d0e' : '#64748b'} />
+                    {isSpotlight ? 'En vedette' : 'Mettre en avant'}
+                  </button>
+
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button 
+                      onClick={() => handleOpenEdit(player)} 
+                      className="btn btn-outline"
+                      style={{ padding: '5px 10px', fontSize: '0.82rem', color: '#1d4ed8', borderColor: '#bfdbfe', display: 'flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      <Edit2 size={13} /> Modifier
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(player.id, player.name)} 
+                      className="btn btn-outline"
+                      style={{ padding: '5px 10px', fontSize: '0.82rem', color: '#b91c1c', borderColor: '#fecaca', display: 'flex', alignItems: 'center', gap: '5px' }}
+                    >
+                      <Trash2 size={13} /> Supprimer
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
         </div>
       )}
     </div>

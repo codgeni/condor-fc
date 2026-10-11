@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { UserCheck, Plus, Edit2, Trash2, Check, X, Upload } from 'lucide-react';
 import { StaffMember, saveStaff, deleteStaff } from '@/lib/dataService';
-import { validateUploadFile } from '@/lib/security';
+import { validateUploadFile, compressAndOptimizeImage } from '@/lib/security';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 
 interface StaffManagerProps {
@@ -11,21 +11,6 @@ interface StaffManagerProps {
   onRefresh: () => void;
   showToast: (msg: string) => void;
 }
-
-const convertToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const validation = validateUploadFile(file);
-    if (!validation.valid) {
-      alert(validation.error || 'Fichier non valide.');
-      reject(new Error(validation.error || 'Fichier non valide.'));
-      return;
-    }
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
-};
 
 export default function StaffManager({ staff, onRefresh, showToast }: StaffManagerProps) {
   const { askConfirm } = useConfirmPoster();
@@ -196,33 +181,65 @@ export default function StaffManager({ staff, onRefresh, showToast }: StaffManag
           </div>
 
           {/* Photo */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px' }}>Photo officielle</label>
+          <div style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1.2rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+            <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 'bold', marginBottom: '6px', color: '#0f172a' }}>
+              Photo officielle du membre du staff
+            </label>
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
               <img 
                 src={editingStaff.img || '/condor_logo_transparent.png'} 
                 alt="preview" 
-                style={{ width: '65px', height: '65px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #ddd' }} 
+                style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #cbd5e1' }} 
               />
-              <div style={{ flex: 1, minWidth: '220px' }}>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={async e => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const base64 = await convertToBase64(file);
-                      setEditingStaff({ ...editingStaff, img: base64 });
-                    }
-                  }}
-                  style={{ display: 'block', marginBottom: '6px' }}
-                />
+              <div style={{ flex: 1, minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <input 
+                    id="staff-file-picker"
+                    type="file" 
+                    accept="image/*" 
+                    onChange={async e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const validation = validateUploadFile(file);
+                        if (!validation.valid) {
+                          showToast(validation.error || 'Fichier non valide.');
+                          return;
+                        }
+                        try {
+                          showToast("Optimisation de la photo...");
+                          const compressed = await compressAndOptimizeImage(file, 800, 0.85);
+                          setEditingStaff({ ...editingStaff, img: compressed });
+                          showToast("Photo du staff chargée !");
+                        } catch (err) {
+                          showToast("Erreur lors de la lecture du fichier.");
+                        }
+                      }
+                    }} 
+                    style={{ display: 'none' }}
+                  />
+                  <label
+                    htmlFor="staff-file-picker"
+                    className="btn btn-primary"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 14px', fontSize: '0.85rem', cursor: 'pointer' }}
+                  >
+                    <Upload size={16} /> Choisir une photo (Téléphone ou PC)
+                  </label>
+                  {editingStaff.img && editingStaff.img !== '/condor_logo_transparent.png' && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingStaff({ ...editingStaff, img: '/condor_logo_transparent.png' })}
+                      style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      Réinitialiser logo
+                    </button>
+                  )}
+                </div>
                 <input 
                   type="text" 
                   placeholder="Ou collez une URL d'image (ex: /mon-image.png)" 
                   value={editingStaff.img || ''} 
                   onChange={e => setEditingStaff({ ...editingStaff, img: e.target.value })}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.85rem' }}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
                 />
               </div>
             </div>

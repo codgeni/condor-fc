@@ -82,6 +82,8 @@ export interface PlayerData {
   stat2val?: number;
   honours1?: number;
   honours2?: number;
+  is_spotlight?: boolean;
+  spotlight?: boolean;
   created_at?: string;
 }
 
@@ -980,7 +982,7 @@ export async function fetchUnits(): Promise<UnitItem[]> {
   return getLocalItem('units_list', DEFAULT_UNITS);
 }
 
-export async function saveUnit(unit: UnitItem): Promise<{ success: boolean; data?: UnitItem }> {
+export async function saveUnit(unit: UnitItem): Promise<{ success: boolean; data?: UnitItem; error?: string }> {
   const currentList = getLocalItem<UnitItem[]>('units_list', DEFAULT_UNITS);
   const targetUnit: UnitItem = {
     ...unit,
@@ -989,15 +991,28 @@ export async function saveUnit(unit: UnitItem): Promise<{ success: boolean; data
     is_active: unit.is_active !== undefined ? unit.is_active : true
   };
 
+  const dbPayload = {
+    id: String(targetUnit.id),
+    name: targetUnit.name,
+    description: targetUnit.description || '',
+    order: Number(targetUnit.order) || 1,
+    is_active: targetUnit.is_active !== false,
+    image: targetUnit.image || null
+  };
+
   try {
-    const { data: existing } = await supabase.from('units').select('id').eq('id', targetUnit.id);
+    const { data: existing } = await supabase.from('units').select('id').eq('id', dbPayload.id);
+    let res;
     if (existing && existing.length > 0) {
-      await supabase.from('units').update(targetUnit).eq('id', targetUnit.id);
+      res = await supabase.from('units').update(dbPayload).eq('id', dbPayload.id);
     } else {
-      await supabase.from('units').insert(targetUnit);
+      res = await supabase.from('units').insert(dbPayload);
+    }
+    if (res?.error) {
+      console.warn('Supabase save unit notice (saved to local cache):', res.error.message);
     }
   } catch (e) {
-    console.warn('Supabase save unit note, stored in local cache', e);
+    console.warn('Supabase save unit exception, stored in local cache', e);
   }
 
   const idx = currentList.findIndex(u => String(u.id) === String(targetUnit.id));
@@ -1016,7 +1031,7 @@ export async function saveUnit(unit: UnitItem): Promise<{ success: boolean; data
 
 export async function deleteUnit(id: string | number): Promise<{ success: boolean }> {
   try {
-    await supabase.from('units').delete().eq('id', id);
+    await supabase.from('units').delete().eq('id', String(id));
   } catch (e) {
     console.warn('Supabase delete unit note', e);
   }
@@ -1048,7 +1063,7 @@ export async function fetchRoles(): Promise<RoleItem[]> {
   return getLocalItem('roles_list', DEFAULT_ROLES);
 }
 
-export async function saveRole(role: RoleItem): Promise<{ success: boolean; data?: RoleItem }> {
+export async function saveRole(role: RoleItem): Promise<{ success: boolean; data?: RoleItem; error?: string }> {
   const currentList = getLocalItem<RoleItem[]>('roles_list', DEFAULT_ROLES);
   const targetRole: RoleItem = {
     ...role,
@@ -1056,12 +1071,23 @@ export async function saveRole(role: RoleItem): Promise<{ success: boolean; data
     order: Number(role.order) || (currentList.length + 1)
   };
 
+  const dbPayload = {
+    id: String(targetRole.id),
+    name: targetRole.name,
+    keywords: targetRole.keywords || '',
+    order: Number(targetRole.order) || 1
+  };
+
   try {
-    const { data: existing } = await supabase.from('roles').select('id').eq('id', targetRole.id);
+    const { data: existing } = await supabase.from('roles').select('id').eq('id', dbPayload.id);
+    let res;
     if (existing && existing.length > 0) {
-      await supabase.from('roles').update(targetRole).eq('id', targetRole.id);
+      res = await supabase.from('roles').update(dbPayload).eq('id', dbPayload.id);
     } else {
-      await supabase.from('roles').insert(targetRole);
+      res = await supabase.from('roles').insert(dbPayload);
+    }
+    if (res?.error) {
+      console.warn('Supabase save role notice (saved in local cache):', res.error.message);
     }
   } catch (e) {
     console.warn('Supabase save role note, stored in local cache', e);
@@ -1083,7 +1109,7 @@ export async function saveRole(role: RoleItem): Promise<{ success: boolean; data
 
 export async function deleteRole(id: string | number): Promise<{ success: boolean }> {
   try {
-    await supabase.from('roles').delete().eq('id', id);
+    await supabase.from('roles').delete().eq('id', String(id));
   } catch (e) {
     console.warn('Supabase delete role note', e);
   }
@@ -1143,7 +1169,7 @@ export async function fetchStaff(): Promise<StaffMember[]> {
   return cached;
 }
 
-export async function saveStaff(member: StaffMember): Promise<{ success: boolean; data?: StaffMember }> {
+export async function saveStaff(member: StaffMember): Promise<{ success: boolean; data?: StaffMember; error?: string }> {
   const currentList = getLocalItem<StaffMember[]>('staff_list', DEFAULT_STAFF);
   const targetMember: StaffMember = {
     ...member,
@@ -1151,12 +1177,24 @@ export async function saveStaff(member: StaffMember): Promise<{ success: boolean
     order: Number(member.order) || (currentList.length + 1)
   };
 
+  const dbPayload = {
+    id: String(targetMember.id),
+    name: targetMember.name,
+    role: targetMember.role,
+    img: targetMember.img,
+    order: Number(targetMember.order) || 1
+  };
+
   try {
-    const { data: existing } = await supabase.from('staff').select('id').eq('id', targetMember.id);
+    const { data: existing } = await supabase.from('staff').select('id').eq('id', dbPayload.id);
+    let res;
     if (existing && existing.length > 0) {
-      await supabase.from('staff').update(targetMember).eq('id', targetMember.id);
+      res = await supabase.from('staff').update(dbPayload).eq('id', dbPayload.id);
     } else {
-      await supabase.from('staff').insert(targetMember);
+      res = await supabase.from('staff').insert(dbPayload);
+    }
+    if (res?.error) {
+      console.warn('Supabase save staff notice (saved in local cache):', res.error.message);
     }
   } catch (e) {
     console.warn('Supabase save staff note, stored in local cache', e);
@@ -1178,7 +1216,7 @@ export async function saveStaff(member: StaffMember): Promise<{ success: boolean
 
 export async function deleteStaff(id: string | number): Promise<{ success: boolean }> {
   try {
-    await supabase.from('staff').delete().eq('id', id);
+    await supabase.from('staff').delete().eq('id', String(id));
   } catch (e) {
     console.warn('Supabase delete staff note', e);
   }
@@ -1210,7 +1248,7 @@ export async function fetchTimeline(): Promise<TimelineItem[]> {
   return getLocalItem('timeline_list', DEFAULT_TIMELINE);
 }
 
-export async function saveTimeline(item: TimelineItem): Promise<{ success: boolean; data?: TimelineItem }> {
+export async function saveTimeline(item: TimelineItem): Promise<{ success: boolean; data?: TimelineItem; error?: string }> {
   const currentList = getLocalItem<TimelineItem[]>('timeline_list', DEFAULT_TIMELINE);
   const targetItem: TimelineItem = {
     ...item,
@@ -1218,12 +1256,24 @@ export async function saveTimeline(item: TimelineItem): Promise<{ success: boole
     order: Number(item.order) || (currentList.length + 1)
   };
 
+  const dbPayload = {
+    id: String(targetItem.id),
+    year: targetItem.year,
+    title: targetItem.title,
+    description: targetItem.description,
+    order: Number(targetItem.order) || 1
+  };
+
   try {
-    const { data: existing } = await supabase.from('timeline').select('id').eq('id', targetItem.id);
+    const { data: existing } = await supabase.from('timeline').select('id').eq('id', dbPayload.id);
+    let res;
     if (existing && existing.length > 0) {
-      await supabase.from('timeline').update(targetItem).eq('id', targetItem.id);
+      res = await supabase.from('timeline').update(dbPayload).eq('id', dbPayload.id);
     } else {
-      await supabase.from('timeline').insert(targetItem);
+      res = await supabase.from('timeline').insert(dbPayload);
+    }
+    if (res?.error) {
+      console.warn('Supabase save timeline notice (saved in local cache):', res.error.message);
     }
   } catch (e) {
     console.warn('Supabase save timeline note, stored in local cache', e);
@@ -1380,7 +1430,8 @@ export async function fetchMergedPlayers(): Promise<Record<string, any>> {
           merged[strId] = {
             ...(merged[strId] || {}),
             ...player,
-            categories: supCats
+            categories: supCats,
+            is_spotlight: Boolean(player.is_spotlight || player.spotlight)
           };
         }
       });
@@ -1399,7 +1450,8 @@ export async function fetchMergedPlayers(): Promise<Record<string, any>> {
         ...player,
         categories: Array.isArray(player.categories) && player.categories.length > 0
           ? player.categories
-          : (player.category ? [player.category] : (merged[strId]?.categories || ['U17']))
+          : (player.category ? [player.category] : (merged[strId]?.categories || ['U17'])),
+        is_spotlight: Boolean(player.is_spotlight || player.spotlight || merged[strId]?.is_spotlight)
       };
     }
   }
@@ -1421,8 +1473,13 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
 
   const fullPlayer: PlayerData = {
     ...player,
+    id: strId,
     category: primaryCategory,
-    categories: categories
+    categories: categories,
+    detail_img: player.detail_img || player.detailImg || player.img || '/condor_logo_transparent.png',
+    detailImg: player.detail_img || player.detailImg || player.img || '/condor_logo_transparent.png',
+    is_spotlight: Boolean(player.is_spotlight || player.spotlight),
+    spotlight: Boolean(player.is_spotlight || player.spotlight)
   };
 
   // Update local cache
@@ -1430,29 +1487,67 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
   localCache[strId] = fullPlayer;
   setLocalItem('players_custom', localCache);
 
+  // Exact database columns present in Supabase 'players' table
+  const dbPayload: Record<string, any> = {
+    id: strId,
+    name: fullPlayer.name,
+    pos: fullPlayer.pos || 'Joueur',
+    num: Number(fullPlayer.num) || 0,
+    img: fullPlayer.img || '/condor_logo_transparent.png',
+    detail_img: fullPlayer.detail_img,
+    filter: fullPlayer.filter || 'none',
+    dob: fullPlayer.dob || '',
+    category: primaryCategory,
+    categories: categories,
+    height: fullPlayer.height || null,
+    weight: fullPlayer.weight || null,
+    matches: Number(fullPlayer.matches) || 0,
+    goals: Number(fullPlayer.goals) || 0,
+    assists: Number(fullPlayer.assists) || 0,
+    stat2lbl: fullPlayer.stat2lbl || 'Buts',
+    stat2val: Number(fullPlayer.stat2val) || 0,
+    pob: fullPlayer.pob || 'Port-au-Prince, Haïti',
+    foot: fullPlayer.foot || 'Droit',
+    nationality: fullPlayer.nationality || 'Haïtienne',
+    bio: fullPlayer.bio || '',
+    honours1: Number(fullPlayer.honours1) || 1,
+    honours2: Number(fullPlayer.honours2) || 0,
+    is_spotlight: fullPlayer.is_spotlight
+  };
+
   try {
     const { data: existing } = await supabase.from('players').select('id').eq('id', strId);
     let res;
     if (existing && existing.length > 0) {
-      res = await supabase.from('players').update(fullPlayer).eq('id', strId);
+      res = await supabase.from('players').update(dbPayload).eq('id', strId);
     } else {
-      res = await supabase.from('players').insert(fullPlayer);
+      res = await supabase.from('players').insert(dbPayload);
     }
 
     if (res?.error) {
-      console.warn('Supabase save player note:', res.error.message);
-      if (res.error.message?.includes('categories')) {
-        const { categories: _discard, ...withoutCategories } = fullPlayer as any;
-        if (existing && existing.length > 0) {
-          await supabase.from('players').update(withoutCategories).eq('id', strId);
-        } else {
-          await supabase.from('players').insert(withoutCategories);
-        }
+      console.warn('Supabase save player notice, attempting fallback without new columns:', res.error.message);
+      const retryPayload = { ...dbPayload };
+      if (res.error.message?.includes('is_spotlight')) {
+        delete retryPayload.is_spotlight;
       }
-      return { success: true };
+      if (res.error.message?.includes('categories')) {
+        delete retryPayload.categories;
+      }
+
+      if (existing && existing.length > 0) {
+        res = await supabase.from('players').update(retryPayload).eq('id', strId);
+      } else {
+        res = await supabase.from('players').insert(retryPayload);
+      }
+
+      if (res?.error) {
+        console.error('Supabase player update error:', res.error.message);
+        return { success: true, error: res.error.message };
+      }
     }
     return { success: true };
   } catch (e: any) {
+    console.error('Player save exception:', e);
     return { success: true };
   }
 }

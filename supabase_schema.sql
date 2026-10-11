@@ -56,6 +56,7 @@ ALTER TABLE players ADD COLUMN IF NOT EXISTS bio TEXT;
 ALTER TABLE players ADD COLUMN IF NOT EXISTS honours1 INT DEFAULT 1;
 ALTER TABLE players ADD COLUMN IF NOT EXISTS honours2 INT DEFAULT 0;
 ALTER TABLE players ADD COLUMN IF NOT EXISTS categories TEXT[];
+ALTER TABLE players ADD COLUMN IF NOT EXISTS is_spotlight BOOLEAN DEFAULT FALSE;
 
 -- 3. Table des images du slider (slides)
 CREATE TABLE IF NOT EXISTS slides (
@@ -419,6 +420,56 @@ BEGIN
     CREATE POLICY "Public read slides" ON slides FOR SELECT USING (true);
   END IF;
   CREATE POLICY "Admin write slides" ON slides FOR ALL 
+    USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated')
+    WITH CHECK (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+
+  -- UNITS
+  ALTER TABLE IF EXISTS units ENABLE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS "Admin write units" ON units;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'units' AND policyname = 'Public read units') THEN
+    CREATE POLICY "Public read units" ON units FOR SELECT USING (true);
+  END IF;
+  CREATE POLICY "Admin write units" ON units FOR ALL 
+    USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated')
+    WITH CHECK (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+
+  -- STAFF
+  ALTER TABLE IF EXISTS staff ENABLE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS "Admin write staff" ON staff;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'staff' AND policyname = 'Public read staff') THEN
+    CREATE POLICY "Public read staff" ON staff FOR SELECT USING (true);
+  END IF;
+  CREATE POLICY "Admin write staff" ON staff FOR ALL 
+    USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated')
+    WITH CHECK (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+
+  -- ROLES
+  ALTER TABLE IF EXISTS roles ENABLE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS "Admin write roles" ON roles;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'roles' AND policyname = 'Public read roles') THEN
+    CREATE POLICY "Public read roles" ON roles FOR SELECT USING (true);
+  END IF;
+  CREATE POLICY "Admin write roles" ON roles FOR ALL 
+    USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated')
+    WITH CHECK (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+
+  -- TIMELINE
+  ALTER TABLE IF EXISTS timeline ENABLE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS "Admin write timeline" ON timeline;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'timeline' AND policyname = 'Public read timeline') THEN
+    CREATE POLICY "Public read timeline" ON timeline FOR SELECT USING (true);
+  END IF;
+  CREATE POLICY "Admin write timeline" ON timeline FOR ALL 
+    USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated')
+    WITH CHECK (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
+
+  -- SITE_CONTENT
+  ALTER TABLE IF EXISTS site_content ENABLE ROW LEVEL SECURITY;
+  DROP POLICY IF EXISTS "Admin write site_content" ON site_content;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'site_content' AND policyname = 'Public read site_content') THEN
+    CREATE POLICY "Public read site_content" ON site_content FOR SELECT USING (true);
+  END IF;
+  CREATE POLICY "Admin write site_content" ON site_content FOR ALL 
     USING (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated')
     WITH CHECK (auth.jwt() ->> 'email' = 'admin@gmail.com' OR auth.role() = 'service_role' OR auth.role() = 'authenticated');
 
