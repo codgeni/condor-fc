@@ -111,9 +111,9 @@ const jsonLd = {
   },
   sport: 'Football / Soccer',
   sameAs: [
-    'https://www.facebook.com',
-    'https://www.instagram.com',
-    'https://www.youtube.com'
+    'https://www.facebook.com/share/19gLVfAm7i/?mibextid=wwXIfr',
+    'https://www.instagram.com/condorecolefootball?exln=bjJua2E1dWViYjJo',
+    'https://www.tiktok.com/@condorhaiti?_r=1&_t=ZS-9ATAOdNenjQ'
   ],
 };
 

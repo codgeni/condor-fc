@@ -389,8 +389,9 @@ export default function Contact() {
                     <select name="connuPar" required value={formData.connuPar} onChange={handleChange} style={inputStyle}>
                       <option value="" style={{background: '#111'}}>Sélectionner</option>
                       <option value="Bouche à l'oreille" style={{background: '#111'}}>Bouche à l'oreille (non du contact)</option>
-                      <option value="Internet: Facebook" style={{background: '#111'}}>Internet: Facebook</option>
-                      <option value="Internet: Instagram" style={{background: '#111'}}>Internet: Instagram</option>
+                      <option value="Internet: Facebook" style={{background: '#111'}}>Internet: Facebook (Condor Edu-Sport)</option>
+                      <option value="Internet: Instagram" style={{background: '#111'}}>Internet: Instagram (@condorecolefootball)</option>
+                      <option value="Internet: TikTok" style={{background: '#111'}}>Internet: TikTok (@condorhaiti)</option>
                       <option value="Site Web" style={{background: '#111'}}>Site Web</option>
                       <option value="Autre" style={{background: '#111'}}>Autre (préciser)</option>
                     </select>

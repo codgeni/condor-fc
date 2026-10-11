@@ -140,6 +140,9 @@ export interface SiteContent {
   hero_title?: string;
   hero_slogan?: string;
   no_match_text?: string;
+  social_facebook?: string;
+  social_instagram?: string;
+  social_tiktok?: string;
   
   // 2. Club Header
   about_title?: string;
@@ -320,6 +323,9 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   hero_title: 'Condor École de Football',
   hero_slogan: '"Plus fort, plus haut dans le score !"',
   no_match_text: "Nos équipes sont actuellement en période d'entraînement intensif et de préparation technique. Suivez nos actualités pour être tenus informés des prochaines rencontres officielles !",
+  social_facebook: 'https://www.facebook.com/share/19gLVfAm7i/?mibextid=wwXIfr',
+  social_instagram: 'https://www.instagram.com/condorecolefootball?exln=bjJua2E1dWViYjJo',
+  social_tiktok: 'https://www.tiktok.com/@condorhaiti?_r=1&_t=ZS-9ATAOdNenjQ',
   
   // 2. Club - Présentation
   about_title: "Plus Qu'une École, Une Famille.",

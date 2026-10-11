@@ -2,10 +2,19 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { MapPin, Phone, Mail, MessageSquare } from 'lucide-react';
+import { fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
 
 export default function Footer() {
   const pathname = usePathname();
+  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+
+  useEffect(() => {
+    fetchSiteContent().then(data => {
+      if (data) setSiteContent(data);
+    });
+  }, []);
 
   // Hide public footer in admin dashboard
   if (pathname?.startsWith('/admin')) {
@@ -76,18 +85,18 @@ export default function Footer() {
             <h3>Réseaux Sociaux</h3>
             <ul className="footer-links">
               <li>
-                <a href="https://www.facebook.com/profile.php?id=100093665796338" target="_blank" rel="noopener noreferrer">
+                <a href={siteContent?.social_facebook || "https://www.facebook.com/share/19gLVfAm7i/?mibextid=wwXIfr"} target="_blank" rel="noopener noreferrer">
                   Facebook : Condor Edu-Sport
                 </a>
               </li>
               <li>
-                <a href="https://www.instagram.com/Condorecoledefootball" target="_blank" rel="noopener noreferrer">
-                  Instagram : @Condorecoledefootball
+                <a href={siteContent?.social_instagram || "https://www.instagram.com/condorecolefootball?exln=bjJua2E1dWViYjJo"} target="_blank" rel="noopener noreferrer">
+                  Instagram : @condorecolefootball
                 </a>
               </li>
               <li>
-                <a href="https://www.tiktok.com/@CondorHaiti" target="_blank" rel="noopener noreferrer">
-                  TikTok : @CondorHaiti
+                <a href={siteContent?.social_tiktok || "https://www.tiktok.com/@condorhaiti?_r=1&_t=ZS-9ATAOdNenjQ"} target="_blank" rel="noopener noreferrer">
+                  TikTok : @condorhaiti
                 </a>
               </li>
             </ul>

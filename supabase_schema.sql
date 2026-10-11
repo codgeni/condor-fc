@@ -656,7 +656,9 @@ CREATE TABLE IF NOT EXISTS site_content (
 
 ALTER TABLE site_content ADD COLUMN IF NOT EXISTS data JSONB DEFAULT '{}'::jsonb;
 
-INSERT INTO site_content (id, hero_tag, hero_title, hero_slogan, no_match_text, about_title, about_text) VALUES
-('main', 'CHAQUE ENFANT EST UNIQUE', 'Condor École de Football', '"Plus fort, plus haut dans le score !"', 'Nos équipes sont actuellement en période d''entraînement intensif et de préparation technique. Suivez nos actualités pour être tenus informés des prochaines rencontres officielles !', 'Plus Qu''une École, Une Famille.', 'Depuis Mai 2023, la Condor École de Football est un symbole d''excellence, d''éducation et de passion sportive à Delmas, Haïti. Nous formons les leaders et les champions de demain.')
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO site_content (id, hero_tag, hero_title, hero_slogan, no_match_text, about_title, about_text, data) VALUES
+('main', 'CHAQUE ENFANT EST UNIQUE', 'Condor École de Football', '"Plus fort, plus haut dans le score !"', 'Nos équipes sont actuellement en période d''entraînement intensif et de préparation technique. Suivez nos actualités pour être tenus informés des prochaines rencontres officielles !', 'Plus Qu''une École, Une Famille.', 'Depuis Mai 2023, la Condor École de Football est un symbole d''excellence, d''éducation et de passion sportive à Delmas, Haïti. Nous formons les leaders et les champions de demain.', '{"social_facebook": "https://www.facebook.com/share/19gLVfAm7i/?mibextid=wwXIfr", "social_instagram": "https://www.instagram.com/condorecolefootball?exln=bjJua2E1dWViYjJo", "social_tiktok": "https://www.tiktok.com/@condorhaiti?_r=1&_t=ZS-9ATAOdNenjQ"}'::jsonb)
+ON CONFLICT (id) DO UPDATE SET 
+  data = COALESCE(site_content.data, '{}'::jsonb) || '{"social_facebook": "https://www.facebook.com/share/19gLVfAm7i/?mibextid=wwXIfr", "social_instagram": "https://www.instagram.com/condorecolefootball?exln=bjJua2E1dWViYjJo", "social_tiktok": "https://www.tiktok.com/@condorhaiti?_r=1&_t=ZS-9ATAOdNenjQ"}'::jsonb;
+
 

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { 
   Type, Save, RotateCcw, Plus, Trash2, Shield, Heart, 
   FileText, Home, Award, Music, AlertTriangle, CheckCircle,
-  Image as ImageIcon, Upload
+  Image as ImageIcon, Upload, Share2
 } from 'lucide-react';
 import { SiteContent, DEFAULT_SITE_CONTENT, DEFAULT_PILLARS, PillarItem, saveSiteContent } from '@/lib/dataService';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
@@ -151,7 +151,10 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
           hero_tag: DEFAULT_SITE_CONTENT.hero_tag,
           hero_title: DEFAULT_SITE_CONTENT.hero_title,
           hero_slogan: DEFAULT_SITE_CONTENT.hero_slogan,
-          no_match_text: DEFAULT_SITE_CONTENT.no_match_text
+          no_match_text: DEFAULT_SITE_CONTENT.no_match_text,
+          social_facebook: DEFAULT_SITE_CONTENT.social_facebook,
+          social_instagram: DEFAULT_SITE_CONTENT.social_instagram,
+          social_tiktok: DEFAULT_SITE_CONTENT.social_tiktok
         }));
       } else if (section === 'club') {
         setForm(prev => ({
@@ -1263,6 +1266,47 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
                 rows={3}
                 style={textareaStyle} 
               />
+            </div>
+
+            <div style={cardStyle}>
+              <div style={cardHeaderStyle}>
+                <Share2 size={18} /> Réseaux Sociaux Officiels (Footer & Contact)
+              </div>
+              <p style={{ color: '#64748b', fontSize: '0.88rem', marginTop: '-4px', marginBottom: '1.2rem' }}>
+                Liens officiels redirigeant vers vos communautés sociales sur les réseaux.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.2rem' }}>
+                <div>
+                  <label style={labelStyle}>Lien Facebook</label>
+                  <input 
+                    type="url" 
+                    value={form.social_facebook || ''} 
+                    onChange={e => setForm({ ...form, social_facebook: e.target.value })} 
+                    placeholder="https://www.facebook.com/..."
+                    style={inputStyle} 
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Lien Instagram</label>
+                  <input 
+                    type="url" 
+                    value={form.social_instagram || ''} 
+                    onChange={e => setForm({ ...form, social_instagram: e.target.value })} 
+                    placeholder="https://www.instagram.com/..."
+                    style={inputStyle} 
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Lien TikTok</label>
+                  <input 
+                    type="url" 
+                    value={form.social_tiktok || ''} 
+                    onChange={e => setForm({ ...form, social_tiktok: e.target.value })} 
+                    placeholder="https://www.tiktok.com/@..."
+                    style={inputStyle} 
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}
