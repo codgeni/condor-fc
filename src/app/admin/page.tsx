@@ -8,14 +8,15 @@ import {
   Tv, ShoppingBag, Trophy, CheckSquare, Square, Eye, EyeOff,
   Radio, Shield, Clock, MapPin, Save, X, Menu,
   UserCheck, History, Type, ArrowRightLeft,
-  Printer, PhoneCall, Mail, MessageSquare, AlertCircle, FileText, Search, ExternalLink, Activity, HeartPulse, ShieldAlert
+  Printer, PhoneCall, Mail, MessageSquare, AlertCircle, FileText, Search, ExternalLink, Activity, HeartPulse, ShieldAlert,
+  Play, Check, Smartphone, Monitor, RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { playersDB } from '@/lib/playersDB';
 import { 
   fetchCurrentMatch, saveMatchConfig, MatchConfig,
-  fetchVideos, saveVideo, deleteVideo, VideoItem, parseVideoUrl,
+  fetchVideos, saveVideo, deleteVideo, VideoItem, parseVideoUrl, getVideoFormat, getVideoPlatform,
   fetchStages, saveStage, deleteStage, StageSession,
   fetchProducts, saveProduct, deleteProduct, ShopProduct,
   savePlayerRecord, deletePlayerRecord,
@@ -26,7 +27,7 @@ import {
   fetchSiteContent, saveSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
   fetchMergedPlayers, fetchNews, isRealNews
 } from '@/lib/dataService';
-import { validateUploadFile, sanitizeFormRecord } from '@/lib/security';
+import { validateUploadFile, sanitizeFormRecord, compressAndOptimizeImage } from '@/lib/security';
 
 import UnitsManager from '@/components/admin/UnitsManager';
 import RolesManager from '@/components/admin/RolesManager';
@@ -1247,17 +1248,29 @@ export default function AdminPanel() {
         )}
 
         {/* ==============================================================
-            TAB 2: CONDOR TV (VIDÉOS CRUD)
+            TAB 2: CONDOR TV (VIDÉOS CRUD AVEC MINIATURE & FORMAT)
         ============================================================== */}
         {activeTab === 'tv' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
                 <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.4rem', margin: 0 }}>Condor TV (Vidéos)</h2>
-                <p style={{ color: 'var(--clr-gray)', margin: '5px 0 0' }}>Gérez les vidéos publiées sur Condor TV et sur la page d'accueil avec support YouTube direct.</p>
+                <p style={{ color: 'var(--clr-gray)', margin: '5px 0 0' }}>
+                  Gérez les vidéos publiées sur Condor TV et la page d'accueil avec support complet YouTube (16:9 & Shorts) et TikTok (9:16).
+                </p>
               </div>
               <button 
-                onClick={() => setEditingVideo({ title: '', url: '', category: 'Résumé des matchs', duration: '10:00', tag: 'Exclusif', description: '' })} 
+                onClick={() => setEditingVideo({ 
+                  title: '', 
+                  url: '', 
+                  category: 'Résumé des matchs', 
+                  duration: '10:00', 
+                  tag: 'Exclusif', 
+                  description: '', 
+                  thumbnail: '', 
+                  format: '16:9',
+                  platform: 'youtube'
+                })} 
                 className="btn btn-primary"
                 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
               >
@@ -1266,27 +1279,36 @@ export default function AdminPanel() {
             </div>
 
             {editingVideo ? (
-              <form onSubmit={handleSaveVideo} style={{ background: 'white', padding: '2rem', borderRadius: '12px', border: '1px solid #eee', marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '1.3rem', marginBottom: '1.5rem' }}>{editingVideo.id ? 'Modifier la Vidéo' : 'Nouvelle Vidéo'}</h3>
+              <form onSubmit={handleSaveVideo} style={{ background: 'white', padding: '2rem', borderRadius: '16px', border: '1px solid #e5e7eb', marginBottom: '2.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #eee', paddingBottom: '1rem' }}>
+                  <h3 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Tv size={22} color="var(--clr-primary)" />
+                    {editingVideo.id ? 'Modifier la Vidéo' : 'Nouvelle Vidéo Condor TV'}
+                  </h3>
+                  <button type="button" onClick={() => setEditingVideo(null)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', padding: '4px' }}>
+                    <X size={20} />
+                  </button>
+                </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.2rem', marginBottom: '1rem' }}>
+                {/* 1. Titre & Catégorie */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.2rem', marginBottom: '1.2rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Titre de la vidéo *</label>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px', color: '#333' }}>Titre de la vidéo *</label>
                     <input 
                       type="text" 
-                      placeholder="Ex: Finale U16 : Condor FC vs AS Delmas" 
-                      value={editingVideo.title} 
+                      placeholder="Ex: Finale U17 : Condor FC vs AS Delmas" 
+                      value={editingVideo.title || ''} 
                       onChange={e => setEditingVideo({ ...editingVideo, title: e.target.value })} 
                       required 
-                      style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} 
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }} 
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Catégorie *</label>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px', color: '#333' }}>Catégorie *</label>
                     <select 
-                      value={editingVideo.category} 
+                      value={editingVideo.category || 'Résumé des matchs'} 
                       onChange={e => setEditingVideo({ ...editingVideo, category: e.target.value })} 
-                      style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+                      style={{ width: '100%', padding: '12px 14px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem', background: '#fff' }}
                     >
                       <option value="Résumé des matchs">Résumé des matchs</option>
                       <option value="En coulisse">En coulisse</option>
@@ -1296,23 +1318,276 @@ export default function AdminPanel() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1.2rem', marginBottom: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Lien de la vidéo (Lien YouTube direct supporté) *</label>
-                    <input 
-                      type="text" 
-                      placeholder="https://www.youtube.com/watch?v=... ou https://youtu.be/..." 
-                      value={editingVideo.url} 
-                      onChange={e => setEditingVideo({ ...editingVideo, url: e.target.value })} 
-                      required 
-                      style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} 
-                    />
+                {/* 2. Lien de la vidéo avec détection auto */}
+                <div style={{ marginBottom: '1.5rem', background: '#f9fafb', padding: '1.2rem', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#111' }}>
+                      Lien de la vidéo (YouTube ou TikTok) *
+                    </label>
+                    {editingVideo.url && (
+                      <a 
+                        href={editingVideo.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        style={{ fontSize: '0.8rem', color: 'var(--clr-primary)', display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', fontWeight: 'bold' }}
+                      >
+                        <ExternalLink size={14} /> Tester le lien (Ouvrir la vidéo)
+                      </a>
+                    )}
                   </div>
+                  <input 
+                    type="text" 
+                    placeholder="https://www.youtube.com/watch?v=... ou https://www.tiktok.com/@.../video/... ou https://youtu.be/..." 
+                    value={editingVideo.url || ''} 
+                    onChange={e => {
+                      const newUrl = e.target.value;
+                      const parsed = parseVideoUrl(newUrl);
+                      const updates: any = { url: newUrl };
+
+                      // Auto-suggestion miniature si YouTube et aucune miniature personnalisée
+                      if (parsed.platform === 'youtube' && parsed.thumbnail) {
+                        if (!editingVideo.thumbnail || editingVideo.thumbnail.includes('youtube.com/vi')) {
+                          updates.thumbnail = parsed.thumbnail;
+                        }
+                      }
+
+                      // Auto-détection format 9:16 ou 16:9
+                      if (parsed.format === '9:16') {
+                        updates.format = '9:16';
+                        updates.platform = parsed.platform;
+                        if (!editingVideo.tag || editingVideo.tag === 'Exclusif') {
+                          updates.tag = parsed.platform === 'tiktok' ? 'TikTok' : 'Shorts';
+                        }
+                      } else if (parsed.platform === 'youtube') {
+                        updates.platform = 'youtube';
+                        if (!editingVideo.format) updates.format = '16:9';
+                      }
+
+                      setEditingVideo({ ...editingVideo, ...updates });
+                    }} 
+                    required 
+                    style={{ width: '100%', padding: '12px 14px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.95rem' }} 
+                  />
+                  <div style={{ display: 'flex', gap: '15px', marginTop: '8px', fontSize: '0.8rem', color: '#666', flexWrap: 'wrap' }}>
+                    <span>✓ YouTube (Watch, Shorts, Embed, youtu.be)</span>
+                    <span>✓ TikTok (Web, App mobile, vm.tiktok.com)</span>
+                  </div>
+                </div>
+
+                {/* 3. Choix du Format Vidéo & Miniature ("avec le bon format") */}
+                <div style={{ marginBottom: '1.5rem', background: '#f8fafc', padding: '1.2rem', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '8px', color: '#1e293b' }}>
+                    Format d'affichage de la vidéo & miniature *
+                  </label>
+                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '1.2rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setEditingVideo({ ...editingVideo, format: '16:9' })}
+                      style={{
+                        flex: '1',
+                        minWidth: '200px',
+                        padding: '12px 16px',
+                        borderRadius: '10px',
+                        border: (editingVideo.format || '16:9') === '16:9' ? '2px solid var(--clr-primary)' : '1px solid #cbd5e1',
+                        background: (editingVideo.format || '16:9') === '16:9' ? 'rgba(202, 2, 79, 0.06)' : '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        fontWeight: (editingVideo.format || '16:9') === '16:9' ? 'bold' : 'normal',
+                        color: (editingVideo.format || '16:9') === '16:9' ? 'var(--clr-primary)' : '#475569',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Monitor size={20} />
+                      <div style={{ textAlign: 'left' }}>
+                        <div>16:9 Paysage (Horizontal)</div>
+                        <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Format classique YouTube / Matchs</div>
+                      </div>
+                      {(editingVideo.format || '16:9') === '16:9' && <Check size={18} style={{ marginLeft: 'auto' }} />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setEditingVideo({ ...editingVideo, format: '9:16' })}
+                      style={{
+                        flex: '1',
+                        minWidth: '200px',
+                        padding: '12px 16px',
+                        borderRadius: '10px',
+                        border: editingVideo.format === '9:16' ? '2px solid var(--clr-primary)' : '1px solid #cbd5e1',
+                        background: editingVideo.format === '9:16' ? 'rgba(202, 2, 79, 0.06)' : '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        fontWeight: editingVideo.format === '9:16' ? 'bold' : 'normal',
+                        color: editingVideo.format === '9:16' ? 'var(--clr-primary)' : '#475569',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Smartphone size={20} />
+                      <div style={{ textAlign: 'left' }}>
+                        <div>9:16 Portrait (Vertical)</div>
+                        <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Format TikTok & YouTube Shorts</div>
+                      </div>
+                      {editingVideo.format === '9:16' && <Check size={18} style={{ marginLeft: 'auto' }} />}
+                    </button>
+                  </div>
+
+                  {/* 4. Gestion de la Miniature (Upload ou URL ou Auto-YouTube) */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 320px) 1fr', gap: '1.5rem', alignItems: 'start', flexWrap: 'wrap' }}>
+                    {/* Aperçu interactif avec le ratio exact */}
+                    <div>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#64748b', marginBottom: '6px' }}>
+                        Aperçu miniature ({editingVideo.format === '9:16' ? 'Format 9:16 Vertical' : 'Format 16:9 Horizontal'})
+                      </div>
+                      <div 
+                        style={{ 
+                          position: 'relative', 
+                          width: '100%', 
+                          aspectRatio: editingVideo.format === '9:16' ? '9 / 16' : '16 / 9',
+                          maxHeight: editingVideo.format === '9:16' ? '320px' : '180px',
+                          background: '#0f172a', 
+                          borderRadius: '12px', 
+                          overflow: 'hidden', 
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                          border: '2px dashed #94a3b8',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          margin: '0 auto'
+                        }}
+                      >
+                        {editingVideo.thumbnail ? (
+                          <>
+                            <img 
+                              src={editingVideo.thumbnail} 
+                              alt="Miniature" 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                            />
+                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '44px', height: '44px', background: 'rgba(202, 2, 79, 0.9)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Play fill="white" size={18} style={{ marginLeft: '2px' }} />
+                            </div>
+                            <div style={{ position: 'absolute', bottom: '8px', right: '8px', background: 'rgba(0,0,0,0.8)', color: '#fff', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                              {editingVideo.duration || '00:00'}
+                            </div>
+                            <div style={{ position: 'absolute', top: '8px', left: '8px', background: editingVideo.url?.includes('tiktok') ? '#000' : 'var(--clr-primary)', color: '#fff', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                              {editingVideo.url?.includes('tiktok') ? 'TikTok' : (editingVideo.format === '9:16' ? 'Shorts' : 'YouTube')}
+                            </div>
+                          </>
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: '1rem', color: '#94a3b8' }}>
+                            <Image size={32} style={{ marginBottom: '6px', opacity: 0.6 }} />
+                            <div style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Aucune miniature</div>
+                            <div style={{ fontSize: '0.7rem' }}>Uploadez une image ou collez un lien</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Contrôles de téléversement et URL miniature */}
+                    <div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#334155', marginBottom: '8px' }}>
+                        Définir la miniature personnalisée
+                      </div>
+
+                      {/* Bouton Téléverser Fichier */}
+                      <div style={{ position: 'relative', marginBottom: '12px' }}>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const validation = validateUploadFile(file);
+                            if (!validation.valid) {
+                              showToast(validation.error || 'Fichier image non valide.');
+                              return;
+                            }
+                            try {
+                              const base64 = await compressAndOptimizeImage(file, 1200, 0.85);
+                              setEditingVideo({ ...editingVideo, thumbnail: base64 });
+                              showToast('Miniature importée et optimisée avec succès !');
+                            } catch (err) {
+                              showToast("Erreur lors de l'optimisation de l'image.");
+                            }
+                          }} 
+                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 2 }}
+                        />
+                        <div style={{ 
+                          border: '2px dashed #cbd5e1', 
+                          borderRadius: '8px', 
+                          padding: '14px', 
+                          textAlign: 'center', 
+                          background: '#fff', 
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '10px'
+                        }}>
+                          <Upload size={20} color="var(--clr-primary)" />
+                          <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#334155' }}>
+                            Uploader une photo depuis votre ordinateur / téléphone
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Saisie URL miniature */}
+                      <div style={{ marginBottom: '10px' }}>
+                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b', marginBottom: '4px' }}>
+                          Ou coller une URL d'image directe :
+                        </label>
+                        <input 
+                          type="url" 
+                          placeholder="https://example.com/miniature.jpg" 
+                          value={editingVideo.thumbnail || ''} 
+                          onChange={e => setEditingVideo({ ...editingVideo, thumbnail: e.target.value })} 
+                          style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} 
+                        />
+                      </div>
+
+                      {/* Actions rapides miniature */}
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {parseVideoUrl(editingVideo.url || '').thumbnail && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const parsed = parseVideoUrl(editingVideo.url || '');
+                              if (parsed.thumbnail) {
+                                setEditingVideo({ ...editingVideo, thumbnail: parsed.thumbnail });
+                                showToast('Miniature YouTube officielle récupérée !');
+                              }
+                            }}
+                            className="btn btn-outline"
+                            style={{ fontSize: '0.75rem', padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#1e293b', borderColor: '#cbd5e1' }}
+                          >
+                            <RefreshCw size={12} /> Utiliser la miniature YouTube auto
+                          </button>
+                        )}
+                        {editingVideo.thumbnail && (
+                          <button
+                            type="button"
+                            onClick={() => setEditingVideo({ ...editingVideo, thumbnail: '' })}
+                            className="btn btn-outline"
+                            style={{ fontSize: '0.75rem', padding: '6px 10px', color: '#dc2626', borderColor: '#fca5a5' }}
+                          >
+                            Effacer la miniature
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Durée, Tag, Description */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.2rem', marginBottom: '1rem' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Durée</label>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Durée de la vidéo</label>
                     <input 
                       type="text" 
-                      placeholder="Ex: 12:45" 
+                      placeholder="Ex: 12:45 ou 00:59" 
                       value={editingVideo.duration || ''} 
                       onChange={e => setEditingVideo({ ...editingVideo, duration: e.target.value })} 
                       style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} 
@@ -1322,7 +1597,7 @@ export default function AdminPanel() {
                     <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Badge / Tag</label>
                     <input 
                       type="text" 
-                      placeholder="Ex: Exclusif, Résumé" 
+                      placeholder="Ex: Exclusif, Résumé, TikTok, Shorts" 
                       value={editingVideo.tag || ''} 
                       onChange={e => setEditingVideo({ ...editingVideo, tag: e.target.value })} 
                       style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} 
@@ -1336,58 +1611,183 @@ export default function AdminPanel() {
                     value={editingVideo.description || ''} 
                     onChange={e => setEditingVideo({ ...editingVideo, description: e.target.value })} 
                     style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', minHeight: '80px' }} 
-                    placeholder="Bref résumé des temps forts..."
+                    placeholder="Bref résumé des temps forts, contexte du match ou de l'interview..."
                   />
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button type="submit" className="btn btn-primary">Enregistrer la vidéo</button>
-                  <button type="button" onClick={() => setEditingVideo(null)} className="btn btn-outline" style={{ color: 'black', borderColor: '#ddd' }}>Annuler</button>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  <button type="submit" className="btn btn-primary" style={{ padding: '12px 24px' }}>
+                    Enregistrer la vidéo
+                  </button>
+                  <button type="button" onClick={() => setEditingVideo(null)} className="btn btn-outline" style={{ color: 'black', borderColor: '#ddd' }}>
+                    Annuler
+                  </button>
                 </div>
               </form>
             ) : null}
 
-            <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #eee', overflow: 'hidden' }}>
+            {/* Liste / Tableau des Vidéos avec aperçus & liens directs */}
+            <div style={{ background: 'white', borderRadius: '16px', border: '1px solid #eee', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
               {videos.length === 0 ? (
-                <p style={{ padding: '2.5rem', textAlign: 'center', color: '#666' }}>Aucune vidéo n'a encore été ajoutée. Cliquez sur "Ajouter une Vidéo" pour publier vos résumés ou vidéos en coulisse.</p>
+                <div style={{ padding: '3.5rem 1.5rem', textAlign: 'center', color: '#666' }}>
+                  <Tv size={48} color="var(--clr-primary)" style={{ marginBottom: '12px', opacity: 0.8 }} />
+                  <h4 style={{ fontSize: '1.2rem', margin: '0 0 6px', color: '#111' }}>Aucune vidéo n'a encore été ajoutée</h4>
+                  <p style={{ margin: '0 0 1.2rem', color: '#777', fontSize: '0.95rem' }}>Cliquez sur "Ajouter une Vidéo" pour publier vos résumés, Shorts ou vidéos TikTok.</p>
+                  <button 
+                    onClick={() => setEditingVideo({ 
+                      title: '', 
+                      url: '', 
+                      category: 'Résumé des matchs', 
+                      duration: '10:00', 
+                      tag: 'Exclusif', 
+                      description: '', 
+                      thumbnail: '', 
+                      format: '16:9' 
+                    })} 
+                    className="btn btn-primary"
+                  >
+                    Ajouter ma première vidéo
+                  </button>
+                </div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ background: '#f5f7fa', borderBottom: '1px solid #eee' }}>
-                      <th style={{ padding: '15px' }}>Aperçu</th>
-                      <th style={{ padding: '15px' }}>Titre</th>
-                      <th style={{ padding: '15px' }}>Catégorie</th>
-                      <th style={{ padding: '15px' }}>Durée</th>
-                      <th style={{ padding: '15px' }}>Date Ajout</th>
-                      <th style={{ padding: '15px', textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {videos.map(video => (
-                      <tr key={video.id} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '15px' }}>
-                          <img 
-                            src={video.thumbnail || parseVideoUrl(video.url).thumbnail || '/player_action_1_1780681882713.png'} 
-                            style={{ width: '70px', height: '45px', objectFit: 'cover', borderRadius: '4px' }} 
-                            alt="thumb" 
-                          />
-                        </td>
-                        <td style={{ padding: '15px', fontWeight: 'bold' }}>{video.title}</td>
-                        <td style={{ padding: '15px' }}>
-                          <span style={{ background: 'rgba(202, 2, 79, 0.1)', color: 'var(--clr-primary)', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                            {video.category}
-                          </span>
-                        </td>
-                        <td style={{ padding: '15px', color: '#666' }}>{video.duration || 'N/A'}</td>
-                        <td style={{ padding: '15px', color: '#666', fontSize: '0.85rem' }}>{formatRelativeTime(video.created_at)}</td>
-                        <td style={{ padding: '15px', textAlign: 'right' }}>
-                          <button onClick={() => setEditingVideo(video)} style={{ background: 'none', border: 'none', color: 'blue', marginRight: '12px', cursor: 'pointer' }}><Edit2 size={16} /></button>
-                          <button onClick={() => handleDeleteVideo(video.id!)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer' }}><Trash2 size={16} /></button>
-                        </td>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <th style={{ padding: '16px' }}>Miniature</th>
+                        <th style={{ padding: '16px' }}>Titre & Lien Direct</th>
+                        <th style={{ padding: '16px' }}>Format & Plateforme</th>
+                        <th style={{ padding: '16px' }}>Catégorie</th>
+                        <th style={{ padding: '16px' }}>Durée</th>
+                        <th style={{ padding: '16px' }}>Date</th>
+                        <th style={{ padding: '16px', textAlign: 'right' }}>Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {videos.map(video => {
+                        const videoFormat = getVideoFormat(video);
+                        const videoPlatform = getVideoPlatform(video);
+                        const thumbSrc = video.thumbnail || parseVideoUrl(video.url).thumbnail || '/player_action_1_1780681882713.png';
+
+                        return (
+                          <tr key={video.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            {/* Miniature avec bon aspect ratio */}
+                            <td style={{ padding: '14px 16px' }}>
+                              <div style={{ 
+                                position: 'relative', 
+                                width: '64px', 
+                                height: videoFormat === '9:16' ? '80px' : '44px', 
+                                borderRadius: '6px', 
+                                overflow: 'hidden', 
+                                background: '#1e293b',
+                                border: '1px solid #cbd5e1'
+                              }}>
+                                <img 
+                                  src={thumbSrc} 
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                  alt={video.title} 
+                                />
+                                <div style={{ position: 'absolute', bottom: '2px', right: '2px', background: 'rgba(0,0,0,0.75)', color: '#fff', fontSize: '0.6rem', padding: '1px 3px', borderRadius: '2px', fontWeight: 'bold' }}>
+                                  {videoFormat}
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Titre & Lien Direct */}
+                            <td style={{ padding: '14px 16px' }}>
+                              <div style={{ fontWeight: 'bold', color: '#0f172a', marginBottom: '4px', fontSize: '0.95rem' }}>
+                                {video.title}
+                              </div>
+                              <a 
+                                href={video.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--clr-primary)', fontSize: '0.8rem', textDecoration: 'none', fontWeight: '500' }}
+                              >
+                                Ouvrir la vidéo <ExternalLink size={12} />
+                              </a>
+                            </td>
+
+                            {/* Format & Plateforme */}
+                            <td style={{ padding: '14px 16px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                                <span style={{ 
+                                  background: videoPlatform === 'tiktok' ? '#000' : 'rgba(255, 0, 0, 0.08)', 
+                                  color: videoPlatform === 'tiktok' ? '#fff' : '#dc2626', 
+                                  padding: '2px 8px', 
+                                  borderRadius: '4px', 
+                                  fontSize: '0.75rem', 
+                                  fontWeight: 'bold',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}>
+                                  {videoPlatform === 'tiktok' ? 'TikTok' : 'YouTube'}
+                                </span>
+                                <span style={{ 
+                                  background: videoFormat === '9:16' ? 'rgba(124, 58, 237, 0.08)' : 'rgba(59, 130, 246, 0.08)', 
+                                  color: videoFormat === '9:16' ? '#7c3aed' : '#2563eb', 
+                                  padding: '2px 8px', 
+                                  borderRadius: '4px', 
+                                  fontSize: '0.72rem', 
+                                  fontWeight: '600' 
+                                }}>
+                                  {videoFormat === '9:16' ? '9:16 Portrait' : '16:9 Paysage'}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Catégorie */}
+                            <td style={{ padding: '14px 16px' }}>
+                              <span style={{ background: 'rgba(202, 2, 79, 0.08)', color: 'var(--clr-primary)', padding: '4px 10px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 'bold' }}>
+                                {video.category}
+                              </span>
+                            </td>
+
+                            {/* Durée */}
+                            <td style={{ padding: '14px 16px', color: '#475569', fontSize: '0.85rem' }}>
+                              {video.duration || 'N/A'}
+                            </td>
+
+                            {/* Date */}
+                            <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '0.82rem' }}>
+                              {formatRelativeTime(video.created_at)}
+                            </td>
+
+                            {/* Actions */}
+                            <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                <a 
+                                  href={video.url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  title="Voir la vidéo"
+                                  style={{ background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#0f172a', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  <ExternalLink size={15} />
+                                </a>
+                                <button 
+                                  onClick={() => setEditingVideo({ ...video, format: videoFormat, platform: videoPlatform })} 
+                                  title="Modifier"
+                                  style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#2563eb', padding: '6px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  <Edit2 size={15} />
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteVideo(video.id!)} 
+                                  title="Supprimer"
+                                  style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: '6px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </motion.div>

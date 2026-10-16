@@ -23,6 +23,8 @@ export interface VideoItem {
   thumbnail?: string;
   tag?: string;
   description?: string;
+  format?: '16:9' | '9:16' | string;
+  platform?: 'youtube' | 'tiktok' | 'other' | string;
   created_at?: string;
 }
 
@@ -644,45 +646,116 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
 ];
 
 // -------------------------------------------------------------
-// Helper : YouTube Link Parser (converts any youtube link to embed & extracts thumbnail)
+// Helper : Video URL Parser (YouTube standard, YouTube Shorts & TikTok)
 // -------------------------------------------------------------
-export function parseVideoUrl(rawUrl: string): { embedUrl: string; thumbnail: string } {
-  if (!rawUrl || typeof rawUrl !== 'string') return { embedUrl: '', thumbnail: '' };
+export interface ParsedVideoInfo {
+  watchUrl: string;
+  embedUrl: string;
+  thumbnail: string;
+  platform: 'youtube' | 'tiktok' | 'other';
+  format: '16:9' | '9:16';
+  videoId?: string;
+}
+
+export function parseVideoUrl(rawUrl: string): ParsedVideoInfo {
+  if (!rawUrl || typeof rawUrl !== 'string') {
+    return { watchUrl: '', embedUrl: '', thumbnail: '', platform: 'other', format: '16:9' };
+  }
   
   const trimmed = rawUrl.trim();
   
   if (/^(javascript|vbscript|data):/i.test(trimmed)) {
-    return { embedUrl: '', thumbnail: '' };
+    return { watchUrl: '', embedUrl: '', thumbnail: '', platform: 'other', format: '16:9' };
   }
-  
-  let videoId = '';
-  const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
-  const match = trimmed.match(ytRegex);
-  
-  if (match && match[1]) {
-    videoId = match[1];
+
+  // 1. TikTok Links
+  // Formats:
+  // - https://www.tiktok.com/@username/video/7123456789012345678
+  // - https://vm.tiktok.com/ZMxxxxxx/
+  // - https://vt.tiktok.com/ZMxxxxxx/
+  // - https://www.tiktok.com/t/ZMxxxxxx/
+  const isTikTok = /(?:tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com)/i.test(trimmed);
+  if (isTikTok) {
+    const videoIdMatch = trimmed.match(/video\/(\d+)/i) || trimmed.match(/v\/(\d+)/i);
+    const videoId = videoIdMatch ? videoIdMatch[1] : '';
     return {
-      embedUrl: `https://www.youtube.com/embed/${videoId}`,
-      thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+      watchUrl: trimmed,
+      embedUrl: videoId ? `https://www.tiktok.com/embed/v2/${videoId}` : trimmed,
+      thumbnail: '',
+      platform: 'tiktok',
+      format: '9:16',
+      videoId
     };
   }
 
+  // 2. YouTube Shorts (format 9:16 vertical)
+  const shortsMatch = trimmed.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/i);
+  if (shortsMatch && shortsMatch[1]) {
+    const videoId = shortsMatch[1];
+    return {
+      watchUrl: `https://www.youtube.com/shorts/${videoId}`,
+      embedUrl: `https://www.youtube.com/embed/${videoId}`,
+      thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+      platform: 'youtube',
+      format: '9:16',
+      videoId
+    };
+  }
+
+  // 3. YouTube Regular (watch, youtu.be, embed)
+  const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i;
+  const ytMatch = trimmed.match(ytRegex);
+  if (ytMatch && ytMatch[1]) {
+    const videoId = ytMatch[1];
+    return {
+      watchUrl: `https://www.youtube.com/watch?v=${videoId}`,
+      embedUrl: `https://www.youtube.com/embed/${videoId}`,
+      thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+      platform: 'youtube',
+      format: '16:9',
+      videoId
+    };
+  }
+
+  // 4. Fallback Generic
+  let platform: 'youtube' | 'tiktok' | 'other' = 'other';
   try {
     const parsed = new URL(trimmed);
-    if (parsed.protocol === 'https:' && (parsed.hostname.includes('youtube.com') || parsed.hostname.includes('youtube-nocookie.com'))) {
-      return {
-        embedUrl: trimmed,
-        thumbnail: ''
-      };
-    }
+    if (parsed.hostname.includes('youtube') || parsed.hostname.includes('youtu.be')) platform = 'youtube';
+    if (parsed.hostname.includes('tiktok')) platform = 'tiktok';
   } catch {
-    // URL non valide
+    // URL relative ou brute
   }
 
   return {
-    embedUrl: '',
-    thumbnail: ''
+    watchUrl: trimmed,
+    embedUrl: trimmed,
+    thumbnail: '',
+    platform,
+    format: platform === 'tiktok' ? '9:16' : '16:9'
   };
+}
+
+export function getVideoFormat(video: Partial<VideoItem>): '16:9' | '9:16' {
+  if (video.format === '9:16' || video.format === '16:9') return video.format;
+  const tag = (video.tag || '').toLowerCase();
+  if (tag.includes('9:16') || tag.includes('portrait') || tag.includes('tiktok') || tag.includes('shorts') || tag.includes('vertical')) {
+    return '9:16';
+  }
+  const url = (video.url || '').toLowerCase();
+  if (url.includes('tiktok.com') || url.includes('/shorts/')) {
+    return '9:16';
+  }
+  return '16:9';
+}
+
+export function getVideoPlatform(video: Partial<VideoItem>): 'youtube' | 'tiktok' | 'other' {
+  if (video.platform === 'youtube' || video.platform === 'tiktok' || video.platform === 'other') return video.platform;
+  const url = (video.url || '').toLowerCase();
+  const tag = (video.tag || '').toLowerCase();
+  if (url.includes('tiktok.com') || tag.includes('tiktok')) return 'tiktok';
+  if (url.includes('youtube.com') || url.includes('youtu.be') || tag.includes('youtube') || tag.includes('shorts')) return 'youtube';
+  return 'other';
 }
 
 // -------------------------------------------------------------
@@ -779,62 +852,123 @@ export async function fetchVideos(): Promise<VideoItem[]> {
       .order('created_at', { ascending: false });
 
     if (!error && data && data.length > 0) {
-      setLocalItem('videos_list', data);
-      return data;
+      const enriched: VideoItem[] = data.map((v: any) => ({
+        ...v,
+        format: getVideoFormat(v),
+        platform: getVideoPlatform(v)
+      }));
+      setLocalItem('videos_list', enriched);
+      return enriched;
     }
   } catch (err) {
     console.warn('Supabase videos fetch error, fallback to local', err);
   }
 
-  return getLocalItem('videos_list', []);
+  const local = getLocalItem<VideoItem[]>('videos_list', []);
+  return local.map(v => ({
+    ...v,
+    format: getVideoFormat(v),
+    platform: getVideoPlatform(v)
+  }));
 }
 
-export async function saveVideo(video: VideoItem): Promise<{ success: boolean; error?: string }> {
+export async function saveVideo(video: VideoItem): Promise<{ success: boolean; data?: VideoItem; error?: string }> {
   const currentList = getLocalItem<VideoItem[]>('videos_list', []);
-  const { embedUrl, thumbnail } = parseVideoUrl(video.url);
+  const parsed = parseVideoUrl(video.url);
+  
+  // Toujours conserver le lien de visionnage direct pour ouvrir la vidéo sur TikTok/YouTube
+  const finalWatchUrl = parsed.watchUrl || video.url;
+  const finalThumbnail = video.thumbnail || parsed.thumbnail || '';
+  const finalFormat = video.format || parsed.format || '16:9';
+  const finalPlatform = video.platform || parsed.platform || 'other';
+
+  // Préserver ou formater le badge tag
+  let finalTag = video.tag || '';
+  if (finalFormat === '9:16' && !finalTag.toLowerCase().includes('9:16') && !finalTag.toLowerCase().includes('tiktok') && !finalTag.toLowerCase().includes('shorts')) {
+    finalTag = finalTag ? `${finalTag} • 9:16` : (finalPlatform === 'tiktok' ? 'TikTok' : 'Shorts');
+  }
+
   const formattedVideo: VideoItem = {
     ...video,
-    url: embedUrl || video.url,
-    thumbnail: video.thumbnail || thumbnail,
+    url: finalWatchUrl,
+    thumbnail: finalThumbnail,
+    tag: finalTag,
+    format: finalFormat,
+    platform: finalPlatform,
     created_at: video.created_at || new Date().toISOString()
   };
 
+  // Colonnes strictes conformes à la table Supabase videos
+  const dbPayload = {
+    title: formattedVideo.title,
+    url: formattedVideo.url,
+    category: formattedVideo.category,
+    duration: formattedVideo.duration || '',
+    thumbnail: formattedVideo.thumbnail || '',
+    tag: formattedVideo.tag || '',
+    description: formattedVideo.description || ''
+  };
+
   try {
-    let res;
-    if (video.id) {
-      res = await supabase.from('videos').update(formattedVideo).eq('id', video.id);
+    if (formattedVideo.id && (typeof formattedVideo.id === 'number' || (typeof formattedVideo.id === 'string' && /^\d+$/.test(formattedVideo.id) && formattedVideo.id.length < 12))) {
+      const { data: updateData, error: updateError } = await supabase
+        .from('videos')
+        .update(dbPayload)
+        .eq('id', formattedVideo.id)
+        .select();
+
+      if (updateError) {
+        console.warn('Supabase update video note:', updateError.message);
+      } else if (updateData && updateData.length > 0) {
+        formattedVideo.id = updateData[0].id;
+        formattedVideo.created_at = updateData[0].created_at;
+      }
     } else {
-      res = await supabase.from('videos').insert(formattedVideo);
-    }
+      const { data: insertData, error: insertError } = await supabase
+        .from('videos')
+        .insert(dbPayload)
+        .select();
 
-    if (!res?.error) {
-      // update local
+      if (insertError) {
+        console.warn('Supabase insert video note:', insertError.message);
+      } else if (insertData && insertData.length > 0) {
+        formattedVideo.id = insertData[0].id;
+        formattedVideo.created_at = insertData[0].created_at;
+      }
     }
-  } catch (e) {
-    console.warn('Supabase save video note, stored in local cache', e);
+  } catch (e: any) {
+    console.warn('Supabase save video exception, stored in local cache', e);
   }
 
-  if (formattedVideo.id) {
-    const updated = currentList.map(v => v.id === formattedVideo.id ? formattedVideo : v);
-    setLocalItem('videos_list', updated);
-  } else {
+  if (!formattedVideo.id) {
     formattedVideo.id = Date.now();
-    formattedVideo.created_at = new Date().toISOString();
-    setLocalItem('videos_list', [formattedVideo, ...currentList]);
   }
 
-  return { success: true };
+  const existingIdx = currentList.findIndex(v => String(v.id) === String(formattedVideo.id));
+  let updatedList: VideoItem[];
+  if (existingIdx >= 0) {
+    updatedList = [...currentList];
+    updatedList[existingIdx] = formattedVideo;
+  } else {
+    updatedList = [formattedVideo, ...currentList];
+  }
+  setLocalItem('videos_list', updatedList);
+
+  return { success: true, data: formattedVideo };
 }
 
-export async function deleteVideo(id: number | string): Promise<{ success: boolean }> {
+export async function deleteVideo(id: number | string): Promise<{ success: boolean; error?: string }> {
   try {
-    await supabase.from('videos').delete().eq('id', id);
-  } catch (e) {
-    console.warn('Supabase delete video note', e);
+    if (typeof id === 'number' || (typeof id === 'string' && /^\d+$/.test(id) && id.length < 12)) {
+      const { error } = await supabase.from('videos').delete().eq('id', id);
+      if (error) console.warn('Supabase delete video note:', error.message);
+    }
+  } catch (e: any) {
+    console.warn('Supabase delete video exception:', e);
   }
 
   const currentList = getLocalItem<VideoItem[]>('videos_list', []);
-  setLocalItem('videos_list', currentList.filter(v => v.id !== id));
+  setLocalItem('videos_list', currentList.filter(v => String(v.id) !== String(id)));
   return { success: true };
 }
 
