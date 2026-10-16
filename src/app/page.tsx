@@ -7,7 +7,7 @@ import { Play, ArrowRight, Calendar, MapPin, ShoppingBag, Landmark, Heart, Troph
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { playersDB } from '@/lib/playersDB';
 import { 
-  fetchCurrentMatch, MatchConfig, fetchVideos, VideoItem, parseVideoUrl, getVideoFormat, getVideoPlatform,
+  fetchCurrentMatch, MatchConfig, fetchVideos, VideoItem, parseVideoUrl,
   fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
   fetchMergedPlayers, fetchNews
 } from '@/lib/dataService';
@@ -498,8 +498,6 @@ export default function Home() {
             <div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', alignItems: 'start' }}>
                 {videos.slice(0, 3).map(vid => {
-                  const vidFormat = getVideoFormat(vid);
-                  const vidPlatform = getVideoPlatform(vid);
                   const thumbSrc = vid.thumbnail || parseVideoUrl(vid.url).thumbnail || '/player_action_1_1780681882713.png';
 
                   return (
@@ -531,7 +529,7 @@ export default function Home() {
                           e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
                         }}
                       >
-                        <div style={{ position: 'relative', width: '100%', aspectRatio: vidFormat === '9:16' ? '9 / 16' : '16 / 9', maxHeight: vidFormat === '9:16' ? '380px' : '220px', background: '#0e0e0e', overflow: 'hidden' }}>
+                        <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', background: '#0e0e0e', overflow: 'hidden' }}>
                           <img 
                             src={thumbSrc} 
                             alt={vid.title} 
@@ -540,40 +538,26 @@ export default function Home() {
                           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '56px', height: '56px', background: 'rgba(202, 2, 79, 0.9)', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 0 20px rgba(202, 2, 79, 0.7)' }}>
                             <Play fill="white" size={24} style={{ marginLeft: '3px' }} />
                           </div>
-                          {vid.duration && (
-                            <div style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(0,0,0,0.85)', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                              {vid.duration}
-                            </div>
-                          )}
-                          <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '6px' }}>
-                            <span style={{ background: vidPlatform === 'tiktok' ? '#000' : 'rgba(255, 0, 0, 0.95)', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                              {vidPlatform === 'tiktok' ? 'TikTok' : (vidFormat === '9:16' ? 'Shorts' : 'YouTube')}
-                            </span>
-                            <span style={{ background: 'var(--clr-primary)', color: '#fff', padding: '3px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold' }}>
-                              {vid.category}
-                            </span>
-                          </div>
                         </div>
 
                         <div style={{ padding: '1.4rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
-                            <span style={{ color: 'var(--clr-primary)', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                              {vidFormat === '9:16' ? 'Format 9:16' : 'Format 16:9'}
-                            </span>
-                            {vid.created_at && (
+                          {vid.created_at && (
+                            <div style={{ marginBottom: '8px' }}>
                               <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <Clock size={12} /> {formatRelativeTime(vid.created_at)}
                               </span>
-                            )}
-                          </div>
+                            </div>
+                          )}
                           <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.4rem', margin: '6px 0 8px', color: '#fff', lineHeight: 1.3 }}>
                             {vid.title}
                           </h3>
-                          <p style={{ color: '#aaa', fontSize: '0.88rem', margin: '0 0 12px', lineClamp: 2, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {vid.description || 'Découvrez cette vidéo exclusive Condor TV.'}
-                          </p>
+                          {vid.description && (
+                            <p style={{ color: '#aaa', fontSize: '0.88rem', margin: '0 0 12px', lineClamp: 2, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                              {vid.description}
+                            </p>
+                          )}
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--clr-primary)', fontWeight: 'bold', fontSize: '0.85rem' }}>
-                            Regarder sur {vidPlatform === 'tiktok' ? 'TikTok' : 'YouTube'} <ExternalLink size={14} />
+                            Regarder la vidéo <ExternalLink size={14} />
                           </div>
                         </div>
                       </div>

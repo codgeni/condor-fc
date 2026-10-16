@@ -1,10 +1,10 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { Play, Tv, Video, Clock, ExternalLink, Smartphone, Monitor } from 'lucide-react';
+import { Play, Tv, Clock, ExternalLink } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { 
-  fetchVideos, VideoItem, parseVideoUrl, getVideoFormat, getVideoPlatform,
+  fetchVideos, VideoItem, parseVideoUrl,
   fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT 
 } from '@/lib/dataService';
 import { formatRelativeTime } from '@/lib/timeUtils';
@@ -13,7 +13,6 @@ export default function CondorTV() {
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [activeCategory, setActiveCategory] = useState<string>('Tous');
-  const [activeFormatFilter, setActiveFormatFilter] = useState<string>('Tous');
 
   useEffect(() => {
     fetchVideos().then(data => {
@@ -25,21 +24,9 @@ export default function CondorTV() {
   }, []);
 
   const categories = ['Tous', 'Résumé des matchs', 'En coulisse', 'Interviews & Conférences', 'Highlights'];
-  const formatFilters = ['Tous', 'YouTube (16:9)', 'TikTok & Shorts (9:16)'];
 
   const filteredVideos = videos.filter(v => {
-    const matchesCategory = activeCategory === 'Tous' || v.category === activeCategory;
-    const format = getVideoFormat(v);
-    const platform = getVideoPlatform(v);
-
-    let matchesFormat = true;
-    if (activeFormatFilter === 'YouTube (16:9)') {
-      matchesFormat = format === '16:9' || platform === 'youtube';
-    } else if (activeFormatFilter === 'TikTok & Shorts (9:16)') {
-      matchesFormat = format === '9:16' || platform === 'tiktok';
-    }
-
-    return matchesCategory && matchesFormat;
+    return activeCategory === 'Tous' || v.category === activeCategory;
   });
 
   const featuredVideo = videos[0] || null;
@@ -73,8 +60,6 @@ export default function CondorTV() {
           <div className="container">
             <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }}>
               {(() => {
-                const featFormat = getVideoFormat(featuredVideo);
-                const featPlatform = getVideoPlatform(featuredVideo);
                 const featThumb = featuredVideo.thumbnail || parseVideoUrl(featuredVideo.url).thumbnail || '/player_action_2_1780681894021.png';
 
                 return (
@@ -88,7 +73,7 @@ export default function CondorTV() {
                       style={{ 
                         position: 'relative', 
                         width: '100%', 
-                        paddingTop: featFormat === '9:16' ? '56%' : '45%', 
+                        paddingTop: '46%', 
                         background: '#111', 
                         borderRadius: '16px', 
                         overflow: 'hidden', 
@@ -115,28 +100,6 @@ export default function CondorTV() {
                       {/* Gradient overlay for readability */}
                       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.2) 100%)' }} />
 
-                      {/* Top Badges */}
-                      <div style={{ position: 'absolute', top: '25px', left: '25px', display: 'flex', gap: '10px', flexWrap: 'wrap', zIndex: 2 }}>
-                        {featuredVideo.tag && (
-                          <div style={{ background: 'var(--clr-primary)', color: 'white', padding: '6px 16px', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.85rem', textTransform: 'uppercase' }}>
-                            {featuredVideo.tag}
-                          </div>
-                        )}
-                        <div style={{ 
-                          background: featPlatform === 'tiktok' ? '#000' : 'rgba(255, 0, 0, 0.9)', 
-                          color: 'white', 
-                          padding: '6px 14px', 
-                          borderRadius: '4px', 
-                          fontWeight: 'bold', 
-                          fontSize: '0.85rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}>
-                          {featPlatform === 'tiktok' ? 'TikTok' : 'YouTube'}
-                        </div>
-                      </div>
-
                       {/* Play Button Overlay */}
                       <div style={{ 
                         position: 'absolute', 
@@ -158,18 +121,6 @@ export default function CondorTV() {
 
                       {/* Bottom Info & Direct Link Notice */}
                       <div style={{ position: 'absolute', bottom: '25px', left: '25px', right: '25px', maxWidth: '850px', zIndex: 2 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                          <span style={{ background: 'rgba(0,0,0,0.7)', padding: '4px 10px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', color: 'var(--clr-primary)' }}>
-                            {featuredVideo.category}
-                          </span>
-                          {featuredVideo.duration && (
-                            <span style={{ background: 'rgba(0,0,0,0.7)', padding: '4px 10px', borderRadius: '4px', fontSize: '0.8rem', color: '#ddd' }}>
-                              <Clock size={12} style={{ display: 'inline', marginRight: '4px' }} />
-                              {featuredVideo.duration}
-                            </span>
-                          )}
-                        </div>
-
                         <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.8rem', margin: '8px 0', textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}>
                           {featuredVideo.title}
                         </h2>
@@ -181,7 +132,7 @@ export default function CondorTV() {
                         )}
 
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#fff', background: 'rgba(202, 2, 79, 0.95)', padding: '8px 18px', borderRadius: '30px', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                          Regarder sur {featPlatform === 'tiktok' ? 'TikTok' : 'YouTube'} <ExternalLink size={16} />
+                          Regarder la vidéo <ExternalLink size={16} />
                         </div>
                       </div>
                     </div>
@@ -193,64 +144,37 @@ export default function CondorTV() {
         </section>
       )}
 
-      {/* 3. Filtre par Catégories & Format */}
+      {/* 3. Filtre par Catégories */}
       <section style={{ borderBottom: '1px solid #222', padding: '1.5rem 0' }}>
         <div className="container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-            {/* Filtre Catégorie */}
-            <div style={{ display: 'flex', gap: '0.8rem', overflowX: 'auto', paddingBottom: '5px' }}>
-              {categories.map(cat => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  style={{
-                    background: activeCategory === cat ? 'var(--clr-primary)' : 'rgba(255,255,255,0.06)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '8px 18px',
-                    borderRadius: '30px',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-heading)',
-                    fontSize: '0.9rem',
-                    textTransform: 'uppercase',
-                    whiteSpace: 'nowrap',
-                    fontWeight: activeCategory === cat ? 'bold' : 'normal',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-
-            {/* Filtre Format (YouTube 16:9 / TikTok 9:16) */}
-            <div style={{ display: 'flex', gap: '0.5rem', background: '#1c1c1c', padding: '4px', borderRadius: '30px', border: '1px solid #333' }}>
-              {formatFilters.map(fmt => (
-                <button
-                  key={fmt}
-                  onClick={() => setActiveFormatFilter(fmt)}
-                  style={{
-                    background: activeFormatFilter === fmt ? 'var(--clr-primary)' : 'transparent',
-                    color: 'white',
-                    border: 'none',
-                    padding: '6px 14px',
-                    borderRadius: '20px',
-                    cursor: 'pointer',
-                    fontSize: '0.8rem',
-                    fontWeight: activeFormatFilter === fmt ? 'bold' : 'normal',
-                    transition: 'all 0.2s',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {fmt}
-                </button>
-              ))}
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.8rem', overflowX: 'auto', paddingBottom: '5px' }}>
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                style={{
+                  background: activeCategory === cat ? 'var(--clr-primary)' : 'rgba(255,255,255,0.06)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 18px',
+                  borderRadius: '30px',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-heading)',
+                  fontSize: '0.9rem',
+                  textTransform: 'uppercase',
+                  whiteSpace: 'nowrap',
+                  fontWeight: activeCategory === cat ? 'bold' : 'normal',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 4. Grille de Vidéos Responsive avec Ratios Adaptatifs */}
+      {/* 4. Grille de Vidéos Responsive */}
       <section className="section-padding">
         <div className="container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
@@ -272,8 +196,6 @@ export default function CondorTV() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: '2rem', alignItems: 'start' }}>
               {filteredVideos.map((video, idx) => {
-                const videoFormat = getVideoFormat(video);
-                const videoPlatform = getVideoPlatform(video);
                 const thumbSrc = video.thumbnail || parseVideoUrl(video.url).thumbnail || '/player_action_1_1780681882713.png';
 
                 return (
@@ -309,13 +231,12 @@ export default function CondorTV() {
                       e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.5)';
                     }}
                   >
-                    {/* Zone Miniature avec Ratio Adaptatif (16:9 ou 9:16) */}
+                    {/* Zone Miniature Standard 16:9 */}
                     <div 
                       style={{ 
                         position: 'relative', 
                         width: '100%', 
-                        aspectRatio: videoFormat === '9:16' ? '9 / 16' : '16 / 9',
-                        maxHeight: videoFormat === '9:16' ? '440px' : '220px',
+                        aspectRatio: '16 / 9',
                         background: '#0e0e0e',
                         overflow: 'hidden'
                       }}
@@ -345,45 +266,17 @@ export default function CondorTV() {
                       }}>
                         <Play fill="white" size={22} style={{ marginLeft: '3px' }} />
                       </div>
-
-                      {/* Durée */}
-                      {video.duration && (
-                        <div style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(0,0,0,0.85)', padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                          {video.duration}
-                        </div>
-                      )}
-
-                      {/* Platform & Format Badges */}
-                      <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '6px' }}>
-                        <span style={{ 
-                          background: videoPlatform === 'tiktok' ? '#000' : 'rgba(255, 0, 0, 0.95)', 
-                          color: '#fff', 
-                          padding: '3px 8px', 
-                          borderRadius: '4px', 
-                          fontSize: '0.7rem', 
-                          fontWeight: 'bold',
-                          textTransform: 'uppercase'
-                        }}>
-                          {videoPlatform === 'tiktok' ? 'TikTok' : (videoFormat === '9:16' ? 'Shorts' : 'YouTube')}
-                        </span>
-                        <span style={{ background: 'var(--clr-primary)', padding: '3px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                          {video.category}
-                        </span>
-                      </div>
                     </div>
                     
                     {/* Détails de la vidéo */}
                     <div style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '8px' }}>
-                        <span style={{ color: 'var(--clr-primary)', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                          {videoPlatform === 'tiktok' ? 'Format 9:16 TikTok' : (videoFormat === '9:16' ? 'YouTube Shorts' : 'Vidéo 16:9')}
-                        </span>
-                        {video.created_at && (
+                      {video.created_at && (
+                        <div style={{ marginBottom: '8px' }}>
                           <span style={{ color: '#94a3b8', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                             <Clock size={12} /> {formatRelativeTime(video.created_at)}
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      )}
 
                       <h3 style={{ fontSize: '1.25rem', margin: '0 0 8px', lineHeight: 1.3, color: 'white' }}>
                         {video.title}
@@ -398,7 +291,7 @@ export default function CondorTV() {
                       {/* Bouton direct "Ouvrir la vidéo" */}
                       <div style={{ marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--clr-primary)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                          Regarder sur {videoPlatform === 'tiktok' ? 'TikTok' : 'YouTube'} <ExternalLink size={14} />
+                          Regarder la vidéo <ExternalLink size={14} />
                         </span>
                         <span style={{ fontSize: '0.75rem', color: '#888' }}>
                           Ouvrir ↗
