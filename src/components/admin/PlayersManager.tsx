@@ -29,6 +29,25 @@ const convertToBase64 = async (file: File, maxDim = 1200): Promise<string> => {
   return await compressAndOptimizeImage(file, maxDim, 0.85);
 };
 
+const AVAILABLE_STATS = [
+  { id: 'goals', label: 'Buts Marqués', icon: '⚽' },
+  { id: 'assists', label: 'Passes Décisives', icon: '👟' },
+  { id: 'matches', label: 'Matchs Joués', icon: '🏟️' },
+  { id: 'passes', label: 'Passes Réussies', icon: '🎯' },
+  { id: 'saves', label: 'Arrêts / Ballons Arrêtés', icon: '🧤' },
+  { id: 'cleansheets', label: 'Clean Sheets', icon: '🛡️' },
+  { id: 'tackles', label: 'Tacles Réussis', icon: '⚡' },
+  { id: 'minutes', label: 'Minutes Jouées', icon: '⏱️' },
+  { id: 'custom', label: 'Statistique Personnalisée', icon: '⭐' }
+];
+
+const STAT_PRESETS = [
+  { name: 'Attaquant', icon: '⚡', stats: ['goals', 'assists', 'matches'] },
+  { name: 'Milieu', icon: '🎯', stats: ['goals', 'assists', 'passes', 'matches'] },
+  { name: 'Défenseur', icon: '🛡️', stats: ['tackles', 'cleansheets', 'passes', 'matches'] },
+  { name: 'Gardien', icon: '🧤', stats: ['saves', 'cleansheets', 'matches'] }
+];
+
 export default function PlayersManager({
   players,
   units,
@@ -104,8 +123,16 @@ export default function PlayersManager({
       assists: 0,
       stat2lbl: 'Buts',
       stat2val: 0,
-      honours1: 1,
+      honours1: 0,
       honours2: 0,
+      displayed_stats: ['goals', 'assists', 'matches'],
+      passes: 0,
+      saves: 0,
+      cleansheets: 0,
+      tackles: 0,
+      minutes: 0,
+      custom_stat_label: '',
+      custom_stat_val: 0,
       is_spotlight: false,
       img: '/condor_logo_transparent.png',
       detail_img: '/condor_logo_transparent.png'
@@ -122,15 +149,29 @@ export default function PlayersManager({
       ? player.category
       : existingCats[0];
 
+    const isGK = (player.pos || '').toLowerCase().includes('gardien') || player.stat2lbl === 'Arrêts';
+    const defaultDisplayed = isGK ? ['saves', 'cleansheets', 'matches'] : ['goals', 'assists', 'matches'];
+    const displayedStats = Array.isArray(player.displayed_stats) && player.displayed_stats.length > 0
+      ? player.displayed_stats
+      : defaultDisplayed;
+
     setEditingPlayer({
       ...player,
       matches: player.matches ?? 0,
       goals: player.goals ?? 0,
       assists: player.assists ?? 0,
-      stat2lbl: player.stat2lbl || 'Buts',
-      stat2val: player.stat2val ?? (player.goals ?? 0),
-      honours1: player.honours1 ?? 1,
-      honours2: player.honours2 ?? 0,
+      stat2lbl: player.stat2lbl || (isGK ? 'Arrêts' : 'Buts'),
+      stat2val: player.stat2val ?? 0,
+      honours1: player.honours1 !== undefined ? Number(player.honours1) : 0,
+      honours2: player.honours2 !== undefined ? Number(player.honours2) : 0,
+      displayed_stats: displayedStats,
+      passes: player.passes ?? 0,
+      saves: player.saves ?? (isGK ? player.stat2val ?? 0 : 0),
+      cleansheets: player.cleansheets ?? 0,
+      tackles: player.tackles ?? 0,
+      minutes: player.minutes ?? 0,
+      custom_stat_label: player.custom_stat_label || (player.stat2lbl !== 'Buts' && player.stat2lbl !== 'Arrêts' ? player.stat2lbl : ''),
+      custom_stat_val: player.custom_stat_val ?? (player.stat2lbl !== 'Buts' && player.stat2lbl !== 'Arrêts' ? player.stat2val ?? 0 : 0),
       height: player.height || '',
       weight: player.weight || '',
       dob: player.dob || '',
@@ -329,8 +370,18 @@ export default function PlayersManager({
       assists: parseInt(editingPlayer.assists) || 0,
       stat2lbl: editingPlayer.stat2lbl || 'Buts',
       stat2val: parseInt(editingPlayer.stat2val) || 0,
-      honours1: parseInt(editingPlayer.honours1) || 0,
-      honours2: parseInt(editingPlayer.honours2) || 0,
+      honours1: editingPlayer.honours1 !== undefined ? parseInt(editingPlayer.honours1) || 0 : 0,
+      honours2: editingPlayer.honours2 !== undefined ? parseInt(editingPlayer.honours2) || 0 : 0,
+      displayed_stats: Array.isArray(editingPlayer.displayed_stats) && editingPlayer.displayed_stats.length > 0
+        ? editingPlayer.displayed_stats
+        : ['goals', 'assists', 'matches'],
+      passes: parseInt(editingPlayer.passes) || 0,
+      saves: parseInt(editingPlayer.saves) || 0,
+      cleansheets: parseInt(editingPlayer.cleansheets) || 0,
+      tackles: parseInt(editingPlayer.tackles) || 0,
+      minutes: parseInt(editingPlayer.minutes) || 0,
+      custom_stat_label: (editingPlayer.custom_stat_label || '').trim(),
+      custom_stat_val: parseInt(editingPlayer.custom_stat_val) || 0,
       height: editingPlayer.height || '',
       weight: editingPlayer.weight || '',
       dob: editingPlayer.dob || '',
@@ -802,93 +853,331 @@ export default function PlayersManager({
 
           {/* 3. Statistiques de la Saison & Palmarès */}
           <h4 style={{ fontSize: '1rem', color: 'var(--clr-primary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1rem' }}>
-            3. Statistiques de la Saison 2026/27 & Palmarès
+            3. Statistiques de la Saison & Palmarès
           </h4>
 
           <div style={{ background: '#f8fafc', padding: '1.4rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>
-            <p style={{ margin: '0 0 14px', fontSize: '0.84rem', color: '#64748b' }}>
-              Mettez à jour les performances individuelles du joueur affichées sur sa fiche publique.
-            </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.2rem', marginBottom: '1.2rem' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Matchs Joués</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={editingPlayer.matches ?? 0} 
-                  onChange={e => setEditingPlayer({ ...editingPlayer, matches: parseInt(e.target.value) || 0 })} 
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
-                />
+            <div style={{ marginBottom: '1.5rem', background: '#ffffff', padding: '1.2rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 'bold', color: '#0f172a' }}>
+                    📊 Choisissez les statistiques à afficher pour ce joueur
+                  </label>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                    Cochez les statistiques pertinentes qui apparaîtront sur sa page publique (Buts, Passes décisives, Arrêts, etc.).
+                  </p>
+                </div>
+
+                {/* Modèles rapides par poste */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#64748b', marginRight: '4px' }}>Modèles rapides :</span>
+                  {STAT_PRESETS.map(preset => (
+                    <button
+                      key={preset.name}
+                      type="button"
+                      onClick={() => {
+                        setEditingPlayer({
+                          ...editingPlayer,
+                          displayed_stats: preset.stats,
+                          stat2lbl: preset.name === 'Gardien' ? 'Arrêts' : 'Buts'
+                        });
+                        showToast(`Modèle "${preset.name}" sélectionné !`);
+                      }}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '20px',
+                        border: '1px solid #cbd5e1',
+                        background: '#f1f5f9',
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                        color: '#334155',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      {preset.icon} {preset.name}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Buts Marqués</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={editingPlayer.goals ?? 0} 
-                  onChange={e => setEditingPlayer({ ...editingPlayer, goals: parseInt(e.target.value) || 0, stat2val: editingPlayer.stat2lbl === 'Buts' ? (parseInt(e.target.value) || 0) : editingPlayer.stat2val })} 
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
-                />
-              </div>
+              {/* Grille de sélection des stats (Checkbox chips) */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px', marginTop: '12px' }}>
+                {AVAILABLE_STATS.map(stat => {
+                  const currentDisplayed: string[] = Array.isArray(editingPlayer.displayed_stats) && editingPlayer.displayed_stats.length > 0
+                    ? editingPlayer.displayed_stats
+                    : ['goals', 'assists', 'matches'];
+                  const isChecked = currentDisplayed.includes(stat.id);
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Passes Décisives</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={editingPlayer.assists ?? 0} 
-                  onChange={e => setEditingPlayer({ ...editingPlayer, assists: parseInt(e.target.value) || 0 })} 
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
-                />
+                  return (
+                    <button
+                      key={stat.id}
+                      type="button"
+                      onClick={() => {
+                        let next: string[];
+                        if (isChecked) {
+                          if (currentDisplayed.length <= 1) {
+                            showToast("Vous devez afficher au moins 1 statistique.");
+                            return;
+                          }
+                          next = currentDisplayed.filter(id => id !== stat.id);
+                        } else {
+                          next = [...currentDisplayed, stat.id];
+                        }
+                        setEditingPlayer({
+                          ...editingPlayer,
+                          displayed_stats: next
+                        });
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        border: isChecked ? '1.5px solid var(--clr-primary)' : '1px solid #cbd5e1',
+                        background: isChecked ? 'rgba(224, 30, 38, 0.05)' : '#ffffff',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.82rem', fontWeight: isChecked ? 'bold' : 'normal', color: isChecked ? 'var(--clr-primary)' : '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>{stat.icon}</span> {stat.label}
+                      </span>
+                      <span style={{
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '4px',
+                        border: isChecked ? 'none' : '1.5px solid #cbd5e1',
+                        background: isChecked ? 'var(--clr-primary)' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        fontSize: '0.7rem'
+                      }}>
+                        {isChecked && '✓'}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
+            </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Type Stat Spécifique</label>
-                <select 
-                  value={editingPlayer.stat2lbl || 'Buts'} 
-                  onChange={e => setEditingPlayer({ ...editingPlayer, stat2lbl: e.target.value })}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.9rem' }}
-                >
-                  <option value="Buts">Buts (Attaquant / Milieu)</option>
-                  <option value="Arrêts">Arrêts (Gardien de but)</option>
-                  <option value="Clean Sheets">Clean Sheets (Gardien)</option>
-                  <option value="Tacles">Tacles réussis (Défenseur)</option>
-                  <option value="Interceptions">Interceptions (Défenseur)</option>
-                </select>
+            {/* Saisie des valeurs des statistiques sélectionnées */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#0f172a', marginBottom: '10px' }}>
+                ✏️ Valeurs des Statistiques Sélectionnées
+              </label>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.2rem' }}>
+                {/* 1. Buts */}
+                {(editingPlayer.displayed_stats || ['goals', 'assists', 'matches']).includes('goals') && (
+                  <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      ⚽ Buts Marqués
+                    </label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={editingPlayer.goals ?? 0} 
+                      onChange={e => {
+                        const val = parseInt(e.target.value) || 0;
+                        setEditingPlayer({ 
+                          ...editingPlayer, 
+                          goals: val,
+                          stat2val: editingPlayer.stat2lbl === 'Buts' ? val : editingPlayer.stat2val
+                        });
+                      }} 
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                    />
+                  </div>
+                )}
+
+                {/* 2. Passes Décisives */}
+                {(editingPlayer.displayed_stats || ['goals', 'assists', 'matches']).includes('assists') && (
+                  <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      👟 Passes Décisives
+                    </label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={editingPlayer.assists ?? 0} 
+                      onChange={e => setEditingPlayer({ ...editingPlayer, assists: parseInt(e.target.value) || 0 })} 
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                    />
+                  </div>
+                )}
+
+                {/* 3. Matchs Joués */}
+                {(editingPlayer.displayed_stats || ['goals', 'assists', 'matches']).includes('matches') && (
+                  <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      🏟️ Matchs Joués
+                    </label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={editingPlayer.matches ?? 0} 
+                      onChange={e => setEditingPlayer({ ...editingPlayer, matches: parseInt(e.target.value) || 0 })} 
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                    />
+                  </div>
+                )}
+
+                {/* 4. Passes Réussies */}
+                {(editingPlayer.displayed_stats || []).includes('passes') && (
+                  <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      🎯 Passes Réussies
+                    </label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={editingPlayer.passes ?? 0} 
+                      onChange={e => setEditingPlayer({ ...editingPlayer, passes: parseInt(e.target.value) || 0 })} 
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                    />
+                  </div>
+                )}
+
+                {/* 5. Arrêts / Ballons Arrêtés */}
+                {(editingPlayer.displayed_stats || []).includes('saves') && (
+                  <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      🧤 Ballons Arrêtés / Arrêts
+                    </label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={editingPlayer.saves ?? editingPlayer.stat2val ?? 0} 
+                      onChange={e => {
+                        const val = parseInt(e.target.value) || 0;
+                        setEditingPlayer({ 
+                          ...editingPlayer, 
+                          saves: val,
+                          stat2lbl: 'Arrêts',
+                          stat2val: val 
+                        });
+                      }} 
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                    />
+                  </div>
+                )}
+
+                {/* 6. Clean Sheets */}
+                {(editingPlayer.displayed_stats || []).includes('cleansheets') && (
+                  <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      🛡️ Clean Sheets
+                    </label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={editingPlayer.cleansheets ?? 0} 
+                      onChange={e => setEditingPlayer({ ...editingPlayer, cleansheets: parseInt(e.target.value) || 0 })} 
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                    />
+                  </div>
+                )}
+
+                {/* 7. Tacles Réussis */}
+                {(editingPlayer.displayed_stats || []).includes('tackles') && (
+                  <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      ⚡ Tacles Réussis
+                    </label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={editingPlayer.tackles ?? 0} 
+                      onChange={e => setEditingPlayer({ ...editingPlayer, tackles: parseInt(e.target.value) || 0 })} 
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                    />
+                  </div>
+                )}
+
+                {/* 8. Minutes Jouées */}
+                {(editingPlayer.displayed_stats || []).includes('minutes') && (
+                  <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      ⏱️ Minutes Jouées
+                    </label>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={editingPlayer.minutes ?? 0} 
+                      onChange={e => setEditingPlayer({ ...editingPlayer, minutes: parseInt(e.target.value) || 0 })} 
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                    />
+                  </div>
+                )}
+
+                {/* 9. Statistique Personnalisée */}
+                {(editingPlayer.displayed_stats || []).includes('custom') && (
+                  <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', gridColumn: 'span 2' }}>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      ⭐ Statistique Personnalisée
+                    </label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="Libellé (ex: Dribbles, Duels Gagnés)"
+                        value={editingPlayer.custom_stat_label || ''} 
+                        onChange={e => setEditingPlayer({ ...editingPlayer, custom_stat_label: e.target.value })} 
+                        style={{ flex: 2, padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.95rem' }} 
+                      />
+                      <input 
+                        type="number" 
+                        min="0"
+                        placeholder="Valeur"
+                        value={editingPlayer.custom_stat_val ?? 0} 
+                        onChange={e => setEditingPlayer({ ...editingPlayer, custom_stat_val: parseInt(e.target.value) || 0 })} 
+                        style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
+            </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Valeur Stat Spécifique</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={editingPlayer.stat2val ?? 0} 
-                  onChange={e => setEditingPlayer({ ...editingPlayer, stat2val: parseInt(e.target.value) || 0 })} 
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
-                />
-              </div>
+            {/* Palmarès & Trophées */}
+            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1.2rem' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#0f172a', marginBottom: '10px' }}>
+                🏆 Palmarès & Trophées Remportés
+              </label>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Titres de Champion (Trophées Or)</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={editingPlayer.honours1 ?? 1} 
-                  onChange={e => setEditingPlayer({ ...editingPlayer, honours1: parseInt(e.target.value) || 0 })} 
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
-                />
-              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.2rem' }}>
+                <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                    🥇 Titres de Champion (Trophées Or)
+                  </label>
+                  <input 
+                    type="number" 
+                    min="0"
+                    value={editingPlayer.honours1 ?? 0} 
+                    onChange={e => setEditingPlayer({ ...editingPlayer, honours1: parseInt(e.target.value) || 0 })} 
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                  />
+                </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>Finales / Podiums (Trophées Argent)</label>
-                <input 
-                  type="number" 
-                  min="0"
-                  value={editingPlayer.honours2 ?? 0} 
-                  onChange={e => setEditingPlayer({ ...editingPlayer, honours2: parseInt(e.target.value) || 0 })} 
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
-                />
+                <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                    🥈 Finales / Podiums (Trophées Argent)
+                  </label>
+                  <input 
+                    type="number" 
+                    min="0"
+                    value={editingPlayer.honours2 ?? 0} 
+                    onChange={e => setEditingPlayer({ ...editingPlayer, honours2: parseInt(e.target.value) || 0 })} 
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }} 
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1065,11 +1354,11 @@ export default function PlayersManager({
                   </div>
 
                   {/* Statistiques Rapides */}
-                  <div style={{ display: 'flex', gap: '8px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', fontSize: '0.76rem', color: '#475569', marginBottom: '10px', fontWeight: '600', justifyContent: 'space-between' }}>
-                    <span>⚽ {player.matches || 0} matchs</span>
-                    <span>🥅 {player.goals || player.stat2val || 0} {player.stat2lbl === "Arrêts" ? "arrêts" : "buts"}</span>
-                    <span>👟 {player.assists || 0} passes</span>
-                    <span>🏆 {player.honours1 || 0} titres</span>
+                  <div style={{ display: 'flex', gap: '8px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', fontSize: '0.76rem', color: '#475569', marginBottom: '10px', fontWeight: '600', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                    <span>⚽ {player.goals ?? 0} buts</span>
+                    <span>👟 {player.assists ?? 0} passes</span>
+                    <span>🧤 {player.saves ?? (player.stat2lbl === "Arrêts" ? player.stat2val ?? 0 : 0)} arrêts</span>
+                    <span>🏆 {player.honours1 ?? 0} titres</span>
                   </div>
 
                   {/* Multi-Unit Badges & Quick Add */}

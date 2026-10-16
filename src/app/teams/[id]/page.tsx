@@ -188,22 +188,54 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
             <Activity color="var(--clr-primary)" /> Statistiques de la Saison
           </h2>
           <div className="player-stats-grid">
-            
-            <motion.div whileHover={{ y: -5 }} style={{ background: 'white', padding: '1.75rem 1rem', borderRadius: '12px', textAlign: 'center', boxShadow: '0 5px 15px rgba(0,0,0,0.02)', border: '1px solid #eee' }}>
-              <div style={{ fontSize: '3rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-primary)', fontWeight: 'bold', lineHeight: 1 }}>{player.matches}</div>
-              <div style={{ color: 'var(--clr-gray)', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 'bold', marginTop: '10px' }}>Matchs Joués</div>
-            </motion.div>
+            {(() => {
+              const isGK = player.pos?.toLowerCase().includes('gardien') || player.stat2lbl === 'Arrêts';
+              const defaultDisplayed = isGK ? ['saves', 'cleansheets', 'matches'] : ['goals', 'assists', 'matches'];
+              const activeStatsKeys: string[] = Array.isArray(player.displayed_stats) && player.displayed_stats.length > 0
+                ? player.displayed_stats
+                : defaultDisplayed;
 
-            <motion.div whileHover={{ y: -5 }} style={{ background: 'white', padding: '1.75rem 1rem', borderRadius: '12px', textAlign: 'center', boxShadow: '0 5px 15px rgba(0,0,0,0.02)', border: '1px solid #eee' }}>
-              <div style={{ fontSize: '3rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-primary)', fontWeight: 'bold', lineHeight: 1 }}>{player.goals || player.stat2val || 0}</div>
-              <div style={{ color: 'var(--clr-gray)', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 'bold', marginTop: '10px' }}>{player.stat2lbl === "Arrêts" ? "Arrêts" : "Buts"}</div>
-            </motion.div>
+              const statCatalog: Record<string, { label: string; value: any }> = {
+                matches: { label: 'Matchs Joués', value: player.matches ?? 0 },
+                goals: { label: 'Buts Marqués', value: player.goals ?? 0 },
+                assists: { label: 'Passes Décisives', value: player.assists ?? 0 },
+                passes: { label: 'Passes Réussies', value: player.passes ?? 0 },
+                saves: { label: 'Ballons Arrêtés / Arrêts', value: player.saves ?? (isGK ? player.stat2val ?? 0 : 0) },
+                cleansheets: { label: 'Clean Sheets', value: player.cleansheets ?? 0 },
+                tackles: { label: 'Tacles Réussis', value: player.tackles ?? 0 },
+                minutes: { label: 'Minutes Jouées', value: player.minutes ?? 0 },
+                custom: { 
+                  label: player.custom_stat_label || (player.stat2lbl !== 'Buts' && player.stat2lbl !== 'Arrêts' ? player.stat2lbl : 'Statistique Personnalisée'), 
+                  value: player.custom_stat_val ?? player.stat2val ?? 0 
+                }
+              };
 
-            <motion.div whileHover={{ y: -5 }} style={{ background: 'white', padding: '1.75rem 1rem', borderRadius: '12px', textAlign: 'center', boxShadow: '0 5px 15px rgba(0,0,0,0.02)', border: '1px solid #eee' }}>
-              <div style={{ fontSize: '3rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-primary)', fontWeight: 'bold', lineHeight: 1 }}>{player.assists}</div>
-              <div style={{ color: 'var(--clr-gray)', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 'bold', marginTop: '10px' }}>Passes Décisives</div>
-            </motion.div>
-
+              return activeStatsKeys.map((key) => {
+                const stat = statCatalog[key] || { label: key, value: (player as any)[key] ?? 0 };
+                return (
+                  <motion.div 
+                    key={key} 
+                    whileHover={{ y: -5 }} 
+                    style={{ 
+                      background: 'white', 
+                      padding: '1.75rem 1rem', 
+                      borderRadius: '12px', 
+                      textAlign: 'center', 
+                      boxShadow: '0 5px 15px rgba(0,0,0,0.02)', 
+                      border: '1px solid #eee',
+                      position: 'relative'
+                    }}
+                  >
+                    <div style={{ fontSize: '3rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-primary)', fontWeight: 'bold', lineHeight: 1 }}>
+                      {stat.value}
+                    </div>
+                    <div style={{ color: 'var(--clr-gray)', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 'bold', marginTop: '10px', letterSpacing: '0.5px' }}>
+                      {stat.label}
+                    </div>
+                  </motion.div>
+                );
+              });
+            })()}
           </div>
         </section>
 
@@ -287,7 +319,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                 </div>
 
                 <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.4rem', fontWeight: '900', color: '#ffffff', lineHeight: 1, margin: '10px 0 4px' }}>
-                  x {player.honours1 || 1}
+                  x {player.honours1 ?? 0}
                 </div>
 
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', color: '#ffffff', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -325,7 +357,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                 </div>
 
                 <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.4rem', fontWeight: '900', color: '#ffffff', lineHeight: 1, margin: '10px 0 4px' }}>
-                  x {player.honours2 || 1}
+                  x {player.honours2 ?? 0}
                 </div>
 
                 <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.15rem', color: '#ffffff', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>

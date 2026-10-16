@@ -86,6 +86,14 @@ export interface PlayerData {
   honours2?: number;
   is_spotlight?: boolean;
   spotlight?: boolean;
+  displayed_stats?: string[];
+  passes?: number | string;
+  saves?: number | string;
+  cleansheets?: number | string;
+  tackles?: number | string;
+  minutes?: number | string;
+  custom_stat_label?: string;
+  custom_stat_val?: number | string;
   created_at?: string;
 }
 
@@ -1564,12 +1572,33 @@ export async function fetchMergedPlayers(): Promise<Record<string, any>> {
       data.forEach((player: any) => {
         const strId = String(player.id);
         if (!deletedIds.has(strId)) {
+          let extraStats: Record<string, any> = {};
+          let actualFilter = player.filter || 'none';
+          if (typeof actualFilter === 'string' && actualFilter.startsWith('{')) {
+            try {
+              const parsed = JSON.parse(actualFilter);
+              actualFilter = parsed.css || 'none';
+              if (parsed.displayed_stats) extraStats.displayed_stats = parsed.displayed_stats;
+              if (parsed.passes !== undefined) extraStats.passes = parsed.passes;
+              if (parsed.saves !== undefined) extraStats.saves = parsed.saves;
+              if (parsed.cleansheets !== undefined) extraStats.cleansheets = parsed.cleansheets;
+              if (parsed.tackles !== undefined) extraStats.tackles = parsed.tackles;
+              if (parsed.minutes !== undefined) extraStats.minutes = parsed.minutes;
+              if (parsed.custom_stat_label !== undefined) extraStats.custom_stat_label = parsed.custom_stat_label;
+              if (parsed.custom_stat_val !== undefined) extraStats.custom_stat_val = parsed.custom_stat_val;
+            } catch (e) {
+              // Ignore JSON parse error, keep actualFilter
+            }
+          }
+
           const supCats = Array.isArray(player.categories) && player.categories.length > 0
             ? player.categories
             : (player.category ? [player.category] : ['U17']);
           merged[strId] = {
             ...(merged[strId] || {}),
             ...player,
+            ...extraStats,
+            filter: actualFilter,
             categories: supCats,
             is_spotlight: Boolean(player.is_spotlight || player.spotlight)
           };
@@ -1619,13 +1648,42 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
     detail_img: player.detail_img || player.detailImg || player.img || '/condor_logo_transparent.png',
     detailImg: player.detail_img || player.detailImg || player.img || '/condor_logo_transparent.png',
     is_spotlight: Boolean(player.is_spotlight || player.spotlight),
-    spotlight: Boolean(player.is_spotlight || player.spotlight)
+    spotlight: Boolean(player.is_spotlight || player.spotlight),
+    matches: player.matches !== undefined ? Number(player.matches) : 0,
+    goals: player.goals !== undefined ? Number(player.goals) : 0,
+    assists: player.assists !== undefined ? Number(player.assists) : 0,
+    stat2val: player.stat2val !== undefined ? Number(player.stat2val) : 0,
+    honours1: player.honours1 !== undefined ? Number(player.honours1) : 0,
+    honours2: player.honours2 !== undefined ? Number(player.honours2) : 0,
+    displayed_stats: Array.isArray(player.displayed_stats) && player.displayed_stats.length > 0 
+      ? player.displayed_stats 
+      : (player.pos?.toLowerCase().includes('gardien') || player.stat2lbl === 'Arrêts' ? ['saves', 'cleansheets', 'matches'] : ['goals', 'assists', 'matches']),
+    passes: player.passes !== undefined ? Number(player.passes) : 0,
+    saves: player.saves !== undefined ? Number(player.saves) : 0,
+    cleansheets: player.cleansheets !== undefined ? Number(player.cleansheets) : 0,
+    tackles: player.tackles !== undefined ? Number(player.tackles) : 0,
+    minutes: player.minutes !== undefined ? Number(player.minutes) : 0,
+    custom_stat_label: player.custom_stat_label || '',
+    custom_stat_val: player.custom_stat_val !== undefined ? Number(player.custom_stat_val) : 0
   };
 
   // Update local cache
   const localCache = getLocalItem<Record<string, any>>('players_custom', {});
   localCache[strId] = fullPlayer;
   setLocalItem('players_custom', localCache);
+
+  // Encode extra fields into filter column to persist safely on Supabase
+  const filterMeta = JSON.stringify({
+    css: fullPlayer.filter || 'none',
+    displayed_stats: fullPlayer.displayed_stats,
+    passes: fullPlayer.passes,
+    saves: fullPlayer.saves,
+    cleansheets: fullPlayer.cleansheets,
+    tackles: fullPlayer.tackles,
+    minutes: fullPlayer.minutes,
+    custom_stat_label: fullPlayer.custom_stat_label,
+    custom_stat_val: fullPlayer.custom_stat_val
+  });
 
   // Exact database columns present in Supabase 'players' table
   const dbPayload: Record<string, any> = {
@@ -1635,23 +1693,23 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
     num: Number(fullPlayer.num) || 0,
     img: fullPlayer.img || '/condor_logo_transparent.png',
     detail_img: fullPlayer.detail_img,
-    filter: fullPlayer.filter || 'none',
+    filter: filterMeta,
     dob: fullPlayer.dob || '',
     category: primaryCategory,
     categories: categories,
     height: fullPlayer.height || null,
     weight: fullPlayer.weight || null,
-    matches: Number(fullPlayer.matches) || 0,
-    goals: Number(fullPlayer.goals) || 0,
-    assists: Number(fullPlayer.assists) || 0,
+    matches: fullPlayer.matches,
+    goals: fullPlayer.goals,
+    assists: fullPlayer.assists,
     stat2lbl: fullPlayer.stat2lbl || 'Buts',
-    stat2val: Number(fullPlayer.stat2val) || 0,
+    stat2val: fullPlayer.stat2val,
     pob: fullPlayer.pob || 'Port-au-Prince, Haïti',
     foot: fullPlayer.foot || 'Droit',
     nationality: fullPlayer.nationality || 'Haïtienne',
     bio: fullPlayer.bio || '',
-    honours1: Number(fullPlayer.honours1) || 1,
-    honours2: Number(fullPlayer.honours2) || 0,
+    honours1: fullPlayer.honours1,
+    honours2: fullPlayer.honours2,
     is_spotlight: fullPlayer.is_spotlight
   };
 
