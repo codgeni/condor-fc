@@ -25,7 +25,8 @@ import {
   fetchStaff, StaffMember,
   fetchTimeline, TimelineItem,
   fetchSiteContent, saveSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
-  fetchMergedPlayers, fetchNews, isRealNews
+  fetchMergedPlayers, fetchNews, isRealNews,
+  parseMatchDateTime
 } from '@/lib/dataService';
 import { validateUploadFile, sanitizeFormRecord, compressAndOptimizeImage } from '@/lib/security';
 
@@ -1055,6 +1056,43 @@ export default function AdminPanel() {
                           <MapPin size={13} /> {matchConfig.location}
                         </span>
                       )}
+
+                      {/* Aperçu Dynamique du Compte à Rebours */}
+                      {(() => {
+                        if (matchConfig.no_matches_now || !matchConfig.match_date) return null;
+                        const parsed = parseMatchDateTime(matchConfig.match_date, matchConfig.match_time);
+                        if (!parsed) {
+                          return (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
+                              ⚠️ Format non reconnu
+                            </span>
+                          );
+                        }
+                        const diff = parsed.getTime() - Date.now();
+                        if (diff <= 0) {
+                          const elapsed = Math.floor(-diff / (1000 * 60));
+                          if (elapsed <= 120) {
+                            return (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
+                                🔴 Match en direct
+                              </span>
+                            );
+                          }
+                          return (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '600' }}>
+                              ⚽ Match terminé
+                            </span>
+                          );
+                        }
+                        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        return (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
+                            ⏱️ Rebours : {d > 0 ? `${d}j ` : ''}{h}h {m}min
+                          </span>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
@@ -1085,7 +1123,7 @@ export default function AdminPanel() {
                     </label>
                     <input 
                       type="text" 
-                      value={matchConfig.home_team || 'Condor FC'} 
+                      value={matchConfig.home_team || 'Condor Ecole de Football'} 
                       onChange={e => setMatchConfig({ ...matchConfig, home_team: e.target.value })} 
                       style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', fontSize: '0.95rem' }}
                     />
@@ -1097,7 +1135,7 @@ export default function AdminPanel() {
                     </label>
                     <input 
                       type="text" 
-                      placeholder="Ex: AS Delmas" 
+                      placeholder="Ex: Fc Colonne Academy ou AS Delmas" 
                       value={matchConfig.opponent} 
                       onChange={e => setMatchConfig({ ...matchConfig, opponent: e.target.value })} 
                       style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', fontSize: '0.95rem' }}
@@ -1110,11 +1148,12 @@ export default function AdminPanel() {
                     </label>
                     <input 
                       type="text" 
-                      placeholder="Ex: 2026-10-24 ou Samedi prochain" 
+                      placeholder="Ex: 2026-10-24 ou 24/10/2026" 
                       value={matchConfig.match_date} 
                       onChange={e => setMatchConfig({ ...matchConfig, match_date: e.target.value })} 
                       style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', fontSize: '0.95rem' }}
                     />
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '4px' }}>Exemples : 2026-10-24, 24/10/2026 ou 24 Octobre 2026</div>
                   </div>
 
                   <div>
@@ -1123,11 +1162,12 @@ export default function AdminPanel() {
                     </label>
                     <input 
                       type="text" 
-                      placeholder="Ex: 16h00 ou 4:00 PM" 
+                      placeholder="Ex: 14h00, 16:00 ou 4:00 PM" 
                       value={matchConfig.match_time} 
                       onChange={e => setMatchConfig({ ...matchConfig, match_time: e.target.value })} 
                       style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', fontSize: '0.95rem' }}
                     />
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '4px' }}>Exemples : 14h00, 14:00, 2:00 PM ou 16h</div>
                   </div>
                 </div>
 
@@ -1156,6 +1196,159 @@ export default function AdminPanel() {
                       onChange={e => setMatchConfig({ ...matchConfig, competition: e.target.value })} 
                       style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', fontSize: '0.95rem' }}
                     />
+                  </div>
+                </div>
+
+                {/* Logos / Photos des Clubs du Match */}
+                <div style={{ background: '#f8fafc', padding: '1.4rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1.8rem' }}>
+                  <h4 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: '800', color: '#0f172a' }}>
+                    Photos & Logos des Clubs (Affiche du Match)
+                  </h4>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    {/* Club Adverse */}
+                    <div style={{ background: '#ffffff', padding: '1.2rem', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
+                      <span style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--clr-primary)', marginBottom: '8px' }}>
+                        Logo / Photo de l'équipe adverse ({matchConfig.opponent || 'Adversaire'})
+                      </span>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '12px' }}>
+                        <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: '#f1f5f9', border: '2px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                          {matchConfig.opponent_logo ? (
+                            <img src={matchConfig.opponent_logo} alt="Logo Adversaire" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          ) : (
+                            <Shield size={28} color="#94a3b8" />
+                          )}
+                        </div>
+
+                        <div style={{ flex: 1 }}>
+                          <label 
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              background: 'var(--clr-primary)',
+                              color: 'white',
+                              padding: '8px 14px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '0.82rem',
+                              fontWeight: '700',
+                              marginBottom: '6px'
+                            }}
+                          >
+                            <Upload size={14} /> Téléverser l'image du club adverse
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              style={{ display: 'none' }}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  try {
+                                    const base64 = await convertToBase64(file);
+                                    setMatchConfig({ ...matchConfig, opponent_logo: base64 });
+                                    showToast("Logo de l'équipe adverse chargé ! N'oubliez pas d'enregistrer.");
+                                  } catch (err) {
+                                    showToast("Erreur lors de la lecture de l'image");
+                                  }
+                                }
+                              }}
+                            />
+                          </label>
+
+                          {matchConfig.opponent_logo && (
+                            <button
+                              type="button"
+                              onClick={() => setMatchConfig({ ...matchConfig, opponent_logo: '' })}
+                              style={{ display: 'block', background: 'none', border: 'none', color: '#dc2626', fontSize: '0.78rem', cursor: 'pointer', textDecoration: 'underline' }}
+                            >
+                              Supprimer le logo adverse
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="Ou collez l'URL directe du logo adverse..."
+                        value={matchConfig.opponent_logo || ''}
+                        onChange={e => setMatchConfig({ ...matchConfig, opponent_logo: e.target.value })}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
+                      />
+                    </div>
+
+                    {/* Club à Domicile */}
+                    <div style={{ background: '#ffffff', padding: '1.2rem', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
+                      <span style={{ display: 'block', fontSize: '0.82rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#0f172a', marginBottom: '8px' }}>
+                        Logo / Photo de l'équipe à domicile ({matchConfig.home_team || 'Condor FC'})
+                      </span>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '12px' }}>
+                        <div style={{ width: '70px', height: '70px', borderRadius: '50%', background: '#f1f5f9', border: '2px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                          <img 
+                            src={matchConfig.home_team_logo || '/condor_logo_transparent.png'} 
+                            alt="Logo Domicile" 
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                          />
+                        </div>
+
+                        <div style={{ flex: 1 }}>
+                          <label 
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              background: '#0f172a',
+                              color: 'white',
+                              padding: '8px 14px',
+                              borderRadius: '8px',
+                              cursor: 'pointer',
+                              fontSize: '0.82rem',
+                              fontWeight: '700',
+                              marginBottom: '6px'
+                            }}
+                          >
+                            <Upload size={14} /> Téléverser logo domicile
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              style={{ display: 'none' }}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  try {
+                                    const base64 = await convertToBase64(file);
+                                    setMatchConfig({ ...matchConfig, home_team_logo: base64 });
+                                    showToast("Logo de l'équipe à domicile chargé !");
+                                  } catch (err) {
+                                    showToast("Erreur lors de la lecture de l'image");
+                                  }
+                                }
+                              }}
+                            />
+                          </label>
+
+                          {matchConfig.home_team_logo && matchConfig.home_team_logo !== '/condor_logo_transparent.png' && (
+                            <button
+                              type="button"
+                              onClick={() => setMatchConfig({ ...matchConfig, home_team_logo: '/condor_logo_transparent.png' })}
+                              style={{ display: 'block', background: 'none', border: 'none', color: '#64748b', fontSize: '0.78rem', cursor: 'pointer', textDecoration: 'underline' }}
+                            >
+                              Rétablir le logo officiel Condor
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="Ou collez l'URL directe du logo domicile (/condor_logo_transparent.png)..."
+                        value={matchConfig.home_team_logo || ''}
+                        onChange={e => setMatchConfig({ ...matchConfig, home_team_logo: e.target.value })}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -1762,6 +1955,18 @@ export default function AdminPanel() {
                     <p style={{ marginBottom: '8px' }}><strong>Enfant :</strong> {selectedStageRegistration.nom} {selectedStageRegistration.prenom}</p>
                     <p style={{ marginBottom: '8px' }}><strong>Date de naissance :</strong> {selectedStageRegistration.dob} {selectedStageRegistration.dob ? `(${new Date().getFullYear() - new Date(selectedStageRegistration.dob).getFullYear()} ans)` : ''}</p>
                     <p style={{ marginBottom: '8px' }}><strong>Session de Stage :</strong> <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold' }}>{selectedStageRegistration.stage}</span></p>
+                    <p style={{ marginBottom: '8px' }}>
+                      <strong>Paiement / Bourse : </strong> 
+                      {(selectedStageRegistration.note?.includes('Bourse') || selectedStageRegistration.payment_mode?.includes('Bourse')) ? (
+                        <span style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b', padding: '3px 8px', borderRadius: '4px', fontSize: '0.82rem', fontWeight: 'bold' }}>
+                          🎓 Demande de Bourse Condor
+                        </span>
+                      ) : (
+                        <span style={{ color: '#475569', fontSize: '0.88rem' }}>
+                          {selectedStageRegistration.payment_mode || "Paiement Standard"}
+                        </span>
+                      )}
+                    </p>
                   </div>
                   <div>
                     <p style={{ marginBottom: '8px' }}><strong>Téléphone Responsable :</strong> {selectedStageRegistration.tel}</p>
@@ -1801,36 +2006,49 @@ export default function AdminPanel() {
                       <th style={{ padding: '10px' }}>Date Naissance</th>
                       <th style={{ padding: '10px' }}>Téléphone</th>
                       <th style={{ padding: '10px' }}>Stage Souhaité</th>
+                      <th style={{ padding: '10px' }}>Paiement / Bourse</th>
                       <th style={{ padding: '10px' }}>Remarques</th>
                       <th style={{ padding: '10px', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {stageRegistrations.map(reg => (
-                      <tr key={reg.id} style={{ borderBottom: '1px solid #eee' }}>
-                        <td style={{ padding: '10px', fontWeight: 'bold' }}>{reg.nom} {reg.prenom}</td>
-                        <td style={{ padding: '10px' }}>{reg.dob}</td>
-                        <td style={{ padding: '10px' }}>
-                          <a href={`tel:${reg.tel}`} style={{ color: 'var(--clr-primary)', textDecoration: 'none' }}>{reg.tel}</a>
-                        </td>
-                        <td style={{ padding: '10px' }}>
-                          <span style={{ background: 'rgba(202, 2, 79, 0.08)', color: 'var(--clr-primary)', padding: '3px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
-                            {reg.stage}
-                          </span>
-                        </td>
-                        <td style={{ padding: '10px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#666', fontSize: '0.85rem' }}>
-                          {reg.note ? reg.note : <span style={{ color: '#aaa', fontStyle: 'italic' }}>Aucune</span>}
-                        </td>
-                        <td style={{ padding: '10px', textAlign: 'right' }}>
-                          <button onClick={() => setSelectedStageRegistration(reg)} className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.8rem', marginRight: '8px', color: 'black', borderColor: '#ccc' }}>
-                            Détails
-                          </button>
-                          <button onClick={() => handleDeleteStageRegistration(reg.id)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer' }} title="Supprimer">
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {stageRegistrations.map(reg => {
+                      const isBourse = Boolean(reg.note?.includes('Bourse') || reg.payment_mode?.includes('Bourse'));
+                      return (
+                        <tr key={reg.id} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: '10px', fontWeight: 'bold' }}>{reg.nom} {reg.prenom}</td>
+                          <td style={{ padding: '10px' }}>{reg.dob}</td>
+                          <td style={{ padding: '10px' }}>
+                            <a href={`tel:${reg.tel}`} style={{ color: 'var(--clr-primary)', textDecoration: 'none' }}>{reg.tel}</a>
+                          </td>
+                          <td style={{ padding: '10px' }}>
+                            <span style={{ background: 'rgba(202, 2, 79, 0.08)', color: 'var(--clr-primary)', padding: '3px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                              {reg.stage}
+                            </span>
+                          </td>
+                          <td style={{ padding: '10px' }}>
+                            {isBourse ? (
+                              <span style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b', padding: '3px 7px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                                🎓 Bourse Demandée
+                              </span>
+                            ) : (
+                              <span style={{ color: '#64748b', fontSize: '0.82rem' }}>Standard</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '10px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#666', fontSize: '0.85rem' }}>
+                            {reg.note ? reg.note : <span style={{ color: '#aaa', fontStyle: 'italic' }}>Aucune</span>}
+                          </td>
+                          <td style={{ padding: '10px', textAlign: 'right' }}>
+                            <button onClick={() => setSelectedStageRegistration(reg)} className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.8rem', marginRight: '8px', color: 'black', borderColor: '#ccc' }}>
+                              Détails
+                            </button>
+                            <button onClick={() => handleDeleteStageRegistration(reg.id)} style={{ background: 'none', border: 'none', color: 'red', cursor: 'pointer' }} title="Supprimer">
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
@@ -2594,9 +2812,15 @@ export default function AdminPanel() {
                               <a href={`tel:${ins.parent_tel}`} style={{ color: 'var(--clr-primary)', textDecoration: 'none' }}>{ins.parent_tel}</a>
                             </td>
                             <td style={{ padding: '12px 15px' }}>
-                              <span style={{ background: 'var(--clr-gray-light)', color: 'var(--clr-primary)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                                {ins.form_data?.planAdhesion?.split(':')[0] || 'Standard'}
-                              </span>
+                              {ins.form_data?.planAdhesion && (ins.form_data.planAdhesion.includes('Bourse') || ins.form_data.planAdhesion.includes('Boursier')) ? (
+                                <span style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  🎓 {ins.form_data?.planAdhesion?.split(':')[0]?.replace(/^[🎓\s]+/, '') || 'Boursier'}
+                                </span>
+                              ) : (
+                                <span style={{ background: 'var(--clr-gray-light)', color: 'var(--clr-primary)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                  {ins.form_data?.planAdhesion?.split(':')[0] || 'Standard'}
+                                </span>
+                              )}
                             </td>
                             <td style={{ padding: '12px 15px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                               <button 

@@ -482,10 +482,40 @@ export default function Contact() {
                     <option value="V1: Paiement intégral de la session (10 mois + inscription)" style={{background: '#111'}}>V1: Paiement intégral de la session (10 mois + inscription)</option>
                     <option value="V2: Paiement de la moitié de la session (5 mois + inscription)" style={{background: '#111'}}>V2: Paiement de la moitié de la session (5 mois + inscription)</option>
                     <option value="V3: Paiement trimestriel de la session (3 mois + inscription)" style={{background: '#111'}}>V3: Paiement trimestriel de la session (3 mois + inscription)</option>
+                    <option value="🎓 Bourse d'Excellence Sportive Condor (Prise en charge à 100%)" style={{background: '#111'}}>🎓 Bourse d'Excellence Sportive Condor (Prise en charge à 100%)</option>
+                    <option value="🎓 Bourse Sociale & Sportive Condor (Réduction de 50% sur l'année)" style={{background: '#111'}}>🎓 Bourse Sociale & Sportive Condor (Réduction de 50% sur l'année)</option>
+                    <option value="🎓 Demande d'Aide Financière / Bourse Partielle" style={{background: '#111'}}>🎓 Demande d'Aide Financière / Bourse Partielle</option>
                     <option value="Boursier: Montant annuel réduit de 50 %" style={{background: '#111'}}>Boursier: Montant annuel réduit de 50 %</option>
                     <option value="Parrainage: Prise en charge à 100% par sponsor" style={{background: '#111'}}>Parrainage: Prise en charge à 100% par sponsor</option>
                   </select>
                 </div>
+
+                {formData.planAdhesion && (formData.planAdhesion.includes('Bourse') || formData.planAdhesion.includes('Boursier')) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(202, 2, 79, 0.08))',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                      borderRadius: '10px',
+                      padding: '16px 20px',
+                      marginBottom: '1.2rem',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px'
+                    }}
+                  >
+                    <div style={{ fontSize: '1.4rem' }}>🎓</div>
+                    <div>
+                      <div style={{ fontWeight: 'bold', color: '#fbbf24', fontSize: '0.95rem', marginBottom: '4px' }}>
+                        Option Bourse & Solidarité Condor Activée
+                      </div>
+                      <p style={{ margin: 0, color: '#fef3c7', fontSize: '0.88rem', lineHeight: 1.5 }}>
+                        Votre demande sera étudiée en priorité par la commission des bourses du Condor FC. Notre politique sportive veille à ce qu'aucun jeune talentueux ne soit freiné par des contraintes financières.
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
                 
                 {/* CONDITIONS FINANCIERES */}
                 <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '8px', marginBottom: '2rem', fontSize: '0.9rem', color: '#ccc', lineHeight: '1.5' }}>

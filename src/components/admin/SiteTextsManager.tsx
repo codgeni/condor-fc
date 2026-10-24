@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { 
   Type, Save, RotateCcw, Plus, Trash2, Shield, Heart, 
   FileText, Home, Award, Music, AlertTriangle, CheckCircle,
-  Image as ImageIcon, Upload, Share2
+  Image as ImageIcon, Upload, Share2, Landmark, Trophy, MapPin
 } from 'lucide-react';
 import { SiteContent, DEFAULT_SITE_CONTENT, DEFAULT_PILLARS, PillarItem, saveSiteContent } from '@/lib/dataService';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
@@ -154,7 +154,24 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
           no_match_text: DEFAULT_SITE_CONTENT.no_match_text,
           social_facebook: DEFAULT_SITE_CONTENT.social_facebook,
           social_instagram: DEFAULT_SITE_CONTENT.social_instagram,
-          social_tiktok: DEFAULT_SITE_CONTENT.social_tiktok
+          social_tiktok: DEFAULT_SITE_CONTENT.social_tiktok,
+          terrain_title: DEFAULT_SITE_CONTENT.terrain_title,
+          terrain_tag: DEFAULT_SITE_CONTENT.terrain_tag,
+          terrain_desc: DEFAULT_SITE_CONTENT.terrain_desc,
+          terrain_img: DEFAULT_SITE_CONTENT.terrain_img,
+          terrain_location: DEFAULT_SITE_CONTENT.terrain_location,
+          terrain_btn_text: DEFAULT_SITE_CONTENT.terrain_btn_text,
+          terrain_btn_link: DEFAULT_SITE_CONTENT.terrain_btn_link,
+          palmares_title: DEFAULT_SITE_CONTENT.palmares_title,
+          palmares_subtitle: DEFAULT_SITE_CONTENT.palmares_subtitle,
+          palmares_stat1_val: DEFAULT_SITE_CONTENT.palmares_stat1_val,
+          palmares_stat1_lbl: DEFAULT_SITE_CONTENT.palmares_stat1_lbl,
+          palmares_stat2_val: DEFAULT_SITE_CONTENT.palmares_stat2_val,
+          palmares_stat2_lbl: DEFAULT_SITE_CONTENT.palmares_stat2_lbl,
+          palmares_stat3_val: DEFAULT_SITE_CONTENT.palmares_stat3_val,
+          palmares_stat3_lbl: DEFAULT_SITE_CONTENT.palmares_stat3_lbl,
+          palmares_stat4_val: DEFAULT_SITE_CONTENT.palmares_stat4_val,
+          palmares_stat4_lbl: DEFAULT_SITE_CONTENT.palmares_stat4_lbl
         }));
       } else if (section === 'club') {
         setForm(prev => ({
@@ -1266,6 +1283,234 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
                 rows={3}
                 style={textareaStyle} 
               />
+            </div>
+
+            {/* SECTION 9 : TERRAIN D'ENTRAÎNEMENT */}
+            <div style={cardStyle}>
+              <div style={cardHeaderStyle}>
+                <Landmark size={18} /> Notre Terrain d'Entraînement (Delmas 77)
+              </div>
+              <p style={{ color: '#64748b', fontSize: '0.88rem', marginTop: '-4px', marginBottom: '1.2rem' }}>
+                Personnalisez le titre, les textes explicatifs et l'image d'arrière-plan de la section terrain de la page d'accueil.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.2rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={labelStyle}>Surtitre / Tag</label>
+                  <input 
+                    type="text" 
+                    value={form.terrain_tag || ''} 
+                    onChange={e => setForm({ ...form, terrain_tag: e.target.value })} 
+                    style={inputStyle} 
+                    placeholder="Terrain d'Entraînement"
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Titre Principal de la Section</label>
+                  <input 
+                    type="text" 
+                    value={form.terrain_title || ''} 
+                    onChange={e => setForm({ ...form, terrain_title: e.target.value })} 
+                    style={inputStyle} 
+                    placeholder="Notre Terrain d'Entraînement"
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={labelStyle}>Description / Texte d'accès aux installations</label>
+                <textarea 
+                  value={form.terrain_desc || ''} 
+                  onChange={e => setForm({ ...form, terrain_desc: e.target.value })} 
+                  rows={3}
+                  style={textareaStyle} 
+                  placeholder="Retrouvez-nous chaque week-end à l'entrée de Delmas 77..."
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.2rem', marginBottom: '1.2rem' }}>
+                <div>
+                  <label style={labelStyle}>Texte du Bouton d'Action</label>
+                  <input 
+                    type="text" 
+                    value={form.terrain_btn_text || ''} 
+                    onChange={e => setForm({ ...form, terrain_btn_text: e.target.value })} 
+                    style={inputStyle} 
+                    placeholder="Nous Contacter & Localiser"
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Lien de Redirection du Bouton</label>
+                  <input 
+                    type="text" 
+                    value={form.terrain_btn_link || ''} 
+                    onChange={e => setForm({ ...form, terrain_btn_link: e.target.value })} 
+                    style={inputStyle} 
+                    placeholder="/contact"
+                  />
+                </div>
+              </div>
+
+              {/* Aperçu et téléversement de la photo du terrain */}
+              <div>
+                <label style={labelStyle}>Image d'Arrière-Plan du Terrain</label>
+                <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ width: '160px', height: '90px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img 
+                      src={form.terrain_img || '/stadium_hero_1780681869623.png'} 
+                      alt="Terrain" 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: '220px' }}>
+                    <input 
+                      type="text" 
+                      value={form.terrain_img || ''} 
+                      onChange={e => setForm({ ...form, terrain_img: e.target.value })} 
+                      placeholder="/stadium_hero_1780681869623.png"
+                      style={{ ...inputStyle, marginBottom: '8px' }} 
+                    />
+                    <label 
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: '#f1f5f9',
+                        border: '1px solid #cbd5e1',
+                        padding: '6px 14px',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '0.82rem',
+                        fontWeight: '600',
+                        color: '#334155'
+                      }}
+                    >
+                      <Upload size={14} />
+                      <span>Téléverser une nouvelle photo du terrain</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        style={{ display: 'none' }}
+                        onChange={e => {
+                          const file = e.target.files?.[0];
+                          if (file) handleBannerUpload('terrain_img', file);
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION PALMARÈS ACCUEIL : TITRES & CHIFFRES */}
+            <div style={cardStyle}>
+              <div style={cardHeaderStyle}>
+                <Trophy size={18} /> Section « Notre Palmarès » (Chiffres & Compteurs Clés)
+              </div>
+              <p style={{ color: '#64748b', fontSize: '0.88rem', marginTop: '-4px', marginBottom: '1.2rem' }}>
+                Modifiez les chiffres des compteurs (Titres, Podiums, Champions, Triplés) et les titres affichés sur la page d'accueil.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1.2rem', marginBottom: '1rem' }}>
+                <div>
+                  <label style={labelStyle}>Titre Section Palmarès</label>
+                  <input 
+                    type="text" 
+                    value={form.palmares_title || ''} 
+                    onChange={e => setForm({ ...form, palmares_title: e.target.value })} 
+                    style={inputStyle} 
+                    placeholder="NOTRE PALMARÈS"
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Sous-titre / Texte Descriptif</label>
+                  <input 
+                    type="text" 
+                    value={form.palmares_subtitle || ''} 
+                    onChange={e => setForm({ ...form, palmares_subtitle: e.target.value })} 
+                    style={inputStyle} 
+                    placeholder="Les titres officiels et les distinctions majeures remportés par le Condor FC..."
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', background: '#f8fafc', padding: '15px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <div>
+                  <label style={labelStyle}>Compteur 1 : Valeur</label>
+                  <input 
+                    type="text" 
+                    value={form.palmares_stat1_val || ''} 
+                    onChange={e => setForm({ ...form, palmares_stat1_val: e.target.value })} 
+                    style={{ ...inputStyle, fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center' }} 
+                    placeholder="05"
+                  />
+                  <label style={{ ...labelStyle, marginTop: '6px' }}>Libellé</label>
+                  <input 
+                    type="text" 
+                    value={form.palmares_stat1_lbl || ''} 
+                    onChange={e => setForm({ ...form, palmares_stat1_lbl: e.target.value })} 
+                    style={inputStyle} 
+                    placeholder="Titres & Podiums"
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Compteur 2 : Valeur</label>
+                  <input 
+                    type="text" 
+                    value={form.palmares_stat2_val || ''} 
+                    onChange={e => setForm({ ...form, palmares_stat2_val: e.target.value })} 
+                    style={{ ...inputStyle, fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center', color: 'var(--clr-primary)' }} 
+                    placeholder="03"
+                  />
+                  <label style={{ ...labelStyle, marginTop: '6px' }}>Libellé</label>
+                  <input 
+                    type="text" 
+                    value={form.palmares_stat2_lbl || ''} 
+                    onChange={e => setForm({ ...form, palmares_stat2_lbl: e.target.value })} 
+                    style={inputStyle} 
+                    placeholder="Titres de Champion"
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Compteur 3 : Valeur</label>
+                  <input 
+                    type="text" 
+                    value={form.palmares_stat3_val || ''} 
+                    onChange={e => setForm({ ...form, palmares_stat3_val: e.target.value })} 
+                    style={{ ...inputStyle, fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center' }} 
+                    placeholder="02"
+                  />
+                  <label style={{ ...labelStyle, marginTop: '6px' }}>Libellé</label>
+                  <input 
+                    type="text" 
+                    value={form.palmares_stat3_lbl || ''} 
+                    onChange={e => setForm({ ...form, palmares_stat3_lbl: e.target.value })} 
+                    style={inputStyle} 
+                    placeholder="Vice-Champions"
+                  />
+                </div>
+
+                <div>
+                  <label style={labelStyle}>Compteur 4 : Valeur</label>
+                  <input 
+                    type="text" 
+                    value={form.palmares_stat4_val || ''} 
+                    onChange={e => setForm({ ...form, palmares_stat4_val: e.target.value })} 
+                    style={{ ...inputStyle, fontWeight: 'bold', fontSize: '1.1rem', textAlign: 'center', color: 'var(--clr-primary)' }} 
+                    placeholder="01"
+                  />
+                  <label style={{ ...labelStyle, marginTop: '6px' }}>Libellé</label>
+                  <input 
+                    type="text" 
+                    value={form.palmares_stat4_lbl || ''} 
+                    onChange={e => setForm({ ...form, palmares_stat4_lbl: e.target.value })} 
+                    style={inputStyle} 
+                    placeholder="Triplé Historique"
+                  />
+                </div>
+              </div>
             </div>
 
             <div style={cardStyle}>

@@ -10,8 +10,26 @@ export interface MatchConfig {
   location: string;
   competition: string;
   opponent_logo?: string;
+  home_team_logo?: string;
   no_matches_now: boolean;
   is_active?: boolean;
+}
+
+export interface TrophyItem {
+  id: string;
+  title: string;
+  edition: string;
+  date: string;
+  rank: string;
+  isGold?: boolean;
+  is_gold?: boolean;
+  badge: string;
+  venue: string;
+  stats: string;
+  desc: string;
+  image?: string; // Photo du tournoi
+  order?: number;
+  created_at?: string;
 }
 
 export interface VideoItem {
@@ -55,6 +73,7 @@ export interface ShopProduct {
   description: string;
   highlights?: string[];
   sizes?: string[];
+  is_available?: boolean;
   created_at?: string;
 }
 
@@ -238,6 +257,27 @@ export interface SiteContent {
   shop_hero_bg?: string;
   tv_hero_bg?: string;
   inscr_hero_bg?: string;
+
+  // 5. Section Palmarès & Chiffres Clés (Page d'accueil)
+  palmares_title?: string;
+  palmares_subtitle?: string;
+  palmares_stat1_val?: string;
+  palmares_stat1_lbl?: string;
+  palmares_stat2_val?: string;
+  palmares_stat2_lbl?: string;
+  palmares_stat3_val?: string;
+  palmares_stat3_lbl?: string;
+  palmares_stat4_val?: string;
+  palmares_stat4_lbl?: string;
+
+  // 6. Section Terrain d'Entraînement
+  terrain_title?: string;
+  terrain_tag?: string;
+  terrain_desc?: string;
+  terrain_img?: string;
+  terrain_location?: string;
+  terrain_btn_text?: string;
+  terrain_btn_link?: string;
 
   created_at?: string;
 }
@@ -437,7 +477,28 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   stages_hero_bg: '/stadium_hero_1780681869623.png',
   shop_hero_bg: '/shop_hero.png',
   tv_hero_bg: '/stadium_hero_1780681869623.png',
-  inscr_hero_bg: ''
+  inscr_hero_bg: '',
+
+  // 5. Section Palmarès & Chiffres Clés (Page d'accueil)
+  palmares_title: "NOTRE PALMARÈS",
+  palmares_subtitle: "Les titres officiels et les distinctions majeures remportés par le Condor FC depuis sa fondation en Mai 2023.",
+  palmares_stat1_val: "05",
+  palmares_stat1_lbl: "Titres & Podiums",
+  palmares_stat2_val: "03",
+  palmares_stat2_lbl: "Titres de Champion",
+  palmares_stat3_val: "02",
+  palmares_stat3_lbl: "Vice-Champions",
+  palmares_stat4_val: "01",
+  palmares_stat4_lbl: "Triplé Historique",
+
+  // 6. Section Terrain d'Entraînement
+  terrain_title: "Notre Terrain d'Entraînement",
+  terrain_tag: "Infrastructures & Localisation",
+  terrain_desc: "Retrouvez-nous chaque week-end à l'entrée de Delmas 77 (à côté de BIWI). Nos installations permettent un apprentissage structuré et sécurisé pour toutes les tranches d'âge.",
+  terrain_img: "/stadium_hero_1780681869623.png",
+  terrain_location: "Entrée de Delmas 77 (à côté de BIWI), Port-au-Prince",
+  terrain_btn_text: "Nous Contacter & Localiser",
+  terrain_btn_link: "/contact"
 };
 
 export const DEFAULT_PRODUCTS: ShopProduct[] = [
@@ -788,17 +849,97 @@ export function setLocalItem<T>(key: string, value: T): void {
   }
 }
 
+const FRENCH_MONTHS: Record<string, number> = {
+  janvier: 1, fevrier: 2, 'février': 2, mars: 3, avril: 4, mai: 5, juin: 6,
+  juillet: 7, aout: 8, 'août': 8, septembre: 9, octobre: 10, novembre: 11, decembre: 12, 'décembre': 12,
+  jan: 1, fev: 2, mar: 3, avr: 4, jun: 6, jul: 7, aou: 8, sep: 9, oct: 10, nov: 11, dec: 12
+};
+
+export function parseMatchDateTime(dateStr?: string, timeStr?: string): Date | null {
+  if (!dateStr && !timeStr) return null;
+  const rawDate = (dateStr || '').trim();
+  const rawTime = (timeStr || '').trim();
+  const combined = `${rawDate} ${rawTime}`.trim();
+  if (!combined) return null;
+
+  let year: number | null = null;
+  let month: number | null = null;
+  let day: number | null = null;
+  let hours = 16;
+  let minutes = 0;
+
+  // 1. Time extraction: 12h AM/PM
+  const ampmMatch = combined.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+  if (ampmMatch) {
+    let h = parseInt(ampmMatch[1], 10);
+    const m = ampmMatch[2] ? parseInt(ampmMatch[2], 10) : 0;
+    const isPm = ampmMatch[3].toLowerCase() === 'pm';
+    if (isPm && h < 12) h += 12;
+    if (!isPm && h === 12) h = 0;
+    hours = h;
+    minutes = m;
+  } else {
+    // 24h format: 14h00, 14:00, 14h, à 14h00
+    const explicitTime = 
+      combined.match(/(?:à\s*|at\s*|\s+)(\d{1,2})[hH:](\d{2})/) ||
+      combined.match(/(?:à\s*|at\s*|\s+)(\d{1,2})\s*[hH]/) ||
+      (rawTime && rawTime.match(/^(\d{1,2})[hH:](\d{2})/)) ||
+      (rawTime && rawTime.match(/^(\d{1,2})\s*[hH]?$/));
+
+    if (explicitTime) {
+      hours = parseInt(explicitTime[1], 10);
+      minutes = explicitTime[2] ? parseInt(explicitTime[2], 10) : 0;
+    }
+  }
+
+  // 2. Date extraction
+  // ISO: YYYY-MM-DD or YYYY/MM/DD
+  const isoMatch = combined.match(/(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (isoMatch) {
+    year = parseInt(isoMatch[1], 10);
+    month = parseInt(isoMatch[2], 10);
+    day = parseInt(isoMatch[3], 10);
+  } else {
+    // FR: DD/MM/YYYY or DD-MM-YYYY
+    const frMatch = combined.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+    if (frMatch) {
+      day = parseInt(frMatch[1], 10);
+      month = parseInt(frMatch[2], 10);
+      year = parseInt(frMatch[3], 10);
+    } else {
+      // Named months: e.g. 24 Octobre 2026
+      const namedMatch = combined.match(/(\d{1,2})\s+([a-zA-Z\u00C0-\u017F]+)\s+(\d{4})/);
+      if (namedMatch) {
+        day = parseInt(namedMatch[1], 10);
+        const mKey = namedMatch[2].toLowerCase();
+        if (FRENCH_MONTHS[mKey]) {
+          month = FRENCH_MONTHS[mKey];
+          year = parseInt(namedMatch[3], 10);
+        }
+      }
+    }
+  }
+
+  if (!year || !month || !day) {
+    const cleanStr = combined.replace(/à\s*/i, '').replace(/(\d{1,2})h(\d{2})/i, '$1:$2');
+    const fallback = new Date(cleanStr);
+    return isNaN(fallback.getTime()) ? null : fallback;
+  }
+
+  return new Date(year, month - 1, day, hours, minutes, 0, 0);
+}
+
 // =============================================================
 // 1. MATCH SERVICE
 // =============================================================
 const DEFAULT_MATCH: MatchConfig = {
-  opponent: '',
-  home_team: 'Condor FC',
-  match_date: '',
-  match_time: '',
-  location: 'Parc Sportif Delmas',
-  competition: 'Prochain Match Officiel',
-  no_matches_now: true,
+  home_team: 'Condor Ecole de Football',
+  opponent: 'Fc Colonne Academy',
+  match_date: '2026-10-24',
+  match_time: '14h00',
+  location: 'Quisqueya Christian School, Delmas 75',
+  competition: 'Match Officiel',
+  no_matches_now: false,
   is_active: true
 };
 
@@ -819,7 +960,12 @@ export async function fetchCurrentMatch(): Promise<MatchConfig> {
     console.warn('Supabase match fetch error, using local fallback', err);
   }
 
-  return getLocalItem('current_match', DEFAULT_MATCH);
+  const cached = getLocalItem<MatchConfig>('current_match', DEFAULT_MATCH);
+  if (!cached || !cached.opponent) {
+    setLocalItem('current_match', DEFAULT_MATCH);
+    return DEFAULT_MATCH;
+  }
+  return cached;
 }
 
 export async function saveMatchConfig(config: MatchConfig): Promise<{ success: boolean; data?: any; error?: string }> {
@@ -1107,6 +1253,168 @@ export async function deleteProduct(id: string): Promise<{ success: boolean }> {
 export function resetProductsToDefault(): ShopProduct[] {
   setLocalItem('products_list', DEFAULT_PRODUCTS);
   return DEFAULT_PRODUCTS;
+}
+
+export async function toggleProductAvailability(id: string, is_available: boolean): Promise<{ success: boolean }> {
+  const currentList = getLocalItem<ShopProduct[]>('products_list', DEFAULT_PRODUCTS);
+  const updated = currentList.map(p => p.id === id ? { ...p, is_available } : p);
+  setLocalItem('products_list', updated);
+  try {
+    await supabase.from('products').update({ is_available }).eq('id', id);
+  } catch (e) {
+    console.warn('Supabase toggle product availability note', e);
+  }
+  return { success: true };
+}
+
+// =============================================================
+// 4.1 PALMARÈS & TOURNOIS (Photos & Trophées du Club)
+// =============================================================
+export const DEFAULT_TROPHIES: TrophyItem[] = [
+  { 
+    id: 'chale-chale',
+    title: 'Tournoi Chale Chale', 
+    edition: '7e Édition · Triplé Inédit',
+    date: 'Avril 2026', 
+    rank: 'Champion U11 / U15 / U16', 
+    isGold: true,
+    is_gold: true,
+    badge: 'Triplé Historique',
+    venue: 'Parc Sportif Delmas',
+    stats: '3 Trophées · 1 Édition · Invaincus',
+    desc: 'Condor FC s\'impose au sommet en remportant les trophées de champions dans trois catégories différentes (U11, U15, U16) lors d\'une seule et même édition. Une domination tactique absolue saluée par tous les observateurs.',
+    image: '',
+    order: 1
+  },
+  { 
+    id: 'back-to-school',
+    title: 'Tournoi Back To School', 
+    edition: 'Édition Annuelle Élite',
+    date: 'Septembre 2025', 
+    rank: 'Champion National U17', 
+    isGold: true,
+    is_gold: true,
+    badge: 'Champion National',
+    venue: 'Stade Municipal',
+    stats: 'Meilleure Attaque · Victoire en Finale 3-1',
+    desc: 'Parcours parfait des U17 qui s\'imposent avec panache face aux plus prestigieuses académies du pays. Une cohésion d\'équipe exemplaire et une efficacité offensive redoutable jusqu\'au sacre.',
+    image: '',
+    order: 2
+  },
+  { 
+    id: 'copa-undecima',
+    title: 'Tournoi Copa Undecima', 
+    edition: 'Coupe d\'Hiver 2025',
+    date: 'Décembre 2025', 
+    rank: 'Champion U15', 
+    isGold: true,
+    is_gold: true,
+    badge: 'Champion Officiel',
+    venue: 'Delmas 77',
+    stats: 'Invaincus · Trophée Meilleur Buteur',
+    desc: 'Une démonstration offensive magistrale menée par la catégorie U15. En finale, les jeunes Condors ont fait preuve d\'un sang-froid extraordinaire pour décrocher le titre suprême devant un public conquis.',
+    image: '',
+    order: 3
+  },
+  { 
+    id: 'flag-day-13',
+    title: 'Flag Day (13e édition)', 
+    edition: 'Tournoi National Fête du Drapeau',
+    date: 'Mai 2026', 
+    rank: 'Vice-Champion U15', 
+    isGold: false,
+    is_gold: false,
+    badge: 'Médaille d\'Argent',
+    venue: 'Complexe National',
+    stats: 'Finale aux Tirs au But · Meilleure Défense',
+    desc: 'Une épopée courageuse menant l\'équipe U15 jusqu\'aux tirs au but de la grande finale nationale du 18 Mai. Une médaille d\'argent disputée avec honneur face aux meilleures formations du pays.',
+    image: '',
+    order: 4
+  },
+  { 
+    id: 'flag-day-12',
+    title: 'Flag Day (12e édition)', 
+    edition: 'Tournoi National Fête du Drapeau',
+    date: 'Mai 2025', 
+    rank: 'Vice-Champion U13', 
+    isGold: false,
+    is_gold: false,
+    badge: 'Médaille d\'Argent',
+    venue: 'Complexe National',
+    stats: 'Premier Podium de l\'Histoire du Club',
+    desc: 'Le tout premier trophée majeur conquis par l\'académie seulement deux ans après sa fondation officielle en Mai 2023. Le point de départ d\'une série de victoires et d\'une ascension constante.',
+    image: '',
+    order: 5
+  }
+];
+
+export async function fetchTrophies(): Promise<TrophyItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from('trophies')
+      .select('*')
+      .order('order', { ascending: true });
+
+    if (!error && data && data.length > 0) {
+      setLocalItem('trophies_list', data);
+      return data;
+    }
+  } catch (err) {
+    console.warn('Supabase trophies fetch note, using local fallback', err);
+  }
+
+  return getLocalItem('trophies_list', DEFAULT_TROPHIES);
+}
+
+export async function saveTrophy(trophy: TrophyItem): Promise<{ success: boolean; data?: TrophyItem; error?: string }> {
+  const currentList = getLocalItem<TrophyItem[]>('trophies_list', DEFAULT_TROPHIES);
+  const targetTrophy: TrophyItem = {
+    ...trophy,
+    id: trophy.id || `trophy-${Date.now()}`,
+    order: Number(trophy.order) || (currentList.length + 1)
+  };
+
+  try {
+    const { data: existing } = await supabase.from('trophies').select('id').eq('id', targetTrophy.id);
+    if (existing && existing.length > 0) {
+      await supabase.from('trophies').update(targetTrophy).eq('id', targetTrophy.id);
+    } else {
+      await supabase.from('trophies').insert(targetTrophy);
+    }
+  } catch (e) {
+    console.warn('Supabase save trophy note, cached locally', e);
+  }
+
+  const idx = currentList.findIndex(t => t.id === targetTrophy.id);
+  let updatedList: TrophyItem[];
+  if (idx >= 0) {
+    updatedList = [...currentList];
+    updatedList[idx] = targetTrophy;
+  } else {
+    updatedList = [...currentList, targetTrophy];
+  }
+  updatedList.sort((a, b) => (a.order || 0) - (b.order || 0));
+  setLocalItem('trophies_list', updatedList);
+
+  return { success: true, data: targetTrophy };
+}
+
+export async function deleteTrophy(id: string): Promise<{ success: boolean }> {
+  try {
+    await supabase.from('trophies').delete().eq('id', id);
+  } catch (e) {
+    console.warn('Supabase delete trophy note', e);
+  }
+
+  const currentList = getLocalItem<TrophyItem[]>('trophies_list', DEFAULT_TROPHIES);
+  const filtered = currentList.filter(t => t.id !== id);
+  setLocalItem('trophies_list', filtered);
+  return { success: true };
+}
+
+export async function resetTrophiesToDefault(): Promise<{ success: boolean; data: TrophyItem[] }> {
+  setLocalItem('trophies_list', DEFAULT_TROPHIES);
+  return { success: true, data: DEFAULT_TROPHIES };
 }
 
 // =============================================================
@@ -1907,4 +2215,5 @@ export async function fetchNews(): Promise<any[]> {
   const cached = getLocalItem<any[]>('news_list', []);
   return cached.filter(isRealNews);
 }
+
 

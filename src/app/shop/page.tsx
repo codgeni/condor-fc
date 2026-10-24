@@ -24,6 +24,7 @@ interface Product {
   description: string;
   highlights: string[];
   sizes: string[];
+  is_available?: boolean;
 }
 
 const PRODUCTS: Product[] = [
@@ -276,7 +277,8 @@ export default function Shop() {
             categoryLabel: p.category_label || p.categoryLabel || 'Boutique Condor',
             formattedPrice: p.formatted_price || p.formattedPrice || `${p.price}.00 $`,
             badgeText: p.badge_text || p.badgeText || '',
-            sizes: Array.isArray(p.sizes) ? p.sizes : ['S', 'M', 'L', 'XL']
+            sizes: Array.isArray(p.sizes) ? p.sizes : ['S', 'M', 'L', 'XL'],
+            is_available: p.is_available !== false
           });
         });
         setProductList(Array.from(customMap.values()));
@@ -451,35 +453,67 @@ export default function Shop() {
                     </ul>
                   </div>
 
-                  {/* Statut Disponibilité */}
-                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1.2rem', marginTop: 'auto' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        padding: '11px 16px',
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '10px',
-                        color: '#64748b',
-                        fontSize: '0.88rem',
-                        fontWeight: '600'
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: '8px',
-                          height: '8px',
-                          borderRadius: '50%',
-                          background: '#f59e0b',
-                          display: 'inline-block',
-                          boxShadow: '0 0 0 3px rgba(245, 158, 11, 0.2)'
-                        }}
-                      />
-                      <span>Temporairement indisponible</span>
+                  {/* Statut Disponibilité & Bouton Commander */}
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1.2rem', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '1.4rem', fontWeight: '800', color: product.is_available !== false ? 'var(--clr-primary)' : '#94a3b8' }}>
+                        {product.formattedPrice}
+                      </span>
+                      {product.is_available !== false ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', fontWeight: '700', color: '#15803d', background: 'rgba(22, 163, 74, 0.1)', padding: '3px 9px', borderRadius: '12px' }}>
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a' }} />
+                          En vente
+                        </span>
+                      ) : (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', fontWeight: '700', color: '#b91c1c', background: 'rgba(220, 38, 38, 0.1)', padding: '3px 9px', borderRadius: '12px' }}>
+                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#dc2626' }} />
+                          Hors vente
+                        </span>
+                      )}
                     </div>
+
+                    {product.is_available !== false ? (
+                      <button
+                        onClick={() => openOrderModal(product)}
+                        className="btn btn-primary"
+                        style={{
+                          width: '100%',
+                          padding: '11px',
+                          borderRadius: '10px',
+                          fontWeight: '700',
+                          fontSize: '0.92rem',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          boxShadow: '0 4px 14px rgba(202, 2, 79, 0.25)'
+                        }}
+                      >
+                        Commander cet équipement
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        style={{
+                          width: '100%',
+                          padding: '11px',
+                          borderRadius: '10px',
+                          fontWeight: '700',
+                          fontSize: '0.92rem',
+                          background: '#f1f5f9',
+                          color: '#94a3b8',
+                          border: '1px solid #e2e8f0',
+                          cursor: 'not-allowed',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px'
+                        }}
+                      >
+                        Actuellement indisponible
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.div>

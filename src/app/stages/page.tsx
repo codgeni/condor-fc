@@ -20,7 +20,7 @@ export default function Stages() {
   const [stages, setStages] = useState<StageSession[]>([]);
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [stageFormData, setStageFormData] = useState({
-    nom: '', prenom: '', dob: '', tel: '', photo: '', stage: '', note: ''
+    nom: '', prenom: '', dob: '', tel: '', photo: '', stage: '', payment_mode: 'Paiement Direct (Comptant / Virement)', note: ''
   });
   const [rdvFormData, setRdvFormData] = useState({
     parentNom: '', enfantNom: '', tel: '', date: '', heure: '', raison: 'Inscription académique'
@@ -90,6 +90,9 @@ export default function Stages() {
 
     try {
       const sanitized = sanitizeFormRecord(stageFormData);
+      const combinedNote = sanitized.payment_mode 
+        ? `[Mode de paiement: ${sanitized.payment_mode}] ${sanitized.note || ''}`.trim() 
+        : sanitized.note;
 
       // Save to Supabase Table 'stages_inscriptions'
       const { error } = await supabase.from('stages_inscriptions').insert({
@@ -98,7 +101,7 @@ export default function Stages() {
         dob: sanitized.dob,
         tel: sanitized.tel,
         stage: sanitized.stage,
-        note: sanitized.note,
+        note: combinedNote,
         photo: sanitized.photo
       });
 
@@ -113,7 +116,7 @@ export default function Stages() {
       showConfirmed("Votre pré-inscription au stage a été transmise avec succès au secrétariat !", "CONFIRMÉ");
       setTimeout(() => {
         setStageSubmitted(false);
-        setStageFormData({ nom: '', prenom: '', dob: '', tel: '', photo: '', stage: '', note: '' });
+        setStageFormData({ nom: '', prenom: '', dob: '', tel: '', photo: '', stage: '', payment_mode: 'Paiement Direct (Comptant / Virement)', note: '' });
       }, 4000);
     } catch (err: any) {
       setStageErrors([err?.message || "Une erreur inattendue est survenue."]);
@@ -323,6 +326,44 @@ export default function Stages() {
                       )}
                     </select>
                   </div>
+
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={labelStyle}>Modalité de Paiement & Demande de Bourse</label>
+                    <select name="payment_mode" required value={stageFormData.payment_mode} onChange={handleStageChange} style={{ ...inputStyle, padding: '14px' }}>
+                      <option value="Paiement Direct (Comptant / Virement)">Paiement Direct (Comptant au secrétariat / Virement)</option>
+                      <option value="🎓 Demande de Bourse Stage (Aide financière Condor)">🎓 Demande de Bourse Stage (Aide financière Condor)</option>
+                      <option value="🎓 Demande de Bourse d'Excellence (Prise en charge à 100%)">🎓 Demande de Bourse d'Excellence (Prise en charge à 100%)</option>
+                      <option value="Paiement Échelonné (2 versements sans frais)">Paiement Échelonné (2 versements sans frais)</option>
+                      <option value="Prise en charge Partenaire / Parrainage">Prise en charge Partenaire / Parrainage</option>
+                    </select>
+                  </div>
+
+                  {stageFormData.payment_mode?.includes('Bourse') && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      style={{
+                        background: '#fffbeb',
+                        border: '1px solid #fde68a',
+                        borderRadius: '10px',
+                        padding: '14px 18px',
+                        marginBottom: '1.5rem',
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '12px'
+                      }}
+                    >
+                      <div style={{ fontSize: '1.3rem' }}>🎓</div>
+                      <div>
+                        <div style={{ fontWeight: 'bold', color: '#b45309', fontSize: '0.9rem', marginBottom: '2px' }}>
+                          Programme Bourses & Solidarité Stages Condor
+                        </div>
+                        <p style={{ margin: 0, color: '#92400e', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                          Le Condor FC offre des opportunités de bourses d'accès pour permettre à chaque passionné de participer aux stages intensifs. Votre demande sera examinée avec bienveillance dès réception.
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
 
                   <div style={{ marginBottom: '1.5rem' }}>
                     <label style={labelStyle}>Remarques ou Besoins Particuliers (Optionnel)</label>

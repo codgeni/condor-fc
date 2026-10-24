@@ -9,7 +9,9 @@ import { playersDB } from '@/lib/playersDB';
 import { 
   fetchCurrentMatch, MatchConfig, fetchVideos, VideoItem, parseVideoUrl,
   fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
-  fetchMergedPlayers, fetchNews
+  fetchMergedPlayers, fetchNews,
+  fetchTrophies, TrophyItem, DEFAULT_TROPHIES,
+  parseMatchDateTime
 } from '@/lib/dataService';
 import { supabase } from '@/lib/supabaseClient';
 import { formatRelativeTime } from '@/lib/timeUtils';
@@ -40,6 +42,7 @@ function renderTrophy(id: string, size = 155, withReflection = false) {
 
 export default function Home() {
   const [activeTrophyIndex, setActiveTrophyIndex] = useState(0);
+  const [trophies, setTrophies] = useState<TrophyItem[]>(DEFAULT_TROPHIES);
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
   const [matchConfig, setMatchConfig] = useState<MatchConfig>({
     opponent: '',
@@ -76,7 +79,7 @@ export default function Home() {
     }
   }, [selectedArticle]);
 
-  const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number; s: number } | null>(null);
+  const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number; s: number; isLive?: boolean; isFinished?: boolean } | null>(null);
   const [playerIndex, setPlayerIndex] = useState(0);
   const [allPlayers, setAllPlayers] = useState<Record<string, any>>(playersDB);
 
@@ -85,12 +88,15 @@ export default function Home() {
   }, [allPlayers]);
 
   useEffect(() => {
-    // 0. Fetch site content & players
+    // 0. Fetch site content, players & trophies
     fetchSiteContent().then(sc => {
       if (sc) setSiteContent(sc);
     });
     fetchMergedPlayers().then(pls => {
       if (pls && Object.keys(pls).length > 0) setAllPlayers(pls);
+    });
+    fetchTrophies().then(tList => {
+      if (tList && tList.length > 0) setTrophies(tList);
     });
 
     // 1. Fetch current match configuration
@@ -125,22 +131,34 @@ export default function Home() {
     }
 
     const calculateTime = () => {
-      const targetStr = `${matchConfig.match_date} ${matchConfig.match_time || '16:00'}`;
-      const target = new Date(targetStr).getTime();
-      const now = new Date().getTime();
-
-      if (isNaN(target) || target <= now) {
-        setTimeLeft({ d: 0, h: 0, m: 0, s: 0 });
+      const targetDate = parseMatchDateTime(matchConfig.match_date, matchConfig.match_time);
+      if (!targetDate) {
+        setTimeLeft(null);
         return;
       }
 
+      const target = targetDate.getTime();
+      const now = Date.now();
       const diff = target - now;
+
+      // Si l'heure du coup d'envoi est atteinte ou passée
+      if (diff <= 0) {
+        const elapsedMinutes = Math.floor(-diff / (1000 * 60));
+        // Durée normale d'une rencontre (90 min + pause et arrêts de jeu ~ 120 min)
+        if (elapsedMinutes <= 120) {
+          setTimeLeft({ d: 0, h: 0, m: 0, s: 0, isLive: true, isFinished: false });
+        } else {
+          setTimeLeft({ d: 0, h: 0, m: 0, s: 0, isLive: false, isFinished: true });
+        }
+        return;
+      }
+
       const d = Math.floor(diff / (1000 * 60 * 60 * 24));
       const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-      setTimeLeft({ d, h, m, s });
+      setTimeLeft({ d, h, m, s, isLive: false, isFinished: false });
     };
 
     calculateTime();
@@ -208,8 +226,8 @@ export default function Home() {
               /* Match Officiel Réellement Configuré par l'Admin */
               <>
                 {/* Logo Club (Gauche) */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '90px', height: '90px', background: 'var(--clr-gray-light)', borderRadius: '50%', padding: '10px', boxShadow: '0 5px 15px rgba(0,0,0,0.05)' }}>
-                  <img src="/condor_logo_transparent.png" alt="Condor FC" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '90px', height: '90px', background: 'var(--clr-gray-light)', borderRadius: '50%', padding: '10px', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+                  <img src={matchConfig.home_team_logo || "/condor_logo_transparent.png"} alt={matchConfig.home_team || "Condor FC"} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
                 </div>
 
                 {/* Infos Match (Centre) */}
@@ -221,21 +239,57 @@ export default function Home() {
                     {matchConfig.home_team || 'Condor FC'} <span style={{color: 'var(--clr-primary)'}}>VS</span> {matchConfig.opponent}
                   </h3>
                   <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--clr-gray)', marginTop: '8px', justifyContent: 'center', flexWrap: 'wrap', fontSize: '0.95rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><Calendar size={16} /> {matchConfig.match_date} à {matchConfig.match_time}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Calendar size={16} /> 
+                      {matchConfig.match_date}
+                      {matchConfig.match_time && !matchConfig.match_date.includes('à') ? ` à ${matchConfig.match_time}` : ''}
+                    </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><MapPin size={16} /> {matchConfig.location || 'Parc Sportif Delmas'}</span>
                   </div>
                 </div>
 
-                {/* Compte à Rebours si disponible */}
+                {/* Compte à Rebours ou Statut du Match */}
                 {timeLeft ? (
-                  <div style={{ display: 'flex', gap: '1.5rem', textAlign: 'center', justifyContent: 'center' }}>
-                    {[ { l: 'Jours', v: timeLeft.d }, { l: 'Heures', v: timeLeft.h }, { l: 'Min', v: timeLeft.m }, { l: 'Sec', v: timeLeft.s } ].map((t, i) => (
-                      <div key={i} style={{ minWidth: '55px' }}>
-                        <div style={{ fontSize: '2.2rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-black)', lineHeight: 1 }}>{t.v.toString().padStart(2, '0')}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--clr-gray)', textTransform: 'uppercase', fontWeight: 'bold', marginTop: '2px' }}>{t.l}</div>
+                  timeLeft.isLive ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        background: '#ca024f',
+                        color: '#ffffff',
+                        padding: '8px 20px',
+                        borderRadius: '30px',
+                        fontSize: '0.92rem',
+                        fontWeight: '800',
+                        letterSpacing: '1px',
+                        boxShadow: '0 4px 15px rgba(202, 2, 79, 0.4)'
+                      }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ffffff', display: 'inline-block' }} />
+                        MATCH EN COURS · DIRECT
                       </div>
-                    ))}
-                  </div>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--clr-gray)', fontWeight: '600' }}>
+                        Coup d'envoi donné à {matchConfig.match_time || '14h00'}
+                      </span>
+                    </div>
+                  ) : timeLeft.isFinished ? (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#1e293b', color: '#ffffff', padding: '8px 18px', borderRadius: '20px', fontSize: '0.88rem', fontWeight: '700' }}>
+                      ⚽ Rencontre Terminée
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: '1rem', textAlign: 'center', justifyContent: 'center' }}>
+                      {[ { l: 'Jours', v: timeLeft.d }, { l: 'Heures', v: timeLeft.h }, { l: 'Min', v: timeLeft.m }, { l: 'Sec', v: timeLeft.s } ].map((t, i) => (
+                        <div key={i} style={{ minWidth: '55px', background: 'rgba(0,0,0,0.02)', padding: '6px 8px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
+                          <div style={{ fontSize: '2.2rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-black)', lineHeight: 1, fontWeight: '800' }}>
+                            {t.v.toString().padStart(2, '0')}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--clr-gray)', textTransform: 'uppercase', fontWeight: 'bold', marginTop: '3px', letterSpacing: '0.5px' }}>
+                            {t.l}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
                 ) : null}
 
                 {/* Logo Adversaire (Droite) */}
@@ -612,11 +666,11 @@ export default function Home() {
                 letterSpacing: '1px',
                 color: '#ffffff'
               }}>
-                NOTRE PALMARÈS
+                {siteContent.palmares_title || 'NOTRE PALMARÈS'}
               </h2>
               
               <p style={{ fontSize: '1.1rem', color: '#94a3b8', maxWidth: '680px', margin: '0 auto 2.2rem', lineHeight: 1.6 }}>
-                Les titres officiels et les distinctions majeures remportés par le Condor FC depuis sa fondation en Mai 2023.
+                {siteContent.palmares_subtitle || 'Les titres officiels et les distinctions majeures remportés par le Condor FC depuis sa fondation en Mai 2023.'}
               </p>
             </motion.div>
 
@@ -634,107 +688,52 @@ export default function Home() {
               width: '100%'
             }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 0.8rem' }}>
-                <div style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', color: '#ffffff', lineHeight: 1, fontWeight: 'bold' }}>05</div>
-                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px', fontWeight: 'bold' }}>Titres & Podiums</div>
+                <div style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', color: '#ffffff', lineHeight: 1, fontWeight: 'bold' }}>
+                  {siteContent.palmares_stat1_val || '05'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px', fontWeight: 'bold' }}>
+                  {siteContent.palmares_stat1_lbl || 'Titres & Podiums'}
+                </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 0.8rem', borderLeft: '1px solid #22222b' }}>
-                <div style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-primary)', lineHeight: 1, fontWeight: 'bold' }}>03</div>
-                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px', fontWeight: 'bold' }}>Titres de Champion</div>
+                <div style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-primary)', lineHeight: 1, fontWeight: 'bold' }}>
+                  {siteContent.palmares_stat2_val || '03'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px', fontWeight: 'bold' }}>
+                  {siteContent.palmares_stat2_lbl || 'Titres de Champion'}
+                </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 0.8rem', borderLeft: '1px solid #22222b' }}>
-                <div style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', color: '#ffffff', lineHeight: 1, fontWeight: 'bold' }}>02</div>
-                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px', fontWeight: 'bold' }}>Vice-Champions</div>
+                <div style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', color: '#ffffff', lineHeight: 1, fontWeight: 'bold' }}>
+                  {siteContent.palmares_stat3_val || '02'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px', fontWeight: 'bold' }}>
+                  {siteContent.palmares_stat3_lbl || 'Vice-Champions'}
+                </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 0.8rem', borderLeft: '1px solid #22222b' }}>
-                <div style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-primary)', lineHeight: 1, fontWeight: 'bold' }}>01</div>
-                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px', fontWeight: 'bold' }}>Triplé Historique</div>
+                <div style={{ fontSize: '2.5rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-primary)', lineHeight: 1, fontWeight: 'bold' }}>
+                  {siteContent.palmares_stat4_val || '01'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '6px', fontWeight: 'bold' }}>
+                  {siteContent.palmares_stat4_lbl || 'Triplé Historique'}
+                </div>
               </div>
             </div>
           </div>
 
           {/* SCÈNE DU TROPHÉE SÉLECTIONNÉ */}
           {(() => {
-            const currentTrophy = [
-              { 
-                id: 'chale-chale',
-                title: 'Tournoi Chale Chale', 
-                edition: '7e Édition · Triplé Inédit',
-                date: 'Avril 2026', 
-                rank: 'Champion U11 / U15 / U16', 
-                isGold: true,
-                badge: 'Triplé Historique',
-                venue: 'Parc Sportif Delmas',
-                stats: '3 Trophées · 1 Édition · Invaincus',
-                desc: 'Condor FC s\'impose au sommet en remportant les trophées de champions dans trois catégories différentes (U11, U15, U16) lors d\'une seule et même édition. Une domination tactique absolue saluée par tous les observateurs.'
-              },
-              { 
-                id: 'back-to-school',
-                title: 'Tournoi Back To School', 
-                edition: 'Édition Annuelle Élite',
-                date: 'Septembre 2025', 
-                rank: 'Champion National U17', 
-                isGold: true,
-                badge: 'Champion National',
-                venue: 'Stade Municipal',
-                stats: 'Meilleure Attaque · Victoire en Finale 3-1',
-                desc: 'Parcours parfait des U17 qui s\'imposent avec panache face aux plus prestigieuses académies du pays. Une cohésion d\'équipe exemplaire et une efficacité offensive redoutable jusqu\'au sacre.'
-              },
-              { 
-                id: 'copa-undecima',
-                title: 'Tournoi Copa Undecima', 
-                edition: 'Coupe d\'Hiver 2025',
-                date: 'Décembre 2025', 
-                rank: 'Champion U15', 
-                isGold: true,
-                badge: 'Champion Officiel',
-                venue: 'Delmas 77',
-                stats: 'Invaincus · Trophée Meilleur Buteur',
-                desc: 'Une démonstration offensive magistrale menée par la catégorie U15. En finale, les jeunes Condors ont fait preuve d\'un sang-froid extraordinaire pour décrocher le titre suprême devant un public conquis.'
-              },
-              { 
-                id: 'flag-day-13',
-                title: 'Flag Day (13e édition)', 
-                edition: 'Tournoi National Fête du Drapeau',
-                date: 'Mai 2026', 
-                rank: 'Vice-Champion U15', 
-                isGold: false,
-                badge: 'Médaille d\'Argent',
-                venue: 'Complexe National',
-                stats: 'Finale aux Tirs au But · Meilleure Défense',
-                desc: 'Une épopée courageuse menant l\'équipe U15 jusqu\'aux tirs au but de la grande finale nationale du 18 Mai. Une médaille d\'argent disputée avec honneur face aux meilleures formations du pays.'
-              },
-              { 
-                id: 'flag-day-12',
-                title: 'Flag Day (12e édition)', 
-                edition: 'Tournoi National Fête du Drapeau',
-                date: 'Mai 2025', 
-                rank: 'Vice-Champion U13', 
-                isGold: false,
-                badge: 'Médaille d\'Argent',
-                venue: 'Complexe National',
-                stats: 'Premier Podium de l\'Histoire du Club',
-                desc: 'Le tout premier trophée majeur conquis par l\'académie seulement deux ans après sa fondation officielle en Mai 2023. Le point de départ d\'une série de victoires et d\'une ascension constante.'
-              }
-            ][activeTrophyIndex] || {
-              id: 'chale-chale',
-              title: 'Tournoi Chale Chale',
-              edition: '7e Édition',
-              date: 'Avril 2026',
-              rank: 'Champion U11 / U15 / U16',
-              isGold: true,
-              badge: 'Champion',
-              venue: 'Parc Sportif Delmas',
-              stats: 'Invaincus',
-              desc: 'Trophée officiel'
-            };
-
-            const allTrophiesList = [
-              { id: 'chale-chale', name: 'Triplé Chale Chale', year: '2026', rank: 'Champion U11/15/16', isGold: true },
-              { id: 'back-to-school', name: 'Back To School', year: '2025', rank: 'Champion U17', isGold: true },
-              { id: 'copa-undecima', name: 'Copa Undecima', year: '2025', rank: 'Champion U15', isGold: true },
-              { id: 'flag-day-13', name: 'Flag Day 13e', year: '2026', rank: 'Vice-Champion U15', isGold: false },
-              { id: 'flag-day-12', name: 'Flag Day 12e', year: '2025', rank: 'Vice-Champion U13', isGold: false }
-            ];
+            const trophyList = trophies && trophies.length > 0 ? trophies : DEFAULT_TROPHIES;
+            const currentTrophy = trophyList[activeTrophyIndex] || trophyList[0];
+            const allTrophiesList = trophyList.map(t => ({
+              id: t.id,
+              name: t.title,
+              year: t.date?.split(' ')?.pop() || '',
+              rank: t.rank || '',
+              isGold: Boolean(t.isGold ?? t.is_gold),
+              image: t.image
+            }));
 
             return (
               <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
@@ -762,16 +761,29 @@ export default function Home() {
                     }}
                     className="trophy-stage-grid"
                   >
-                    {/* Colonne Gauche : Trophée */}
+                    {/* Colonne Gauche : Trophée ou Photo de Tournoi */}
                     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center' }}>
                       <motion.div
                         key={currentTrophy.id}
                         initial={{ opacity: 0, scale: 0.88, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ duration: 0.4, ease: 'easeOut' }}
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, minHeight: '230px' }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1, minHeight: '230px', width: '100%' }}
                       >
-                        {renderTrophy(currentTrophy.id, 155, true)}
+                        {currentTrophy.image ? (
+                          <div style={{ position: 'relative', width: '100%', maxWidth: '320px', height: '230px', borderRadius: '16px', overflow: 'hidden', border: '2px solid rgba(202, 2, 79, 0.5)', boxShadow: '0 20px 45px rgba(0,0,0,0.8), 0 0 35px rgba(202,2,79,0.3)' }}>
+                            <img 
+                              src={currentTrophy.image} 
+                              alt={currentTrophy.title} 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                            />
+                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '8px 12px', background: 'linear-gradient(transparent, rgba(0,0,0,0.85))', color: 'white', fontSize: '0.8rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <Trophy size={14} color="var(--clr-primary)" /> Photo Officielle du Tournoi
+                            </div>
+                          </div>
+                        ) : (
+                          renderTrophy(currentTrophy.id, 155, true)
+                        )}
                       </motion.div>
 
                       {/* Plaque Socle du Trophée */}
@@ -871,7 +883,7 @@ export default function Home() {
                       {/* Barre d'Action & Navigation */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
                         <button
-                          onClick={() => setActiveTrophyIndex((prev) => (prev > 0 ? prev - 1 : 4))}
+                          onClick={() => setActiveTrophyIndex((prev) => (prev > 0 ? prev - 1 : trophyList.length - 1))}
                           className="btn"
                           style={{
                             background: '#181822',
@@ -891,11 +903,11 @@ export default function Home() {
                         </button>
 
                         <span style={{ fontSize: '0.88rem', color: '#94a3b8', fontWeight: 'bold', letterSpacing: '1px' }}>
-                          0{activeTrophyIndex + 1} / 05
+                          0{activeTrophyIndex + 1} / 0{trophyList.length}
                         </span>
 
                         <button
-                          onClick={() => setActiveTrophyIndex((prev) => (prev < 4 ? prev + 1 : 0))}
+                          onClick={() => setActiveTrophyIndex((prev) => (prev < trophyList.length - 1 ? prev + 1 : 0))}
                           className="btn btn-primary"
                           style={{
                             padding: '10px 22px',
@@ -960,9 +972,17 @@ export default function Home() {
                             justifyContent: 'center'
                           }}
                         >
-                          {/* Mini Trophée 3D */}
-                          <div style={{ height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px auto 12px', transform: 'translateY(8px)' }}>
-                            {renderTrophy(t.id, 54, false)}
+                          {/* Mini Trophée 3D ou Photo de Tournoi */}
+                          <div style={{ height: '90px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px auto 12px' }}>
+                            {t.image ? (
+                              <div style={{ width: '75px', height: '75px', borderRadius: '10px', overflow: 'hidden', border: isActive ? '2px solid var(--clr-primary)' : '1px solid #333', boxShadow: '0 6px 15px rgba(0,0,0,0.6)' }}>
+                                <img src={t.image} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              </div>
+                            ) : (
+                              <div style={{ transform: 'translateY(8px)' }}>
+                                {renderTrophy(t.id, 54, false)}
+                              </div>
+                            )}
                           </div>
 
                           {/* Titre & Année */}
@@ -1017,16 +1037,35 @@ export default function Home() {
       </section>
 
       {/* 9. Training Site (Delmas 77) */}
-      <section style={{ position: 'relative', padding: '6rem 0', color: 'white' }}>
+      <section style={{ position: 'relative', padding: '6rem 0', color: 'white', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }}>
-          <img src="/stadium_hero_1780681869623.png" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.3)' }} alt="Terrain Delmas 77" />
+          <img 
+            src={siteContent.terrain_img || "/stadium_hero_1780681869623.png"} 
+            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.3)' }} 
+            alt="Terrain Delmas 77" 
+          />
         </div>
-        <div className="container" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'center' }}>
+        <div className="container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', alignItems: 'center' }}>
           <motion.div initial={{ y: 50, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }}>
             <Landmark size={48} color="white" style={{ marginBottom: '1rem' }} />
-            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', margin: '0 0 1rem' }}>Notre Terrain d'Entraînement</h2>
-            <p style={{ fontSize: '1.2rem', color: '#ccc', marginBottom: '2rem' }}>Retrouvez-nous chaque week-end à l'entrée de Delmas 77 (à côté de BIWI). Nos installations permettent un apprentissage structuré et sécurisé pour toutes les tranches d'âge.</p>
-            <Link href="/contact" className="btn btn-primary" style={{ background: 'white', color: 'var(--clr-black)', textDecoration: 'none' }}>Nous Contacter & Localiser</Link>
+            {siteContent.terrain_tag && (
+              <span style={{ display: 'block', color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '0.85rem', marginBottom: '6px' }}>
+                {siteContent.terrain_tag}
+              </span>
+            )}
+            <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '3rem', margin: '0 0 1rem' }}>
+              {siteContent.terrain_title || "Notre Terrain d'Entraînement"}
+            </h2>
+            <p style={{ fontSize: '1.2rem', color: '#ccc', marginBottom: '2rem', lineHeight: 1.6 }}>
+              {siteContent.terrain_desc || "Retrouvez-nous chaque week-end à l'entrée de Delmas 77 (à côté de BIWI). Nos installations permettent un apprentissage structuré et sécurisé pour toutes les tranches d'âge."}
+            </p>
+            <Link 
+              href={siteContent.terrain_btn_link || "/contact"} 
+              className="btn btn-primary" 
+              style={{ background: 'white', color: 'var(--clr-black)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+            >
+              {siteContent.terrain_btn_text || "Nous Contacter & Localiser"}
+            </Link>
           </motion.div>
         </div>
       </section>

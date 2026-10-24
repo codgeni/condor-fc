@@ -6,7 +6,14 @@ import {
   RotateCcw, Search, Upload, Tag, DollarSign, Layers,
   CheckCircle, AlertCircle, Eye, Shirt
 } from 'lucide-react';
-import { ShopProduct, saveProduct, deleteProduct, resetProductsToDefault, DEFAULT_PRODUCTS } from '@/lib/dataService';
+import { 
+  ShopProduct, 
+  saveProduct, 
+  deleteProduct, 
+  resetProductsToDefault, 
+  toggleProductAvailability,
+  DEFAULT_PRODUCTS 
+} from '@/lib/dataService';
 import { validateUploadFile, sanitizeInput } from '@/lib/security';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 
@@ -47,10 +54,19 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
   const { askConfirm } = useConfirmPoster();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'match' | 'training' | 'accessories'>('all');
+  const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'available' | 'unavailable'>('all');
   const [editingProduct, setEditingProduct] = useState<ShopProduct | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [highlightsInput, setHighlightsInput] = useState('');
+
+  // Toggle Single Product Availability Immediately
+  const handleToggleAvailability = async (product: ShopProduct) => {
+    const newStatus = product.is_available === false ? true : false;
+    await toggleProductAvailability(product.id, newStatus);
+    showToast(`"${product.title}" est désormais ${newStatus ? 'disponible à la vente (en ligne)' : 'marqué hors vente (indisponible)'}.`);
+    onRefresh();
+  };
 
   // Open Create Form
   const handleOpenCreate = () => {
@@ -70,7 +86,8 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
       badge_text: '',
       description: '',
       highlights: [],
-      sizes: ['S', 'M', 'L', 'XL']
+      sizes: ['S', 'M', 'L', 'XL'],
+      is_available: true
     });
   };
 
@@ -82,7 +99,8 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
       ...product,
       category_label: product.category_label || (product.category === 'match' ? 'Tenue Officielle Match' : product.category === 'training' ? 'Entraînement' : 'Accessoires'),
       tag_bg: product.tag_bg || 'var(--clr-primary)',
-      sizes: Array.isArray(product.sizes) && product.sizes.length > 0 ? product.sizes : ['S', 'M', 'L', 'XL']
+      sizes: Array.isArray(product.sizes) && product.sizes.length > 0 ? product.sizes : ['S', 'M', 'L', 'XL'],
+      is_available: product.is_available !== false
     });
   };
 
@@ -233,14 +251,22 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
   // Filtered Products
   const filteredProducts = products.filter(p => {
     const matchesCat = selectedCategory === 'all' || p.category === selectedCategory;
+    const isAvail = p.is_available !== false;
+    const matchesAvail = 
+      availabilityFilter === 'all' ||
+      (availabilityFilter === 'available' && isAvail) ||
+      (availabilityFilter === 'unavailable' && !isAvail);
     const term = searchTerm.toLowerCase();
     const matchesSearch = !term || 
       p.title.toLowerCase().includes(term) ||
       p.id.toLowerCase().includes(term) ||
       (p.subtitle && p.subtitle.toLowerCase().includes(term)) ||
       (p.tag && p.tag.toLowerCase().includes(term));
-    return matchesCat && matchesSearch;
+    return matchesCat && matchesAvail && matchesSearch;
   });
+
+  const availableCount = products.filter(p => p.is_available !== false).length;
+  const unavailableCount = products.filter(p => p.is_available === false).length;
 
   return (
     <div>
@@ -254,7 +280,7 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
             Gestion de la Boutique
           </h2>
           <p style={{ color: 'var(--clr-gray)', margin: '6px 0 0', fontSize: '0.96rem' }}>
-            Contrôlez l'ensemble des maillots officiels, packs de match, tenues d'entraînement et accessoires disponibles à la vente.
+            Contrôlez l'ensemble des maillots officiels, packs de match, tenues d'entraînement et sélectionnez quels équipements sont disponibles à la vente.
           </p>
         </div>
 
@@ -279,24 +305,81 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
       </div>
 
       {/* Filter Toolbar */}
-      <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1rem 1.4rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-        {/* Search */}
-        <div style={{ position: 'relative', minWidth: '280px', flex: 1 }}>
-          <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-          <input
-            type="text"
-            placeholder="Rechercher par nom, référence, tag..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            style={{ width: '100%', padding: '10px 14px 10px 38px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', fontSize: '0.9rem', outline: 'none' }}
-          />
+      <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1.2rem 1.4rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          {/* Search */}
+          <div style={{ position: 'relative', minWidth: '280px', flex: 1 }}>
+            <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input
+              type="text"
+              placeholder="Rechercher par nom, référence, tag..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px 10px 38px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', fontSize: '0.9rem', outline: 'none' }}
+            />
+          </div>
+
+          {/* Availability Pills */}
+          <div style={{ display: 'flex', gap: '6px', background: '#f1f5f9', padding: '4px', borderRadius: '10px' }}>
+            <button
+              onClick={() => setAvailabilityFilter('all')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '8px',
+                border: 'none',
+                background: availabilityFilter === 'all' ? '#0f172a' : 'transparent',
+                color: availabilityFilter === 'all' ? '#ffffff' : '#64748b',
+                fontWeight: '700',
+                fontSize: '0.82rem',
+                cursor: 'pointer'
+              }}
+            >
+              Tous ({products.length})
+            </button>
+            <button
+              onClick={() => setAvailabilityFilter('available')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '8px',
+                border: 'none',
+                background: availabilityFilter === 'available' ? '#16a34a' : 'transparent',
+                color: availabilityFilter === 'available' ? '#ffffff' : '#15803d',
+                fontWeight: '700',
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+            >
+              <CheckCircle size={13} /> En vente ({availableCount})
+            </button>
+            <button
+              onClick={() => setAvailabilityFilter('unavailable')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '8px',
+                border: 'none',
+                background: availabilityFilter === 'unavailable' ? '#dc2626' : 'transparent',
+                color: availabilityFilter === 'unavailable' ? '#ffffff' : '#b91c1c',
+                fontWeight: '700',
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+            >
+              <AlertCircle size={13} /> Hors vente ({unavailableCount})
+            </button>
+          </div>
         </div>
 
         {/* Category Pills */}
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
           {[
-            { id: 'all', label: `Tous (${products.length})` },
-            { id: 'match', label: `Match (${products.filter(p => p.category === 'match').length})` },
+            { id: 'all', label: `Toutes catégories` },
+            { id: 'match', label: `Match Officiel (${products.filter(p => p.category === 'match').length})` },
             { id: 'training', label: `Entraînement (${products.filter(p => p.category === 'training').length})` },
             { id: 'accessories', label: `Accessoires (${products.filter(p => p.category === 'accessories').length})` }
           ].map(tab => (
@@ -304,15 +387,15 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
               key={tab.id}
               onClick={() => setSelectedCategory(tab.id as any)}
               style={{
-                padding: '8px 16px',
+                padding: '6px 14px',
                 borderRadius: '8px',
-                border: 'none',
-                background: selectedCategory === tab.id ? 'var(--clr-primary)' : '#f1f5f9',
+                background: selectedCategory === tab.id ? 'var(--clr-primary)' : '#f8fafc',
                 color: selectedCategory === tab.id ? '#ffffff' : '#475569',
                 fontWeight: selectedCategory === tab.id ? '700' : '600',
-                fontSize: '0.85rem',
+                fontSize: '0.83rem',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                border: '1px solid ' + (selectedCategory === tab.id ? 'var(--clr-primary)' : '#e2e8f0')
               }}
             >
               {tab.label}
@@ -609,6 +692,32 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
               </div>
             </div>
 
+            {/* Disponibilité à la Vente (Statut Commercial) */}
+            <div style={{ background: editingProduct.is_available !== false ? 'rgba(22, 163, 74, 0.06)' : 'rgba(239, 68, 68, 0.06)', border: editingProduct.is_available !== false ? '1px solid rgba(22, 163, 74, 0.25)' : '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '12px', padding: '1.2rem', marginBottom: '1.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ flex: 1, minWidth: '240px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: '800', fontSize: '0.95rem', color: editingProduct.is_available !== false ? '#15803d' : '#b91c1c' }}>
+                    {editingProduct.is_available !== false ? '✓ Équipement disponible à la vente' : '✕ Équipement hors vente (Indisponible)'}
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.84rem', color: '#64748b' }}>
+                  {editingProduct.is_available !== false 
+                    ? "Cet équipement est affiché et ouvert à la commande pour les supporters sur la boutique en ligne." 
+                    : "Cet équipement est désactivé. Il sera marqué comme indisponible ou masqué pour les supporters."}
+                </p>
+              </div>
+
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', cursor: 'pointer', background: '#ffffff', padding: '8px 16px', borderRadius: '10px', border: '1px solid #cbd5e1', fontWeight: '700', fontSize: '0.88rem', color: '#0f172a' }}>
+                <input
+                  type="checkbox"
+                  checked={editingProduct.is_available !== false}
+                  onChange={e => setEditingProduct({ ...editingProduct, is_available: e.target.checked })}
+                  style={{ width: '18px', height: '18px', accentColor: 'var(--clr-primary)', cursor: 'pointer' }}
+                />
+                <span>{editingProduct.is_available !== false ? 'Disponible à la vente' : 'Marquer disponible'}</span>
+              </label>
+            </div>
+
             {/* Form Actions */}
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', borderTop: '1px solid #f1f5f9', paddingTop: '1.2rem' }}>
               <button
@@ -733,8 +842,41 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
 
               {/* Product Body */}
               <div style={{ padding: '1.4rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--clr-primary)', marginBottom: '4px' }}>
-                  {prod.category_label || (prod.category === 'match' ? 'Match Officiel' : prod.category === 'training' ? 'Entraînement' : 'Accessoires')}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--clr-primary)' }}>
+                    {prod.category_label || (prod.category === 'match' ? 'Match Officiel' : prod.category === 'training' ? 'Entraînement' : 'Accessoires')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAvailability(prod)}
+                    title={prod.is_available !== false ? "Cliquer pour marquer comme hors vente (indisponible)" : "Cliquer pour activer la mise en vente"}
+                    style={{
+                      border: prod.is_available !== false ? '1px solid rgba(22, 163, 74, 0.3)' : '1px solid rgba(220, 38, 38, 0.3)',
+                      background: prod.is_available !== false ? 'rgba(22, 163, 74, 0.1)' : 'rgba(220, 38, 38, 0.1)',
+                      color: prod.is_available !== false ? '#15803d' : '#b91c1c',
+                      padding: '3px 8px',
+                      borderRadius: '16px',
+                      fontSize: '0.72rem',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {prod.is_available !== false ? (
+                      <>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a' }} />
+                        En vente
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#dc2626' }} />
+                        Hors vente
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 <h4 style={{ margin: '0 0 6px', fontSize: '1.15rem', fontWeight: '700', color: '#0f172a', lineHeight: 1.3 }}>

@@ -2532,5 +2532,41 @@ export const playersDB: Record<string, any> = {
       "assists",
       "matches"
     ]
+  },
+  "71": {
+    "id": "71",
+    "name": "Benoit Emile",
+    "pos": "Attaquant",
+    "num": 11,
+    "img": "/players/Benoit Emile.jpg",
+    "filter": "none",
+    "dob": "14/08/2009",
+    "category": "U17",
+    "foot": "Droit",
+    "nationality": "Haïtienne",
+    "pob": "Port-au-Prince, Haïti",
+    "bio": "Benoit Emile est un attaquant percutant et combatif qui évolue au sein de la catégorie U17 du Condor FC. Doté d'une excellente vivacité et d'un remarquable engagement sur le terrain, il se distingue par sa détermination constante à faire la différence pour son équipe. Discipliné, travailleur et passionné par le football, Benoit incarne pleinement l'esprit d'équipe, l'ambition et la rigueur enseignés au sein de l'académie.",
+    "matches": 0,
+    "goals": 0,
+    "assists": 0,
+    "stat2lbl": "Buts",
+    "stat2val": 0,
+    "recentMatch": {
+      "opponent": "-",
+      "result": "-",
+      "rating": "-",
+      "minutes": 0
+    },
+    "honours1": 1,
+    "honours2": 0,
+    "categories": [
+      "U17"
+    ],
+    "detailImg": "/players/Benoit Emile.jpg",
+    "displayed_stats": [
+      "goals",
+      "assists",
+      "matches"
+    ]
   }
 };
