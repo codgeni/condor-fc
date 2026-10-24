@@ -75,7 +75,7 @@ export default function Navbar() {
           <Link href="/teams" onClick={handleNavClick}>Équipes</Link>
           <Link href="/stages" onClick={handleNavClick}>Stages</Link>
           <Link href="/tv" onClick={handleNavClick}>Condor TV</Link>
-          <Link href="/club" onClick={handleNavClick}>Le Club</Link>
+          <Link href="/club" onClick={handleNavClick}>L&apos;Académie</Link>
           <Link href="/shop" onClick={handleNavClick}>Boutique</Link>
           {mobileMenuOpen && (
             <>

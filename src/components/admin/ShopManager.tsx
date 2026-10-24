@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   ShoppingBag, Plus, Edit2, Trash2, Check, X, 
   RotateCcw, Search, Upload, Tag, DollarSign, Layers,
@@ -78,8 +78,8 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
       category: 'match',
       category_label: 'Tenue Officielle Domicile',
       subtitle: '',
-      price: 65,
-      formatted_price: '65.00 $',
+      price: 0,
+      formatted_price: '',
       tag: 'NOUVEAU',
       tag_bg: 'var(--clr-primary)',
       img: '/shop/kit_officiel_polo_condor.png',
@@ -147,10 +147,6 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
       showToast('Veuillez renseigner un titre pour le produit.');
       return;
     }
-    if (!editingProduct.price || editingProduct.price <= 0) {
-      showToast('Veuillez spécifier un prix valide en USD.');
-      return;
-    }
 
     const parsedHighlights = highlightsInput
       .split('\n')
@@ -166,7 +162,8 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
       tag: sanitizeInput(editingProduct.tag || ''),
       badge_text: sanitizeInput(editingProduct.badge_text || ''),
       description: sanitizeInput(editingProduct.description || ''),
-      formatted_price: `${editingProduct.price}.00 $`,
+      price: 0,
+      formatted_price: '',
       highlights: parsedHighlights
     };
 
@@ -179,7 +176,7 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
       itemDetails: {
         type: isCreating ? 'Ajout' : 'Modification',
         title: payload.title,
-        subtitle: `${payload.category_label || payload.category} • ${payload.formatted_price}`,
+        subtitle: payload.category_label || payload.category,
         image: payload.img,
         badge: payload.tag || payload.badge_text
       },
@@ -248,8 +245,21 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
     });
   };
 
+  // Fusion garantissant que l'intégralité des 10 équipements officiels soit toujours visible et administrable
+  const effectiveProducts = useMemo(() => {
+    const map = new Map<string, ShopProduct>();
+    DEFAULT_PRODUCTS.forEach(p => {
+      map.set(p.id, { ...p, is_available: p.is_available !== false });
+    });
+    (products || []).forEach(p => {
+      const existing = map.get(p.id);
+      map.set(p.id, { ...(existing || {}), ...p });
+    });
+    return Array.from(map.values());
+  }, [products]);
+
   // Filtered Products
-  const filteredProducts = products.filter(p => {
+  const filteredProducts = effectiveProducts.filter(p => {
     const matchesCat = selectedCategory === 'all' || p.category === selectedCategory;
     const isAvail = p.is_available !== false;
     const matchesAvail = 
@@ -265,8 +275,8 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
     return matchesCat && matchesAvail && matchesSearch;
   });
 
-  const availableCount = products.filter(p => p.is_available !== false).length;
-  const unavailableCount = products.filter(p => p.is_available === false).length;
+  const availableCount = effectiveProducts.filter(p => p.is_available !== false).length;
+  const unavailableCount = effectiveProducts.filter(p => p.is_available === false).length;
 
   return (
     <div>
@@ -485,24 +495,6 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
                 </select>
               </div>
 
-              {/* Price USD */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
-                  Prix ($ USD) *
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  step="0.5"
-                  value={editingProduct.price}
-                  onChange={e => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
-                  required
-                  style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', fontSize: '0.95rem' }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.2rem', marginBottom: '1.2rem' }}>
               {/* Subtitle */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
@@ -516,6 +508,9 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
                   style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', fontSize: '0.95rem' }}
                 />
               </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.2rem', marginBottom: '1.2rem' }}>
 
               {/* Category Label */}
               <div>
@@ -889,8 +884,9 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
                   </p>
                 )}
 
-                <div style={{ fontSize: '1.4rem', fontWeight: '800', color: 'var(--clr-primary)', margin: 'auto 0 12px' }}>
-                  {prod.formatted_price || `${prod.price}.00 $`}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 'auto 0 12px', fontSize: '0.8rem', color: '#64748b', fontWeight: '600' }}>
+                  <Tag size={13} color="var(--clr-primary)" />
+                  <span>Réf : {prod.id}</span>
                 </div>
 
                 {/* Sizes Chips Preview */}

@@ -19,10 +19,10 @@ const BANNER_CONFIGS = [
   },
   {
     key: 'club_hero_bg' as const,
-    title: 'Le Club',
+    title: "L'Académie",
     route: '/club',
     defaultImg: '/club_hero.png',
-    description: "Bandeau de présentation du club (Histoire, philosophie et valeurs)."
+    description: "Bandeau de présentation de l'académie (Histoire, philosophie et valeurs)."
   },
   {
     key: 'teams_hero_bg' as const,
@@ -253,7 +253,7 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
           Textes, Clauses & Messages Officiels
         </h2>
         <p style={{ color: 'var(--clr-gray)', margin: '6px 0 0', maxWidth: '850px', fontSize: '0.95rem' }}>
-          Personnalisez l'intégralité des contenus du site internet : les clauses et conditions du formulaire d'inscription (« Nous rejoindre »), la philosophie et les valeurs de la page « Le Club », ainsi que les slogans d'accueil.
+          Personnalisez l'intégralité des contenus du site internet : les clauses et conditions du formulaire d'inscription (« Nous rejoindre »), la philosophie et les valeurs de la page « L'Académie », ainsi que les slogans d'accueil.
         </p>
       </div>
 
@@ -325,7 +325,7 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
           }}
         >
           <Shield size={18} />
-          <span>Page « Le Club »</span>
+          <span>Page « L&apos;Académie »</span>
         </button>
 
         <button
@@ -853,14 +853,14 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
         )}
 
         {/* ==============================================================
-            SOUS-ONGLET 2 : PAGE LE CLUB (PHILOSOPHIE, VALEURS, HYMNE)
+            SOUS-ONGLET 2 : PAGE L'ACADÉMIE (PHILOSOPHIE, VALEURS, HYMNE)
         ============================================================== */}
         {activeSubTab === 'club' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
                 <h3 style={{ fontSize: '1.4rem', color: 'var(--clr-black)', margin: 0, fontWeight: 'bold' }}>
-                  Textes, Philosophie & Valeurs de la Page « Le Club »
+                  Textes, Philosophie &amp; Valeurs de la Page « L&apos;Académie »
                 </h3>
                 <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: '0.9rem' }}>
                   Modifiez la présentation générale, les 7 objectifs de coaching, les piliers moraux et les paroles de l'hymne officiel.

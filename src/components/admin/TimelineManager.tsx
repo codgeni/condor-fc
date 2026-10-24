@@ -851,17 +851,17 @@ export default function TimelineManager({ timeline, onRefresh, showToast }: Time
       )}
 
       {/* ==============================================================
-          SOUS-ONGLET 3 : FRISE CHRONOLOGIQUE DU CLUB (PAGE LE CLUB)
+          SOUS-ONGLET 3 : FRISE CHRONOLOGIQUE (PAGE L'ACADÉMIE)
       ============================================================== */}
       {activeSubTab === 'timeline' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <h3 style={{ fontSize: '1.3rem', margin: 0, fontWeight: 'bold' }}>
-                Étapes Historiques du Parcours (Page Club)
+                Étapes Historiques du Parcours (Page L&apos;Académie)
               </h3>
               <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: '0.88rem' }}>
-                Gérez la frise chronologique affichée sur la page « Le Club » racontant l'histoire et la progression du Condor FC.
+                Gérez la frise chronologique affichée sur la page « L&apos;Académie » racontant l'histoire et la progression du Condor FC.
               </p>
             </div>
 

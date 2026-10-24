@@ -15,8 +15,8 @@ interface Product {
   category: 'match' | 'training' | 'accessories';
   categoryLabel: string;
   subtitle?: string;
-  price: number;
-  formattedPrice: string;
+  price?: number;
+  formattedPrice?: string;
   tag?: string;
   tagBg?: string;
   img: string;
@@ -275,7 +275,7 @@ export default function Shop() {
           customMap.set(p.id, {
             ...p,
             categoryLabel: p.category_label || p.categoryLabel || 'Boutique Condor',
-            formattedPrice: p.formatted_price || p.formattedPrice || `${p.price}.00 $`,
+            formattedPrice: '',
             badgeText: p.badge_text || p.badgeText || '',
             sizes: Array.isArray(p.sizes) ? p.sizes : ['S', 'M', 'L', 'XL'],
             is_available: p.is_available !== false
@@ -456,16 +456,16 @@ export default function Shop() {
                   {/* Statut Disponibilité & Bouton Commander */}
                   <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1.2rem', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '1.4rem', fontWeight: '800', color: product.is_available !== false ? 'var(--clr-primary)' : '#94a3b8' }}>
-                        {product.formattedPrice}
+                      <span style={{ fontSize: '0.82rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Équipement Officiel
                       </span>
                       {product.is_available !== false ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', fontWeight: '700', color: '#15803d', background: 'rgba(22, 163, 74, 0.1)', padding: '3px 9px', borderRadius: '12px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', fontWeight: '700', color: '#15803d', background: 'rgba(22, 163, 74, 0.1)', padding: '4px 10px', borderRadius: '12px' }}>
                           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a' }} />
                           En vente
                         </span>
                       ) : (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.75rem', fontWeight: '700', color: '#b91c1c', background: 'rgba(220, 38, 38, 0.1)', padding: '3px 9px', borderRadius: '12px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', fontWeight: '700', color: '#b91c1c', background: 'rgba(220, 38, 38, 0.1)', padding: '4px 10px', borderRadius: '12px' }}>
                           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#dc2626' }} />
                           Hors vente
                         </span>

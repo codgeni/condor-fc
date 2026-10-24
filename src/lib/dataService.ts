@@ -64,7 +64,7 @@ export interface ShopProduct {
   category: 'match' | 'training' | 'accessories';
   category_label?: string;
   subtitle?: string;
-  price: number;
+  price?: number;
   formatted_price?: string;
   tag?: string;
   tag_bg?: string;
@@ -508,8 +508,6 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
     category: 'match',
     category_label: 'Tenue Officielle Domicile',
     subtitle: 'Tenue Complète : Polo, Short #17 & Chaussettes',
-    price: 65,
-    formatted_price: '65.00 $',
     tag: 'DOMICILE',
     tag_bg: 'var(--clr-primary)',
     img: '/shop/kit_officiel_polo_condor.png',
@@ -521,7 +519,8 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
       'Dos floqué "NOM 17" personnalisable avec votre nom',
       'Tissu respirant haute durabilité adapté au climat des Caraïbes'
     ],
-    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL']
+    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL'],
+    is_available: true
   },
   {
     id: 'kit-officiel-exterieur-blanc',
@@ -529,8 +528,6 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
     category: 'match',
     category_label: 'Tenue Officielle Extérieure',
     subtitle: 'Maillot Blanc Rayé Pinceau, Short #08 & Chaussettes',
-    price: 65,
-    formatted_price: '65.00 $',
     tag: 'EXTÉRIEUR',
     tag_bg: '#0284c7',
     img: '/shop/kit_officiel_exterieur_blanc.png',
@@ -542,7 +539,8 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
       'Devise officielle du club "Plus fort, plus haut dans le score"',
       'Détails haute précision : écussons club et drapeau d\'Haïti'
     ],
-    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL']
+    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL'],
+    is_available: true
   },
   {
     id: 'kit-third-alveoles-lave',
@@ -550,8 +548,6 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
     category: 'match',
     category_label: 'Tenue Third Spéciale',
     subtitle: 'Maillot Graphique Grunge, Short à Vagues & Détails',
-    price: 65,
-    formatted_price: '65.00 $',
     tag: 'THIRD PRO',
     tag_bg: '#475569',
     img: '/shop/kit_third_alveoles_lave.png',
@@ -563,7 +559,8 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
       'Short noir exclusif à liserés ondulés aérodynamiques',
       'Dos floqué avec devise du club et verset PS60:12'
     ],
-    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL']
+    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL'],
+    is_available: true
   },
   {
     id: 'maillot-match-pro-marbre',
@@ -571,8 +568,6 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
     category: 'match',
     category_label: 'Maillot de Match Pro',
     subtitle: 'Motif Fusion Marbré & Sponsor Officiel DNC',
-    price: 50,
-    formatted_price: '50.00 $',
     tag: 'PRO MATCH',
     tag_bg: '#0f172a',
     badge_text: 'Top Vente',
@@ -584,7 +579,8 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
       'Sponsor officiel DNC et écusson Condor thermo-appliqué',
       'Coupe moderne ergonomique favorisant l\'agilité'
     ],
-    sizes: ['S', 'M', 'L', 'XL', 'XXL']
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    is_available: true
   },
   {
     id: 'short-chaussettes-pro-marbre',
@@ -592,8 +588,6 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
     category: 'match',
     category_label: 'Ensemble Bas Match Pro',
     subtitle: 'Ensemble Bas Officiel Marbré Assorti',
-    price: 30,
-    formatted_price: '30.00 $',
     tag: 'BAS ASSORTI',
     tag_bg: '#334155',
     badge_text: 'Complément Pro',
@@ -605,16 +599,15 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
       'Chaussettes montantes anatomiques avec maintien voûte plantaire',
       'Renforts amortissants au talon et aux orteils'
     ],
-    sizes: ['Taille Unique Adulte', 'Taille Junior']
+    sizes: ['Taille Unique Adulte', 'Taille Junior'],
+    is_available: true
   },
   {
     id: 'kit-officiel-polo-sleeves',
     title: 'Kit Officiel Polo - Édition Manches',
     category: 'match',
-    category_label: 'Tenue Officielle Club',
+    category_label: 'Tenue Officielle Académie',
     subtitle: 'Torse Épuré & Badges sur Manches',
-    price: 65,
-    formatted_price: '65.00 $',
     tag: 'OFFICIEL',
     tag_bg: 'var(--clr-primary)',
     badge_text: 'Édition Club',
@@ -626,7 +619,8 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
       'Short noir compétition et chaussettes techniques inclus',
       'Confort athlétique stretch et résistant'
     ],
-    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL']
+    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL'],
+    is_available: true
   },
   {
     id: 'kit-entrainement-pro-rouge-10',
@@ -634,8 +628,6 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
     category: 'training',
     category_label: 'Entraînement Pro',
     subtitle: 'Débardeur Rouge #10, Short Assorti & Devise Club',
-    price: 45,
-    formatted_price: '45.00 $',
     tag: 'PRO TRAINING',
     tag_bg: '#dc2626',
     badge_text: 'Pack Entraînement',
@@ -647,7 +639,8 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
       'Maille légère anti-humidité et régulation thermique',
       'Short à découpes ergonomiques avec écusson club'
     ],
-    sizes: ['Enfant (6-10 ans)', 'Enfant (11-14 ans)', 'S', 'M', 'L', 'XL']
+    sizes: ['Enfant (6-10 ans)', 'Enfant (11-14 ans)', 'S', 'M', 'L', 'XL'],
+    is_available: true
   },
   {
     id: 'kit-entrainement-debardeur-rouge',
@@ -655,8 +648,6 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
     category: 'training',
     category_label: 'Entraînement Académie',
     subtitle: 'Débardeur Rouge, Short #08 & Chaussettes Rayées',
-    price: 45,
-    formatted_price: '45.00 $',
     tag: 'ENTRAÎNEMENT',
     tag_bg: '#e11d48',
     badge_text: 'Académie Condor',
@@ -668,7 +659,8 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
       'Drapeau haïtien cousu sur la base du maillot',
       'Short technique avec cordon élastique et chaussettes rayées'
     ],
-    sizes: ['Enfant (6-10 ans)', 'Enfant (11-14 ans)', 'S', 'M', 'L', 'XL']
+    sizes: ['Enfant (6-10 ans)', 'Enfant (11-14 ans)', 'S', 'M', 'L', 'XL'],
+    is_available: true
   },
   {
     id: 'debardeur-entrainement-noir-fitness',
@@ -676,8 +668,6 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
     category: 'training',
     category_label: 'Entraînement',
     subtitle: 'Coupe Athlétique Sans Manches Noir',
-    price: 28,
-    formatted_price: '28.00 $',
     tag: 'FITNESS',
     tag_bg: '#1e293b',
     badge_text: 'Essentiel',
@@ -689,7 +679,8 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
       'Flancs contrastés rouge et blanc',
       'Tissu technique stretch et respirant'
     ],
-    sizes: ['S', 'M', 'L', 'XL', 'XXL']
+    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
+    is_available: true
   },
   {
     id: 'debardeur-entrainement-blanc',
@@ -697,8 +688,6 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
     category: 'training',
     category_label: 'Entraînement',
     subtitle: 'Coupe Athlétique Sans Manches Blanc',
-    price: 28,
-    formatted_price: '28.00 $',
     tag: 'ACADÉMIE',
     tag_bg: '#64748b',
     badge_text: 'Essentiel',
@@ -710,7 +699,8 @@ export const DEFAULT_PRODUCTS: ShopProduct[] = [
       'Flancs bicolores latéraux noir et rouge',
       'Tissu léger et aéré adapté aux entraînements'
     ],
-    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL']
+    sizes: ['Enfant (8-12 ans)', 'S', 'M', 'L', 'XL', 'XXL'],
+    is_available: true
   }
 ];
 
@@ -1188,6 +1178,7 @@ export async function deleteStage(id: number | string): Promise<{ success: boole
 // 4. BOUTIQUE / PRODUCTS SERVICE
 // =============================================================
 export async function fetchProducts(): Promise<ShopProduct[]> {
+  let dbProducts: ShopProduct[] = [];
   try {
     const { data, error } = await supabase
       .from('products')
@@ -1195,45 +1186,65 @@ export async function fetchProducts(): Promise<ShopProduct[]> {
       .order('created_at', { ascending: false });
 
     if (!error && data && data.length > 0) {
-      setLocalItem('products_list', data);
-      return data;
+      dbProducts = data;
     }
   } catch (err) {
     console.warn('Supabase products fetch error, fallback to local', err);
   }
 
-  const cached = getLocalItem<ShopProduct[]>('products_list', DEFAULT_PRODUCTS);
-  if (cached && cached.length > 0) {
-    return cached;
+  // Merge map garantissant la présence permanente des 10 équipements officiels
+  const map = new Map<string, ShopProduct>();
+  DEFAULT_PRODUCTS.forEach(p => {
+    map.set(p.id, { ...p, is_available: p.is_available !== false });
+  });
+
+  // Superposer le cache local (modifications locales de disponibilité ou personnalisations)
+  const cached = getLocalItem<ShopProduct[]>('products_list', []);
+  if (Array.isArray(cached) && cached.length > 0) {
+    cached.forEach(p => {
+      const existing = map.get(p.id);
+      map.set(p.id, { ...(existing || {}), ...p });
+    });
   }
-  return DEFAULT_PRODUCTS;
+
+  // Superposer les enregistrements Supabase
+  dbProducts.forEach(p => {
+    const existing = map.get(p.id);
+    map.set(p.id, { ...(existing || {}), ...p });
+  });
+
+  const merged = Array.from(map.values());
+  setLocalItem('products_list', merged);
+  return merged;
 }
 
 export async function saveProduct(product: ShopProduct): Promise<{ success: boolean; error?: string }> {
-  const currentList = getLocalItem<ShopProduct[]>('products_list', DEFAULT_PRODUCTS);
-  const formattedProduct: ShopProduct = {
+  const currentList = await fetchProducts();
+  const targetProduct: ShopProduct = {
     ...product,
-    formatted_price: product.formatted_price || `${product.price}.00 $`
+    price: 0,
+    formatted_price: ''
   };
 
   try {
-    const { data: existing } = await supabase.from('products').select('id').eq('id', formattedProduct.id);
+    const { data: existing } = await supabase.from('products').select('id').eq('id', targetProduct.id);
     if (existing && existing.length > 0) {
-      await supabase.from('products').update(formattedProduct).eq('id', formattedProduct.id);
+      await supabase.from('products').update(targetProduct).eq('id', targetProduct.id);
     } else {
-      await supabase.from('products').insert(formattedProduct);
+      await supabase.from('products').insert(targetProduct);
     }
   } catch (e) {
     console.warn('Supabase save product note, stored in local cache', e);
   }
 
-  const exists = currentList.some(p => p.id === formattedProduct.id);
+  const exists = currentList.some(p => p.id === targetProduct.id);
+  let updated: ShopProduct[];
   if (exists) {
-    const updated = currentList.map(p => p.id === formattedProduct.id ? formattedProduct : p);
-    setLocalItem('products_list', updated);
+    updated = currentList.map(p => p.id === targetProduct.id ? targetProduct : p);
   } else {
-    setLocalItem('products_list', [formattedProduct, ...currentList]);
+    updated = [targetProduct, ...currentList];
   }
+  setLocalItem('products_list', updated);
 
   return { success: true };
 }
@@ -1245,18 +1256,19 @@ export async function deleteProduct(id: string): Promise<{ success: boolean }> {
     console.warn('Supabase delete product note', e);
   }
 
-  const currentList = getLocalItem<ShopProduct[]>('products_list', DEFAULT_PRODUCTS);
+  const currentList = await fetchProducts();
   setLocalItem('products_list', currentList.filter(p => p.id !== id));
   return { success: true };
 }
 
 export function resetProductsToDefault(): ShopProduct[] {
-  setLocalItem('products_list', DEFAULT_PRODUCTS);
-  return DEFAULT_PRODUCTS;
+  const resetList = DEFAULT_PRODUCTS.map(p => ({ ...p, is_available: true, price: 0, formatted_price: '' }));
+  setLocalItem('products_list', resetList);
+  return resetList;
 }
 
 export async function toggleProductAvailability(id: string, is_available: boolean): Promise<{ success: boolean }> {
-  const currentList = getLocalItem<ShopProduct[]>('products_list', DEFAULT_PRODUCTS);
+  const currentList = await fetchProducts();
   const updated = currentList.map(p => p.id === id ? { ...p, is_available } : p);
   setLocalItem('products_list', updated);
   try {

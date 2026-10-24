@@ -30,7 +30,7 @@ export default function Footer() {
             <p style={{ color: 'var(--clr-gray)' }}>Condor Ecole de Football - Former et éduquer les champions de demain. Fondée en Mai 2023 à Delmas, Haïti.</p>
           </div>
           <div className="footer-col">
-            <h3>Le Club</h3>
+            <h3>L&apos;Académie</h3>
             <ul className="footer-links">
               <li><Link href="/club">Histoire & Philosophie</Link></li>
               <li><Link href="/club">Palmarès</Link></li>
