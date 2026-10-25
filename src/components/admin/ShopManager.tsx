@@ -692,13 +692,13 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
               <div style={{ flex: 1, minWidth: '240px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                   <span style={{ fontWeight: '800', fontSize: '0.95rem', color: editingProduct.is_available !== false ? '#15803d' : '#b91c1c' }}>
-                    {editingProduct.is_available !== false ? '✓ Équipement disponible à la vente' : '✕ Équipement hors vente (Indisponible)'}
+                    {editingProduct.is_available !== false ? '✓ Équipement disponible à la vente' : '✕ Équipement hors vente'}
                   </span>
                 </div>
                 <p style={{ margin: 0, fontSize: '0.84rem', color: '#64748b' }}>
                   {editingProduct.is_available !== false 
                     ? "Cet équipement est affiché et ouvert à la commande pour les supporters sur la boutique en ligne." 
-                    : "Cet équipement est désactivé. Il sera marqué comme indisponible ou masqué pour les supporters."}
+                    : "Cet équipement est désactivé. Il sera marqué comme hors vente pour les supporters."}
                 </p>
               </div>
 
@@ -917,6 +917,27 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAvailability(prod)}
+                    title={prod.is_available !== false ? "Basculer hors vente" : "Activer la mise en vente"}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontSize: '0.82rem',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      border: prod.is_available !== false ? '1px solid rgba(22, 163, 74, 0.4)' : '1px solid rgba(220, 38, 38, 0.4)',
+                      background: prod.is_available !== false ? 'rgba(22, 163, 74, 0.1)' : 'rgba(220, 38, 38, 0.1)',
+                      color: prod.is_available !== false ? '#15803d' : '#b91c1c',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}
+                  >
+                    {prod.is_available !== false ? '✓ En vente' : '✕ Hors vente'}
+                  </button>
+
                   <button
                     onClick={() => handleOpenEdit(prod)}
                     className="btn btn-outline"

@@ -34,9 +34,10 @@ export default function Teams() {
         }
 
         if (loadedUnits && loadedUnits.length > 0) {
-          setUnits(loadedUnits);
-          if (!loadedUnits.some(u => u.name === selectedCategory)) {
-            const firstActive = loadedUnits.find(u => u.is_active !== false) || loadedUnits[0];
+          const validUnits = loadedUnits.filter(u => !u.name.toLowerCase().includes('premi'));
+          setUnits(validUnits);
+          if (!validUnits.some(u => u.name === selectedCategory)) {
+            const firstActive = validUnits.find(u => u.is_active !== false) || validUnits[0];
             if (firstActive) setSelectedCategory(firstActive.name);
           }
         }
@@ -241,9 +242,9 @@ export default function Teams() {
             Sélectionnez une catégorie ci-dessous pour découvrir l'effectif complet et consulter la fiche détaillée de chaque joueur.
           </p>
           
-          {/* Menu dynamique de sélection des unités/catégories (U7, U8, U9, U13, U15, U17, Équipe Première) */}
+          {/* Menu dynamique de sélection des unités/catégories (U7, U8, U9, U13, U15, U17) */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.8rem', flexWrap: 'wrap', marginTop: '2rem' }}>
-            {units.filter(u => u.is_active !== false).map(unit => (
+            {units.filter(u => u.is_active !== false && !u.name.toLowerCase().includes('premi')).map(unit => (
               <button
                 key={unit.id}
                 onClick={() => handleCategoryChange(unit.name)}

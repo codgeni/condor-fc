@@ -152,11 +152,12 @@ Afficher toutes les actualités de toutes les catégories dans une seule liste.
 
 Au clic sur « Équipe », ouvrir un menu permettant de choisir une catégorie :
 
-* Équipe Première
 * U17
 * U15
 * U13
-* etc.
+* U9
+* U8
+* U7
 
 Une fois la catégorie sélectionnée, afficher automatiquement :
 

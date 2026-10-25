@@ -286,13 +286,12 @@ export interface SiteContent {
 // DEFAULTS
 // -------------------------------------------------------------
 export const DEFAULT_UNITS: UnitItem[] = [
-  { id: 'unit-1', name: 'Équipe Première', description: 'Effectif Senior & Élite', order: 1, is_active: true, image: '/stadium_hero_1780681869623.png' },
-  { id: 'unit-2', name: 'U17', description: 'Moins de 17 ans (Cadets)', order: 2, is_active: true, image: '/kick_hero.png' },
-  { id: 'unit-3', name: 'U15', description: 'Moins de 15 ans (Minimes)', order: 3, is_active: true, image: '/player_action_1_1780681882713.png' },
-  { id: 'unit-4', name: 'U13', description: 'Moins de 13 ans (Benjamins)', order: 4, is_active: true, image: '/trophy_moment_1780681956500.png' },
-  { id: 'unit-5', name: 'U9', description: 'Moins de 9 ans (Poussins / École)', order: 5, is_active: true, image: '/player_action_2_1780681894021.png' },
-  { id: 'unit-6', name: 'U8', description: 'Moins de 8 ans (Poussins)', order: 6, is_active: true, image: '/club_hero.png' },
-  { id: 'unit-7', name: 'U7', description: 'Moins de 7 ans (Débutants / École de Football)', order: 7, is_active: true, image: '/soccer.png' },
+  { id: 'unit-2', name: 'U17', description: 'Moins de 17 ans (Cadets)', order: 1, is_active: true, image: '/kick_hero.png' },
+  { id: 'unit-3', name: 'U15', description: 'Moins de 15 ans (Minimes)', order: 2, is_active: true, image: '/player_action_1_1780681882713.png' },
+  { id: 'unit-4', name: 'U13', description: 'Moins de 13 ans (Benjamins)', order: 3, is_active: true, image: '/trophy_moment_1780681956500.png' },
+  { id: 'unit-5', name: 'U9', description: 'Moins de 9 ans (Poussins / École)', order: 4, is_active: true, image: '/player_action_2_1780681894021.png' },
+  { id: 'unit-6', name: 'U8', description: 'Moins de 8 ans (Poussins)', order: 5, is_active: true, image: '/club_hero.png' },
+  { id: 'unit-7', name: 'U7', description: 'Moins de 7 ans (Débutants / École de Football)', order: 6, is_active: true, image: '/soccer.png' },
 ];
 
 export const DEFAULT_ROLES: RoleItem[] = [
@@ -1269,12 +1268,22 @@ export function resetProductsToDefault(): ShopProduct[] {
 
 export async function toggleProductAvailability(id: string, is_available: boolean): Promise<{ success: boolean }> {
   const currentList = await fetchProducts();
+  const target = currentList.find(p => p.id === id);
   const updated = currentList.map(p => p.id === id ? { ...p, is_available } : p);
   setLocalItem('products_list', updated);
-  try {
-    await supabase.from('products').update({ is_available }).eq('id', id);
-  } catch (e) {
-    console.warn('Supabase toggle product availability note', e);
+
+  if (target) {
+    const updatedProd = { ...target, is_available, price: 0, formatted_price: '' };
+    try {
+      const { data: existing } = await supabase.from('products').select('id').eq('id', id);
+      if (existing && existing.length > 0) {
+        await supabase.from('products').update({ is_available }).eq('id', id);
+      } else {
+        await supabase.from('products').insert(updatedProd);
+      }
+    } catch (e) {
+      console.warn('Supabase toggle product availability note', e);
+    }
   }
   return { success: true };
 }
@@ -1433,6 +1442,11 @@ export async function resetTrophiesToDefault(): Promise<{ success: boolean; data
 // 5. UNITS / CATEGORIES SERVICE (Unités d'équipes: U17, U13, etc.)
 // =============================================================
 export async function fetchUnits(): Promise<UnitItem[]> {
+  const isNotPremiere = (u: UnitItem) => {
+    const n = (u.name || '').toLowerCase();
+    return !n.includes('premi') && u.id !== 'unit-1';
+  };
+
   try {
     const { data, error } = await supabase
       .from('units')
@@ -1440,14 +1454,18 @@ export async function fetchUnits(): Promise<UnitItem[]> {
       .order('order', { ascending: true });
 
     if (!error && data && data.length > 0) {
-      setLocalItem('units_list', data);
-      return data;
+      const filtered = data.filter(isNotPremiere);
+      setLocalItem('units_list', filtered);
+      return filtered;
     }
   } catch (err) {
     console.warn('Supabase units fetch note, using local fallback', err);
   }
 
-  return getLocalItem('units_list', DEFAULT_UNITS);
+  const localUnits = getLocalItem<UnitItem[]>('units_list', DEFAULT_UNITS);
+  const filtered = (Array.isArray(localUnits) ? localUnits : DEFAULT_UNITS).filter(isNotPremiere);
+  setLocalItem('units_list', filtered);
+  return filtered;
 }
 
 export async function saveUnit(unit: UnitItem): Promise<{ success: boolean; data?: UnitItem; error?: string }> {

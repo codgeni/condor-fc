@@ -284,7 +284,7 @@ export default function UnitsManager({ units, players, onRefresh, showToast }: U
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '6px' }}>
-                Nom de l'unité * (ex: U17, U13, Équipe Première, Féminine)
+                Nom de l'unité * (ex: U17, U15, U13, Féminine)
               </label>
               <input 
                 type="text" 
@@ -555,7 +555,7 @@ export default function UnitsManager({ units, players, onRefresh, showToast }: U
                   </h3>
                 </div>
                 <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#94a3b8' }}>
-                  Affectez des joueurs à cette unité (ex: surclassement de U15 vers U17 ou Équipe Première)
+                  Affectez des joueurs à cette unité (ex: surclassement de U13 vers U15 ou U17)
                 </p>
               </div>
 

@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Check, 
   X, 
-  AlertCircle 
+  AlertCircle,
+  MessageCircle
 } from 'lucide-react';
 import { fetchProducts, fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
 
@@ -263,6 +264,7 @@ export default function Shop() {
   const [productList, setProductList] = useState<Product[]>(PRODUCTS);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string>('');
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
 
   useEffect(() => {
@@ -270,7 +272,7 @@ export default function Shop() {
       if (data && data.length > 0) {
         // Merge or replace
         const customMap = new Map();
-        PRODUCTS.forEach(p => customMap.set(p.id, p));
+        PRODUCTS.forEach(p => customMap.set(p.id, { ...p, is_available: true }));
         data.forEach((p: any) => {
           customMap.set(p.id, {
             ...p,
@@ -295,6 +297,7 @@ export default function Shop() {
 
   const openOrderModal = (product: Product) => {
     setActiveProduct(product);
+    setSelectedSize(product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'Standard');
   };
 
   const closeModal = () => {
@@ -494,24 +497,24 @@ export default function Shop() {
                       </button>
                     ) : (
                       <button
-                        disabled
+                        onClick={() => openOrderModal(product)}
                         style={{
                           width: '100%',
                           padding: '11px',
                           borderRadius: '10px',
                           fontWeight: '700',
                           fontSize: '0.92rem',
-                          background: '#f1f5f9',
-                          color: '#94a3b8',
+                          background: '#f8fafc',
+                          color: '#64748b',
                           border: '1px solid #e2e8f0',
-                          cursor: 'not-allowed',
+                          cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           gap: '8px'
                         }}
                       >
-                        Actuellement indisponible
+                        Hors vente (Voir détails)
                       </button>
                     )}
                   </div>
@@ -603,31 +606,59 @@ export default function Shop() {
                       </p>
                       
                       {/* Disponibilité Badge */}
-                      <div
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          background: '#fffbeb',
-                          border: '1px solid #fef3c7',
-                          color: '#b45309',
-                          padding: '6px 14px',
-                          borderRadius: '8px',
-                          fontSize: '0.85rem',
-                          fontWeight: '600'
-                        }}
-                      >
-                        <span
+                      {activeProduct.is_available !== false ? (
+                        <div
                           style={{
-                            width: '8px',
-                            height: '8px',
-                            borderRadius: '50%',
-                            background: '#f59e0b',
-                            display: 'inline-block'
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: '#ecfdf5',
+                            border: '1px solid #a7f3d0',
+                            color: '#065f46',
+                            padding: '6px 14px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: '700'
                           }}
-                        />
-                        <span>Temporairement indisponible</span>
-                      </div>
+                        >
+                          <span
+                            style={{
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              background: '#10b981',
+                              display: 'inline-block'
+                            }}
+                          />
+                          <span>Disponible à la commande</span>
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            background: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            color: '#991b1b',
+                            padding: '6px 14px',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontWeight: '700'
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              background: '#ef4444',
+                              display: 'inline-block'
+                            }}
+                          />
+                          <span>Hors vente</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -648,50 +679,109 @@ export default function Shop() {
                     </div>
                   )}
 
-                  {/* Size Selector (Consultation) */}
+                  {/* Size Selector */}
                   <div style={{ marginBottom: '1.8rem' }}>
                     <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', color: '#1e293b' }}>
-                      Tailles de la collection :
+                      Choisir votre taille :
                     </label>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       {activeProduct.sizes.map((sz) => (
-                        <span
+                        <button
                           key={sz}
+                          type="button"
+                          onClick={() => setSelectedSize(sz)}
                           style={{
-                            padding: '6px 14px',
+                            padding: '8px 16px',
                             borderRadius: '8px',
-                            border: '1px solid #cbd5e1',
-                            background: '#f8fafc',
-                            color: '#334155',
-                            fontWeight: '600',
-                            fontSize: '0.85rem'
+                            border: selectedSize === sz ? '2px solid var(--clr-primary)' : '1px solid #cbd5e1',
+                            background: selectedSize === sz ? 'rgba(202, 2, 79, 0.08)' : '#f8fafc',
+                            color: selectedSize === sz ? 'var(--clr-primary)' : '#334155',
+                            fontWeight: '700',
+                            fontSize: '0.88rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
                           }}
                         >
                           {sz}
-                        </span>
+                        </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Notice Réapprovisionnement */}
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem', textAlign: 'center' }}>
-                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#fffbeb', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
-                      <AlertCircle size={22} />
+                  {/* Action Commande */}
+                  {activeProduct.is_available !== false ? (
+                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1.6rem', textAlign: 'center' }}>
+                      <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3rem', margin: '0 0 8px', color: '#0f172a' }}>
+                        Commander cet équipement officiel
+                      </h4>
+                      <p style={{ margin: '0 0 1.2rem', color: '#64748b', fontSize: '0.9rem', lineHeight: 1.5, maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto' }}>
+                        Équipement certifié Condor FC. Passez commande directement via WhatsApp ou réservez votre taille auprès du secrétariat du club.
+                      </p>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '420px', margin: '0 auto' }}>
+                        <a
+                          href={`https://wa.me/50946055757?text=${encodeURIComponent(`Bonjour Condor FC, je souhaite commander l'équipement officiel : ${activeProduct.title || ''}${selectedSize ? ` (Taille : ${selectedSize})` : ''}. Pouvez-vous m'indiquer la disponibilité et les modalités ? Merci !`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-primary"
+                          style={{
+                            padding: '12px 20px',
+                            borderRadius: '10px',
+                            fontWeight: '700',
+                            fontSize: '0.95rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            textDecoration: 'none',
+                            boxShadow: '0 4px 14px rgba(202, 2, 79, 0.3)'
+                          }}
+                        >
+                          <MessageCircle size={18} />
+                          Commander via WhatsApp (+509 4605 5757)
+                        </a>
+
+                        <a
+                          href={`/contact?subject=${encodeURIComponent(`Commande Boutique : ${activeProduct.title || ''}${selectedSize ? ` (${selectedSize})` : ''}`)}`}
+                          className="btn btn-outline"
+                          style={{
+                            padding: '11px 20px',
+                            borderRadius: '10px',
+                            fontWeight: '700',
+                            fontSize: '0.9rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px',
+                            color: '#1e293b',
+                            borderColor: '#cbd5e1',
+                            textDecoration: 'none'
+                          }}
+                        >
+                          Demander par Formulaire de contact
+                        </a>
+                      </div>
                     </div>
-                    <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', margin: '0 0 6px', color: '#0f172a' }}>
-                      Réapprovisionnement en cours
-                    </h4>
-                    <p style={{ margin: '0 0 1.2rem', color: '#64748b', fontSize: '0.9rem', lineHeight: 1.6, maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto' }}>
-                      Les commandes pour cet équipement officiel sont momentanément fermées. Suivez les réseaux officiels du Condor FC pour être informé dès la réouverture des ventes.
-                    </p>
-                    <button
-                      onClick={closeModal}
-                      className="btn btn-outline"
-                      style={{ padding: '10px 28px', borderRadius: '8px', fontSize: '0.9rem', color: '#1e293b', borderColor: '#cbd5e1' }}
-                    >
-                      Fermer l'aperçu
-                    </button>
-                  </div>
+                  ) : (
+                    <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '14px', padding: '1.6rem', textAlign: 'center' }}>
+                      <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#fee2e2', color: '#b91c1c', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
+                        <AlertCircle size={22} />
+                      </div>
+                      <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', margin: '0 0 6px', color: '#991b1b' }}>
+                        Équipement Hors Vente
+                      </h4>
+                      <p style={{ margin: '0 0 1.2rem', color: '#7f1d1d', fontSize: '0.9rem', lineHeight: 1.6, maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto' }}>
+                        Cet article est actuellement hors vente ou réservé. Contactez le secrétariat pour toute question.
+                      </p>
+                      <button
+                        onClick={closeModal}
+                        className="btn btn-outline"
+                        style={{ padding: '10px 24px', borderRadius: '8px', fontSize: '0.9rem', color: '#1e293b', borderColor: '#cbd5e1' }}
+                      >
+                        Fermer l'aperçu
+                      </button>
+                    </div>
+                  )}
 
                 </div>
             </motion.div>

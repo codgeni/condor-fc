@@ -619,7 +619,7 @@ export default function PlayersManager({
               </span>
             </div>
             <p style={{ margin: '0 0 12px', fontSize: '0.82rem', color: '#64748b' }}>
-              Cochez toutes les unités où le joueur est inscrit (ex: un joueur de U15 peut aussi être ajouté à U17 et à l'Équipe Première).
+              Cochez toutes les unités où le joueur est inscrit (ex: un joueur de U13 peut aussi être ajouté à U15 ou U17).
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '10px' }}>
               {units.map(unit => {
