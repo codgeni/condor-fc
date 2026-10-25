@@ -77,6 +77,24 @@ export interface ShopProduct {
   created_at?: string;
 }
 
+export interface ShopOrder {
+  id: string | number;
+  customer_name: string;
+  customer_phone: string;
+  customer_email?: string;
+  product_id?: string;
+  product_title: string;
+  product_img?: string;
+  size: string;
+  quantity: number;
+  flocage_name?: string;
+  flocage_number?: string;
+  delivery_address?: string;
+  notes?: string;
+  status: 'En attente' | 'Contacté' | 'Confirmé' | 'Prêt / Livré' | 'Annulé';
+  created_at?: string;
+}
+
 export interface PlayerData {
   id: string;
   name: string;
@@ -1285,6 +1303,102 @@ export async function toggleProductAvailability(id: string, is_available: boolea
       console.warn('Supabase toggle product availability note', e);
     }
   }
+  return { success: true };
+}
+
+// =============================================================
+// 4.0.1 COMMANDES BOUTIQUE (Shop Orders Service)
+// =============================================================
+export async function fetchShopOrders(): Promise<ShopOrder[]> {
+  try {
+    const { data, error } = await supabase
+      .from('shop_orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setLocalItem('shop_orders_list', data);
+      return data;
+    }
+  } catch (err) {
+    console.warn('Supabase fetch shop orders note, using local cache', err);
+  }
+
+  return getLocalItem<ShopOrder[]>('shop_orders_list', []);
+}
+
+export async function submitShopOrder(order: Partial<ShopOrder>): Promise<{ success: boolean; data?: ShopOrder; error?: string }> {
+  const currentList = getLocalItem<ShopOrder[]>('shop_orders_list', []);
+  const newOrder: ShopOrder = {
+    id: order.id || `cmd-${Date.now()}`,
+    customer_name: order.customer_name || 'Client',
+    customer_phone: order.customer_phone || '',
+    customer_email: order.customer_email || '',
+    product_id: order.product_id || '',
+    product_title: order.product_title || 'Équipement Officiel',
+    product_img: order.product_img || '',
+    size: order.size || 'M',
+    quantity: Number(order.quantity) || 1,
+    flocage_name: order.flocage_name || '',
+    flocage_number: order.flocage_number || '',
+    delivery_address: order.delivery_address || '',
+    notes: order.notes || '',
+    status: order.status || 'En attente',
+    created_at: order.created_at || new Date().toISOString()
+  };
+
+  try {
+    const { data, error } = await supabase.from('shop_orders').insert({
+      customer_name: newOrder.customer_name,
+      customer_phone: newOrder.customer_phone,
+      customer_email: newOrder.customer_email || null,
+      product_id: newOrder.product_id || null,
+      product_title: newOrder.product_title,
+      product_img: newOrder.product_img || null,
+      size: newOrder.size,
+      quantity: newOrder.quantity,
+      flocage_name: newOrder.flocage_name || null,
+      flocage_number: newOrder.flocage_number || null,
+      delivery_address: newOrder.delivery_address || null,
+      notes: newOrder.notes || null,
+      status: newOrder.status
+    }).select().single();
+
+    if (!error && data) {
+      newOrder.id = data.id;
+    }
+  } catch (e) {
+    console.warn('Supabase save shop order note, stored in local cache', e);
+  }
+
+  const updated = [newOrder, ...currentList];
+  setLocalItem('shop_orders_list', updated);
+  return { success: true, data: newOrder };
+}
+
+export async function updateShopOrderStatus(id: string | number, status: ShopOrder['status']): Promise<{ success: boolean }> {
+  try {
+    await supabase.from('shop_orders').update({ status }).eq('id', id);
+  } catch (e) {
+    console.warn('Supabase update shop order status note', e);
+  }
+
+  const currentList = getLocalItem<ShopOrder[]>('shop_orders_list', []);
+  const updated = currentList.map(o => String(o.id) === String(id) ? { ...o, status } : o);
+  setLocalItem('shop_orders_list', updated);
+  return { success: true };
+}
+
+export async function deleteShopOrder(id: string | number): Promise<{ success: boolean }> {
+  try {
+    await supabase.from('shop_orders').delete().eq('id', id);
+  } catch (e) {
+    console.warn('Supabase delete shop order note', e);
+  }
+
+  const currentList = getLocalItem<ShopOrder[]>('shop_orders_list', []);
+  const updated = currentList.filter(o => String(o.id) !== String(id));
+  setLocalItem('shop_orders_list', updated);
   return { success: true };
 }
 

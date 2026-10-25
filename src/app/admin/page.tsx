@@ -9,7 +9,7 @@ import {
   Radio, Shield, Clock, MapPin, Save, X, Menu,
   UserCheck, History, Type, ArrowRightLeft,
   Printer, PhoneCall, Mail, MessageSquare, AlertCircle, FileText, Search, ExternalLink, Activity, HeartPulse, ShieldAlert,
-  Play, Check, Smartphone, Monitor, RefreshCw
+  Play, Check, Smartphone, Monitor, RefreshCw, Package
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
@@ -19,6 +19,7 @@ import {
   fetchVideos, saveVideo, deleteVideo, VideoItem, parseVideoUrl,
   fetchStages, saveStage, deleteStage, StageSession,
   fetchProducts, saveProduct, deleteProduct, ShopProduct,
+  fetchShopOrders, ShopOrder,
   savePlayerRecord, deletePlayerRecord,
   fetchUnits, UnitItem,
   fetchRoles, RoleItem,
@@ -37,6 +38,7 @@ import TimelineManager from '@/components/admin/TimelineManager';
 import SiteTextsManager from '@/components/admin/SiteTextsManager';
 import PlayersManager from '@/components/admin/PlayersManager';
 import ShopManager from '@/components/admin/ShopManager';
+import OrdersManager from '@/components/admin/OrdersManager';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 import { printInscriptionDossier } from '@/lib/pdfPrintService';
 import { formatRelativeTime, formatFullDateTime } from '@/lib/timeUtils';
@@ -114,6 +116,7 @@ export default function AdminPanel() {
   // 4. Boutique / Products State
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [shopOrders, setShopOrders] = useState<ShopOrder[]>([]);
 
   // 5. News State
   const [newsList, setNewsList] = useState<any[]>([]);
@@ -164,9 +167,13 @@ export default function AdminPanel() {
     const { data: rdvData } = await supabase.from('appointments').select('*').order('created_at', { ascending: false });
     if (rdvData) setAppointments(rdvData);
 
-    // 4. Fetch Products
-    const productsData = await fetchProducts();
+    // 4. Fetch Products & Commandes Boutique
+    const [productsData, ordersData] = await Promise.all([
+      fetchProducts(),
+      fetchShopOrders()
+    ]);
     if (productsData) setProducts(productsData);
+    if (ordersData) setShopOrders(ordersData);
 
     // 5. Fetch News
     const newsData = await fetchNews();
@@ -802,7 +809,8 @@ export default function AdminPanel() {
           { id: 'news', label: 'Actualités', icon: <BookOpen size={18} /> },
           { id: 'tv', label: 'Condor TV (Vidéos)', icon: <Tv size={18} /> },
           { id: 'stages', label: 'Stages & RDV', icon: <Calendar size={18} /> },
-          { id: 'shop', label: 'Boutique Officielle', icon: <ShoppingBag size={18} /> },
+          { id: 'shop', label: 'Boutique (Articles)', icon: <ShoppingBag size={18} /> },
+          { id: 'orders', label: `Commandes Reçues${shopOrders.filter(o => o.status === 'En attente').length > 0 ? ` (${shopOrders.filter(o => o.status === 'En attente').length})` : ''}`, icon: <Package size={18} /> },
           { id: 'inscriptions', label: 'Inscriptions Annuelles', icon: <Award size={18} /> },
           { id: 'supporters', label: 'Supporters & Alertes', icon: <Settings size={18} /> }
         ].map(tab => (
@@ -2110,6 +2118,22 @@ export default function AdminPanel() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <ShopManager
               products={products}
+              onRefresh={fetchData}
+              showToast={showToast}
+              onViewOrders={() => setActiveTab('orders')}
+              ordersCount={shopOrders.length}
+              pendingOrdersCount={shopOrders.filter(o => o.status === 'En attente').length}
+            />
+          </motion.div>
+        )}
+
+        {/* ==============================================================
+            TAB: COMMANDES BOUTIQUE REÇUES
+        ============================================================== */}
+        {activeTab === 'orders' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <OrdersManager
+              orders={shopOrders}
               onRefresh={fetchData}
               showToast={showToast}
             />

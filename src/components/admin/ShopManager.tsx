@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { 
   ShoppingBag, Plus, Edit2, Trash2, Check, X, 
   RotateCcw, Search, Upload, Tag, DollarSign, Layers,
-  CheckCircle, AlertCircle, Eye, Shirt
+  CheckCircle, AlertCircle, Eye, Shirt, Package
 } from 'lucide-react';
 import { 
   ShopProduct, 
@@ -21,6 +21,9 @@ interface ShopManagerProps {
   products: ShopProduct[];
   onRefresh: () => void;
   showToast: (msg: string) => void;
+  onViewOrders?: () => void;
+  ordersCount?: number;
+  pendingOrdersCount?: number;
 }
 
 // Visual catalog templates available in the project
@@ -50,7 +53,14 @@ const STANDARD_SIZES = [
   'Taille Unique Adulte'
 ];
 
-export default function ShopManager({ products, onRefresh, showToast }: ShopManagerProps) {
+export default function ShopManager({ 
+  products, 
+  onRefresh, 
+  showToast,
+  onViewOrders,
+  ordersCount = 0,
+  pendingOrdersCount = 0
+}: ShopManagerProps) {
   const { askConfirm } = useConfirmPoster();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'match' | 'training' | 'accessories'>('all');
@@ -295,6 +305,43 @@ export default function ShopManager({ products, onRefresh, showToast }: ShopMana
         </div>
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {onViewOrders && (
+            <button
+              onClick={onViewOrders}
+              className="btn btn-outline"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                color: '#1e293b',
+                borderColor: pendingOrdersCount > 0 ? '#f59e0b' : '#cbd5e1',
+                background: pendingOrdersCount > 0 ? '#fffbeb' : '#ffffff',
+                padding: '11px 18px',
+                borderRadius: '10px',
+                fontWeight: '700',
+                fontSize: '0.9rem',
+                cursor: 'pointer'
+              }}
+            >
+              <Package size={16} color={pendingOrdersCount > 0 ? '#b45309' : 'var(--clr-primary)'} />
+              <span>Commandes Reçues</span>
+              {ordersCount > 0 && (
+                <span
+                  style={{
+                    background: pendingOrdersCount > 0 ? 'var(--clr-primary)' : '#64748b',
+                    color: '#ffffff',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    fontSize: '0.75rem',
+                    fontWeight: '800'
+                  }}
+                >
+                  {ordersCount}
+                </span>
+              )}
+            </button>
+          )}
+
           <button
             onClick={handleRestoreDefaults}
             className="btn btn-outline"

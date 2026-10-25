@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Check, 
   X, 
   AlertCircle,
-  MessageCircle
+  MessageCircle,
+  FileText
 } from 'lucide-react';
 import { fetchProducts, fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
 
@@ -476,8 +478,8 @@ export default function Shop() {
                     </div>
 
                     {product.is_available !== false ? (
-                      <button
-                        onClick={() => openOrderModal(product)}
+                      <Link
+                        href={`/shop/order?id=${product.id}`}
                         className="btn btn-primary"
                         style={{
                           width: '100%',
@@ -485,16 +487,16 @@ export default function Shop() {
                           borderRadius: '10px',
                           fontWeight: '700',
                           fontSize: '0.92rem',
-                          cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           gap: '8px',
+                          textDecoration: 'none',
                           boxShadow: '0 4px 14px rgba(202, 2, 79, 0.25)'
                         }}
                       >
                         Commander cet équipement
-                      </button>
+                      </Link>
                     ) : (
                       <button
                         onClick={() => openOrderModal(product)}
@@ -715,20 +717,18 @@ export default function Shop() {
                         Commander cet équipement officiel
                       </h4>
                       <p style={{ margin: '0 0 1.2rem', color: '#64748b', fontSize: '0.9rem', lineHeight: 1.5, maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto' }}>
-                        Équipement certifié Condor FC. Passez commande directement via WhatsApp ou réservez votre taille auprès du secrétariat du club.
+                        Équipement officiel certifié Condor FC. Remplissez simplement le bon de commande en ligne : aucun paiement immédiat n'est requis.
                       </p>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '420px', margin: '0 auto' }}>
-                        <a
-                          href={`https://wa.me/50946055757?text=${encodeURIComponent(`Bonjour Condor FC, je souhaite commander l'équipement officiel : ${activeProduct.title || ''}${selectedSize ? ` (Taille : ${selectedSize})` : ''}. Pouvez-vous m'indiquer la disponibilité et les modalités ? Merci !`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '440px', margin: '0 auto' }}>
+                        <Link
+                          href={`/shop/order?id=${activeProduct.id}&size=${encodeURIComponent(selectedSize)}`}
                           className="btn btn-primary"
                           style={{
-                            padding: '12px 20px',
+                            padding: '13px 22px',
                             borderRadius: '10px',
-                            fontWeight: '700',
-                            fontSize: '0.95rem',
+                            fontWeight: '800',
+                            fontSize: '0.98rem',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -737,18 +737,20 @@ export default function Shop() {
                             boxShadow: '0 4px 14px rgba(202, 2, 79, 0.3)'
                           }}
                         >
-                          <MessageCircle size={18} />
-                          Commander via WhatsApp (+509 4605 5757)
-                        </a>
+                          <FileText size={18} />
+                          Remplir le bon de commande (Sans paiement)
+                        </Link>
 
                         <a
-                          href={`/contact?subject=${encodeURIComponent(`Commande Boutique : ${activeProduct.title || ''}${selectedSize ? ` (${selectedSize})` : ''}`)}`}
+                          href={`https://wa.me/50946055757?text=${encodeURIComponent(`Bonjour Condor FC, j'ai une question sur l'équipement : ${activeProduct.title || ''}${selectedSize ? ` (Taille : ${selectedSize})` : ''}. Merci !`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="btn btn-outline"
                           style={{
-                            padding: '11px 20px',
+                            padding: '10px 18px',
                             borderRadius: '10px',
                             fontWeight: '700',
-                            fontSize: '0.9rem',
+                            fontSize: '0.86rem',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -758,7 +760,8 @@ export default function Shop() {
                             textDecoration: 'none'
                           }}
                         >
-                          Demander par Formulaire de contact
+                          <MessageCircle size={16} />
+                          Poser une question via WhatsApp (+509 4605 5757)
                         </a>
                       </div>
                     </div>
