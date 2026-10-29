@@ -2299,6 +2299,12 @@ export async function fetchMergedPlayers(): Promise<Record<string, any>> {
         merged[strId] = {
           ...(merged[strId] || {}),
           ...player,
+          passes: extraStats.passes ?? 0,
+          saves: extraStats.saves ?? 0,
+          cleansheets: extraStats.cleansheets ?? 0,
+          tackles: extraStats.tackles ?? 0,
+          minutes: extraStats.minutes ?? 0,
+          custom_stat_val: extraStats.custom_stat_val ?? 0,
           ...extraStats,
           id: strId,
            detailImg: player.detail_img || player.detailImg || player.img || merged[strId]?.detailImg || '/condor_logo_transparent.png',
