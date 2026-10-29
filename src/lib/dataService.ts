@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient';
 import { playersDB } from './playersDB';
 
-export interface MatchConfig {
+export interface MatchItem {
   id?: number | string;
   opponent: string;
   home_team?: string;
@@ -11,8 +11,12 @@ export interface MatchConfig {
   competition: string;
   opponent_logo?: string;
   home_team_logo?: string;
+}
+
+export interface MatchConfig extends MatchItem {
   no_matches_now: boolean;
   is_active?: boolean;
+  extra_matches?: MatchItem[];
 }
 
 export interface TrophyItem {
@@ -975,11 +979,28 @@ export async function fetchCurrentMatch(): Promise<MatchConfig> {
     const { data, error } = await supabase
       .from('matches')
       .select('*')
-      .order('id', { ascending: false })
-      .limit(1);
+      .order('id', { ascending: true });
 
     if (!error && data && data.length > 0) {
-      const match = data[0];
+      const primary = data[0];
+      const extra_matches: MatchItem[] = data
+        .slice(1)
+        .filter((r: any) => r.is_active !== false)
+        .map((r: any) => ({
+          id: r.id,
+          home_team: r.home_team || 'Condor Ecole de Football',
+          opponent: r.opponent || '',
+          match_date: r.match_date || primary.match_date || '',
+          match_time: r.match_time || '',
+          location: r.location || primary.location || '',
+          competition: r.competition || 'Match Officiel',
+          opponent_logo: r.opponent_logo || ''
+        }));
+
+      const match: MatchConfig = {
+        ...primary,
+        extra_matches
+      };
       setLocalItem('current_match', match);
       return match;
     }
@@ -998,37 +1019,44 @@ export async function fetchCurrentMatch(): Promise<MatchConfig> {
 export async function saveMatchConfig(config: MatchConfig): Promise<{ success: boolean; data?: any; error?: string }> {
   setLocalItem('current_match', config);
 
-  const dbPayload: Record<string, any> = {
-    home_team: config.home_team || 'Condor Ecole de Football',
-    opponent: config.opponent || 'Adversaire',
-    opponent_logo: config.opponent_logo || null,
-    match_date: config.match_date || '',
-    match_time: config.match_time || '',
-    location: config.location || '',
-    competition: config.competition || '',
-    no_matches_now: Boolean(config.no_matches_now),
-    is_active: config.is_active !== false
-  };
+  const extraList = Array.isArray(config.extra_matches) ? config.extra_matches : [];
+  const allMatches: MatchItem[] = [config, ...extraList];
 
   try {
-    let result;
-    if (config.id && typeof config.id === 'number') {
-      result = await supabase.from('matches').update(dbPayload).eq('id', config.id).select();
-    } else {
-      const { data: existing } = await supabase.from('matches').select('id').limit(1);
-      if (existing && existing.length > 0) {
-        result = await supabase.from('matches').update(dbPayload).eq('id', existing[0].id).select();
+    const { data: existingRows } = await supabase
+      .from('matches')
+      .select('id')
+      .order('id', { ascending: true });
+
+    for (let i = 0; i < allMatches.length; i++) {
+      const m = allMatches[i];
+      const dbPayload: Record<string, any> = {
+        home_team: m.home_team || 'Condor Ecole de Football',
+        opponent: m.opponent || 'Adversaire',
+        opponent_logo: m.opponent_logo || null,
+        match_date: m.match_date || config.match_date || '',
+        match_time: m.match_time || '',
+        location: m.location || config.location || '',
+        competition: m.competition || 'Match Officiel',
+        no_matches_now: Boolean(config.no_matches_now),
+        is_active: config.is_active !== false
+      };
+
+      if (existingRows && existingRows[i]) {
+        await supabase.from('matches').update(dbPayload).eq('id', existingRows[i].id);
       } else {
-        result = await supabase.from('matches').insert(dbPayload).select();
+        await supabase.from('matches').insert(dbPayload);
       }
     }
 
-    if (result.error) {
-      console.warn('Supabase match save note:', result.error.message);
-      return { success: true, data: config };
+    if (existingRows && existingRows.length > allMatches.length) {
+      const idsToDelete = existingRows.slice(allMatches.length).map((r: any) => r.id);
+      if (idsToDelete.length > 0) {
+        await supabase.from('matches').delete().in('id', idsToDelete);
+      }
     }
 
-    return { success: true, data: result.data?.[0] ? { ...config, ...result.data[0] } : config };
+    return { success: true, data: config };
   } catch (e: any) {
     return { success: true, data: config };
   }

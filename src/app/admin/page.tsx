@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { playersDB } from '@/lib/playersDB';
 import { 
-  fetchCurrentMatch, saveMatchConfig, MatchConfig,
+  fetchCurrentMatch, saveMatchConfig, MatchConfig, MatchItem,
   fetchVideos, saveVideo, deleteVideo, VideoItem, parseVideoUrl,
   fetchStages, saveStage, deleteStage, StageSession,
   fetchProducts, saveProduct, deleteProduct, ShopProduct, DEFAULT_PRODUCTS,
@@ -251,24 +251,66 @@ export default function AdminPanel() {
   // -------------------------------------------------------------
   // MATCH & SLIDER HANDLERS
   // -------------------------------------------------------------
+  const handleAddSameDayMatch = () => {
+    const currentExtras = Array.isArray(matchConfig.extra_matches) ? [...matchConfig.extra_matches] : [];
+    currentExtras.push({
+      home_team: matchConfig.home_team || 'Condor Ecole de Football',
+      opponent: '',
+      match_date: matchConfig.match_date || '',
+      match_time: '',
+      location: matchConfig.location || 'Parc Sportif Delmas',
+      competition: matchConfig.competition || 'Match Officiel',
+      opponent_logo: ''
+    });
+    setMatchConfig({ ...matchConfig, extra_matches: currentExtras });
+  };
+
+  const handleUpdateExtraMatch = (index: number, patch: Partial<MatchItem>) => {
+    const currentExtras = Array.isArray(matchConfig.extra_matches) ? [...matchConfig.extra_matches] : [];
+    if (!currentExtras[index]) return;
+    currentExtras[index] = { ...currentExtras[index], ...patch };
+    setMatchConfig({ ...matchConfig, extra_matches: currentExtras });
+  };
+
+  const handleRemoveExtraMatch = (index: number) => {
+    const currentExtras = Array.isArray(matchConfig.extra_matches) ? [...matchConfig.extra_matches] : [];
+    currentExtras.splice(index, 1);
+    setMatchConfig({ ...matchConfig, extra_matches: currentExtras });
+  };
+
   const handleSaveMatch = async (e: React.FormEvent) => {
     e.preventDefault();
+    const extraCount = Array.isArray(matchConfig.extra_matches)
+      ? matchConfig.extra_matches.filter(m => m.opponent && m.opponent.trim() !== '').length
+      : 0;
+    const totalMatches = 1 + extraCount;
+
     askConfirm({
-      title: 'ENREGISTRER LE MATCH',
-      message: 'Confirmez-vous la mise à jour des paramètres du match officiel ?',
+      title: totalMatches > 1 ? `ENREGISTRER LES ${totalMatches} MATCHS` : 'ENREGISTRER LE MATCH',
+      message: totalMatches > 1
+        ? `Confirmez-vous la mise à jour de l'annonce officielle (${totalMatches} matchs programmés) ?`
+        : 'Confirmez-vous la mise à jour des paramètres du match officiel ?',
       confirmLabel: 'OUI, ENREGISTRER',
       itemDetails: {
         type: 'Modification',
-        title: `${matchConfig.home_team || 'Condor FC'} vs ${matchConfig.opponent || 'Adversaire'}`,
+        title: totalMatches > 1
+          ? `${totalMatches} Matchs au Programme (${matchConfig.match_date || 'Même jour'})`
+          : `${matchConfig.home_team || 'Condor FC'} vs ${matchConfig.opponent || 'Adversaire'}`,
         subtitle: `${matchConfig.match_date || 'Date à définir'} • ${matchConfig.location || 'Parc Sportif Delmas'}`,
         image: matchConfig.opponent_logo,
         badge: matchConfig.competition || 'Match Officiel'
       },
       onConfirm: async () => {
-        const res = await saveMatchConfig(matchConfig);
+        const cleanedExtras = Array.isArray(matchConfig.extra_matches)
+          ? matchConfig.extra_matches.filter(m => m.opponent && m.opponent.trim() !== '')
+          : [];
+        const payloadToSave: MatchConfig = { ...matchConfig, extra_matches: cleanedExtras };
+        setMatchConfig(payloadToSave);
+        const res = await saveMatchConfig(payloadToSave);
         if (res.success) {
-          showToast('Configuration du match enregistrée avec succès !');
-          fetchData();
+          showToast(totalMatches > 1 ? `Annonce des ${totalMatches} matchs enregistrée avec succès !` : 'Configuration du match enregistrée avec succès !');
+          const refreshed = await fetchCurrentMatch();
+          if (refreshed) setMatchConfig(refreshed);
         } else {
           showToast('Erreur lors de l\'enregistrement du match.');
         }
@@ -1058,64 +1100,79 @@ export default function AdminPanel() {
 
               {/* Rendu & Description élégante */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                <div style={{ fontSize: '0.92rem', color: '#475569', lineHeight: 1.5 }}>
+                <div style={{ fontSize: '0.92rem', color: '#475569', lineHeight: 1.5, flex: 1 }}>
                   {matchConfig.no_matches_now ? (
                     <span>
                       Message affiché aux supporters : <em>« Aucun match officiel programmé pour le moment. Nos équipes sont en période d'entraînement intensif. »</em>
                     </span>
                   ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span>Affiche en ligne :</span>
-                      <strong style={{ color: '#0f172a' }}>{matchConfig.home_team || 'Condor FC'} vs {matchConfig.opponent || 'Adversaire'}</strong>
-                      {matchConfig.match_date ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ffffff', border: '1px solid #e2e8f0', padding: '2px 8px', borderRadius: '6px', fontSize: '0.82rem', fontWeight: '600' }}>
-                          <Calendar size={13} /> {matchConfig.match_date} {matchConfig.match_time ? `à ${matchConfig.match_time}` : ''}
-                        </span>
-                      ) : (
-                        <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>(Date à renseigner ci-dessous)</span>
-                      )}
-                      {matchConfig.location && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ffffff', border: '1px solid #e2e8f0', padding: '2px 8px', borderRadius: '6px', fontSize: '0.82rem', fontWeight: '600' }}>
-                          <MapPin size={13} /> {matchConfig.location}
-                        </span>
-                      )}
-
-                      {/* Aperçu Dynamique du Compte à Rebours */}
-                      {(() => {
-                        if (matchConfig.no_matches_now || !matchConfig.match_date) return null;
-                        const parsed = parseMatchDateTime(matchConfig.match_date, matchConfig.match_time);
-                        if (!parsed) {
-                          return (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
-                              ⚠️ Format non reconnu
-                            </span>
-                          );
-                        }
-                        const diff = parsed.getTime() - Date.now();
-                        if (diff <= 0) {
-                          const elapsed = Math.floor(-diff / (1000 * 60));
-                          if (elapsed <= 120) {
-                            return (
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
-                                🔴 Match en direct
-                              </span>
-                            );
-                          }
-                          return (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '600' }}>
-                              ⚽ Match terminé
-                            </span>
-                          );
-                        }
-                        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-                        const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                        const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {[matchConfig, ...(Array.isArray(matchConfig.extra_matches) ? matchConfig.extra_matches : [])].map((m, mIdx) => {
+                        const mDate = m.match_date || matchConfig.match_date;
+                        const mLoc = m.location || matchConfig.location;
                         return (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
-                            ⏱️ Rebours : {d > 0 ? `${d}j ` : ''}{h}h {m}min
-                          </span>
+                          <div key={mIdx} style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: '700', color: 'var(--clr-primary)', fontSize: '0.8rem', textTransform: 'uppercase' }}>
+                              {(matchConfig.extra_matches?.length || 0) > 0 ? `Match #${mIdx + 1} :` : 'Affiche en ligne :'}
+                            </span>
+                            <strong style={{ color: '#0f172a' }}>{m.home_team || matchConfig.home_team || 'Condor FC'} vs {m.opponent || 'Adversaire'}</strong>
+                            {m.competition && (
+                              <span style={{ background: 'rgba(202, 2, 79, 0.08)', color: 'var(--clr-primary)', padding: '2px 8px', borderRadius: '6px', fontSize: '0.78rem', fontWeight: '700' }}>
+                                {m.competition}
+                              </span>
+                            )}
+                            {mDate ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ffffff', border: '1px solid #e2e8f0', padding: '2px 8px', borderRadius: '6px', fontSize: '0.82rem', fontWeight: '600' }}>
+                                <Calendar size={13} /> {mDate} {m.match_time ? `à ${m.match_time}` : ''}
+                              </span>
+                            ) : (
+                              <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>(Date à renseigner ci-dessous)</span>
+                            )}
+                            {mLoc && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ffffff', border: '1px solid #e2e8f0', padding: '2px 8px', borderRadius: '6px', fontSize: '0.82rem', fontWeight: '600' }}>
+                                <MapPin size={13} /> {mLoc}
+                              </span>
+                            )}
+
+                            {/* Aperçu Dynamique du Compte à Rebours */}
+                            {(() => {
+                              if (matchConfig.no_matches_now || !mDate) return null;
+                              const parsed = parseMatchDateTime(mDate, m.match_time);
+                              if (!parsed) {
+                                return (
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
+                                    ⚠️ Format non reconnu
+                                  </span>
+                                );
+                              }
+                              const diff = parsed.getTime() - Date.now();
+                              if (diff <= 0) {
+                                const elapsed = Math.floor(-diff / (1000 * 60));
+                                if (elapsed <= 120) {
+                                  return (
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
+                                      🔴 Match en direct
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '600' }}>
+                                    ⚽ Match terminé
+                                  </span>
+                                );
+                              }
+                              const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                              const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                              const min = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                              return (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
+                                  ⏱️ Rebours : {d > 0 ? `${d}j ` : ''}{h}h {min}min
+                                </span>
+                              );
+                            })()}
+                          </div>
                         );
-                      })()}
+                      })}
                     </div>
                   )}
                 </div>
@@ -1131,14 +1188,35 @@ export default function AdminPanel() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.6rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', flexWrap: 'wrap', gap: '0.8rem' }}>
                 <div>
                   <h3 style={{ fontSize: '1.25rem', margin: 0, fontWeight: '800', color: '#0f172a' }}>Paramètres de l'Affiche & Horaires</h3>
-                  <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#64748b' }}>Renseignez l'adversaire et le calendrier officiel pour alimenter le compte à rebours de l'accueil.</p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#64748b' }}>Renseignez un ou plusieurs matchs pour le même jour afin d'alimenter l'annonce officielle de l'accueil.</p>
                 </div>
-                <span style={{ fontSize: '0.78rem', background: '#f1f5f9', padding: '4px 10px', borderRadius: '6px', color: '#64748b', fontWeight: '600' }}>
-                  Édition en direct
-                </span>
+                <button
+                  type="button"
+                  onClick={handleAddSameDayMatch}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'rgba(202, 2, 79, 0.08)',
+                    color: 'var(--clr-primary)',
+                    border: '1px solid rgba(202, 2, 79, 0.25)',
+                    padding: '9px 16px',
+                    borderRadius: '10px',
+                    fontSize: '0.85rem',
+                    fontWeight: '800',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Plus size={16} /> Ajouter un autre match pour le même jour
+                </button>
               </div>
               
               <form onSubmit={handleSaveMatch}>
+                {(matchConfig.extra_matches?.length || 0) > 0 && (
+                  <div style={{ marginBottom: '12px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#0f172a', color: '#ffffff', padding: '5px 12px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                    Match #1 (Affiche Principale)
+                  </div>
+                )}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.4rem', marginBottom: '1.4rem' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#475569', marginBottom: '7px' }}>
@@ -1210,11 +1288,11 @@ export default function AdminPanel() {
 
                   <div>
                     <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#475569', marginBottom: '7px' }}>
-                      Intitulé / Compétition
+                      Intitulé / Compétition / Catégorie
                     </label>
                     <input 
                       type="text" 
-                      placeholder="Ex: Tournoi National d'Automne" 
+                      placeholder="Ex: Match Officiel U17 ou Tournoi National" 
                       value={matchConfig.competition} 
                       onChange={e => setMatchConfig({ ...matchConfig, competition: e.target.value })} 
                       style={{ width: '100%', padding: '11px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', background: '#f8fafc', fontSize: '0.95rem' }}
@@ -1225,7 +1303,7 @@ export default function AdminPanel() {
                 {/* Logos / Photos des Clubs du Match */}
                 <div style={{ background: '#f8fafc', padding: '1.4rem', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1.8rem' }}>
                   <h4 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: '800', color: '#0f172a' }}>
-                    Photos & Logos des Clubs (Affiche du Match)
+                    Photos & Logos des Clubs (Match #1)
                   </h4>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
@@ -1269,7 +1347,7 @@ export default function AdminPanel() {
                                 const file = e.target.files?.[0];
                                 if (file) {
                                   try {
-                                    const base64 = await convertToBase64(file);
+                                    const base64 = await convertToBase64(file, 400);
                                     setMatchConfig({ ...matchConfig, opponent_logo: base64 });
                                     showToast("Logo de l'équipe adverse chargé ! N'oubliez pas d'enregistrer.");
                                   } catch (err) {
@@ -1341,7 +1419,7 @@ export default function AdminPanel() {
                                 const file = e.target.files?.[0];
                                 if (file) {
                                   try {
-                                    const base64 = await convertToBase64(file);
+                                    const base64 = await convertToBase64(file, 400);
                                     setMatchConfig({ ...matchConfig, home_team_logo: base64 });
                                     showToast("Logo de l'équipe à domicile chargé !");
                                   } catch (err) {
@@ -1375,7 +1453,185 @@ export default function AdminPanel() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                {/* Matchs supplémentaires programmés le même jour */}
+                {Array.isArray(matchConfig.extra_matches) && matchConfig.extra_matches.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '1.8rem' }}>
+                    {matchConfig.extra_matches.map((extra, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          background: '#fff8fa',
+                          border: '1px solid rgba(202, 2, 79, 0.25)',
+                          borderRadius: '14px',
+                          padding: '1.5rem'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem', flexWrap: 'wrap', gap: '10px' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--clr-primary)', color: '#ffffff', padding: '5px 12px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                            Match #{idx + 2} — Même Jour ({extra.match_date || matchConfig.match_date || 'Date du jour'})
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveExtraMatch(idx)}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              background: '#fef2f2',
+                              color: '#dc2626',
+                              border: '1px solid #fecaca',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              fontSize: '0.8rem',
+                              fontWeight: '700',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Trash2 size={14} /> Supprimer ce match
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.2rem', marginBottom: '1.2rem' }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>
+                              Équipe à domicile
+                            </label>
+                            <input
+                              type="text"
+                              value={extra.home_team || ''}
+                              placeholder="Ex: Condor Ecole de Football (U15)"
+                              onChange={e => handleUpdateExtraMatch(idx, { home_team: e.target.value })}
+                              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '0.92rem' }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>
+                              Équipe adverse *
+                            </label>
+                            <input
+                              type="text"
+                              value={extra.opponent || ''}
+                              placeholder="Ex: AS Delmas ou Racing Club"
+                              onChange={e => handleUpdateExtraMatch(idx, { opponent: e.target.value })}
+                              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '0.92rem' }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>
+                              Date du match
+                            </label>
+                            <input
+                              type="text"
+                              value={extra.match_date || ''}
+                              placeholder={matchConfig.match_date || 'Ex: 2026-10-24'}
+                              onChange={e => handleUpdateExtraMatch(idx, { match_date: e.target.value })}
+                              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '0.92rem' }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>
+                              Heure / Horaire
+                            </label>
+                            <input
+                              type="text"
+                              value={extra.match_time || ''}
+                              placeholder="Ex: 16h00"
+                              onChange={e => handleUpdateExtraMatch(idx, { match_time: e.target.value })}
+                              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '0.92rem' }}
+                            />
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.2rem' }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>
+                              Lieu de la rencontre
+                            </label>
+                            <input
+                              type="text"
+                              value={extra.location || ''}
+                              placeholder={matchConfig.location || 'Parc Sportif Delmas'}
+                              onChange={e => handleUpdateExtraMatch(idx, { location: e.target.value })}
+                              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '0.92rem' }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>
+                              Intitulé / Compétition / Catégorie
+                            </label>
+                            <input
+                              type="text"
+                              value={extra.competition || ''}
+                              placeholder="Ex: Match Officiel U15"
+                              onChange={e => handleUpdateExtraMatch(idx, { competition: e.target.value })}
+                              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#ffffff', fontSize: '0.92rem' }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', color: '#475569', marginBottom: '6px' }}>
+                              Logo de l'équipe adverse (Optionnel)
+                            </label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              {extra.opponent_logo && (
+                                <img src={extra.opponent_logo} alt="Logo" style={{ width: '38px', height: '38px', objectFit: 'contain', borderRadius: '50%', background: '#ffffff', border: '1px solid #e2e8f0' }} />
+                              )}
+                              <label
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  background: '#ffffff',
+                                  color: '#0f172a',
+                                  border: '1px solid #cbd5e1',
+                                  padding: '8px 12px',
+                                  borderRadius: '8px',
+                                  cursor: 'pointer',
+                                  fontSize: '0.8rem',
+                                  fontWeight: '700'
+                                }}
+                              >
+                                <Upload size={13} /> Logo adverse
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  style={{ display: 'none' }}
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      try {
+                                        const base64 = await convertToBase64(file, 400);
+                                        handleUpdateExtraMatch(idx, { opponent_logo: base64 });
+                                        showToast("Logo chargé pour le match #" + (idx + 2));
+                                      } catch {
+                                        showToast("Erreur lors de la lecture de l'image");
+                                      }
+                                    }
+                                  }}
+                                />
+                              </label>
+                              {extra.opponent_logo && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateExtraMatch(idx, { opponent_logo: '' })}
+                                  style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: '0.78rem', cursor: 'pointer', textDecoration: 'underline' }}
+                                >
+                                  Retirer
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                   <button 
                     type="submit" 
                     className="btn btn-primary" 
@@ -1389,7 +1645,27 @@ export default function AdminPanel() {
                       boxShadow: '0 4px 15px rgba(202, 2, 79, 0.25)' 
                     }}
                   >
-                    <Save size={18} /> Enregistrer la configuration du match
+                    <Save size={18} /> Enregistrer la configuration {(matchConfig.extra_matches?.length || 0) > 0 ? `des ${(matchConfig.extra_matches?.length || 0) + 1} matchs` : 'du match'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleAddSameDayMatch}
+                    className="btn btn-outline"
+                    style={{
+                      padding: '13px 22px',
+                      borderRadius: '10px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      fontWeight: '700',
+                      color: 'var(--clr-primary)',
+                      borderColor: 'rgba(202, 2, 79, 0.35)',
+                      background: '#ffffff',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Plus size={18} /> Ajouter un autre match pour le même jour
                   </button>
                 </div>
               </form>

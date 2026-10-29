@@ -79,13 +79,42 @@ export default function Home() {
     }
   }, [selectedArticle]);
 
-  const [timeLeft, setTimeLeft] = useState<{ d: number; h: number; m: number; s: number; isLive?: boolean; isFinished?: boolean } | null>(null);
+  const [nowTick, setNowTick] = useState<number>(() => Date.now());
   const [playerIndex, setPlayerIndex] = useState(0);
   const [allPlayers, setAllPlayers] = useState<Record<string, any>>(playersDB);
 
   const spotlightPlayers = useMemo(() => {
     return Object.values(allPlayers).filter(p => Boolean(p.is_spotlight || p.spotlight));
   }, [allPlayers]);
+
+  const activeMatches = useMemo(() => {
+    if (matchConfig.no_matches_now) return [];
+    const list = [
+      matchConfig,
+      ...(Array.isArray(matchConfig.extra_matches) ? matchConfig.extra_matches : [])
+    ].filter(m => m && m.opponent && m.opponent.trim() !== '');
+    return list;
+  }, [matchConfig]);
+
+  const getMatchCountdown = (dateStr?: string, timeStr?: string) => {
+    const effectiveDate = dateStr || matchConfig.match_date;
+    if (!effectiveDate) return null;
+    const targetDate = parseMatchDateTime(effectiveDate, timeStr);
+    if (!targetDate) return null;
+    const diff = targetDate.getTime() - nowTick;
+    if (diff <= 0) {
+      const elapsedMinutes = Math.floor(-diff / (1000 * 60));
+      if (elapsedMinutes <= 120) {
+        return { d: 0, h: 0, m: 0, s: 0, isLive: true, isFinished: false };
+      }
+      return { d: 0, h: 0, m: 0, s: 0, isLive: false, isFinished: true };
+    }
+    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((diff % (1000 * 60)) / 1000);
+    return { d, h, m, s, isLive: false, isFinished: false };
+  };
 
   useEffect(() => {
     // 0. Fetch site content, players & trophies
@@ -123,48 +152,15 @@ export default function Home() {
     });
   }, []);
 
-  // Dynamic countdown calculation if a valid date is set and no_matches_now is false
+  // Dynamic countdown tick if matches are active
   useEffect(() => {
-    if (matchConfig.no_matches_now || !matchConfig.opponent || !matchConfig.match_date) {
-      setTimeLeft(null);
+    if (matchConfig.no_matches_now || activeMatches.length === 0) {
       return;
     }
-
-    const calculateTime = () => {
-      const targetDate = parseMatchDateTime(matchConfig.match_date, matchConfig.match_time);
-      if (!targetDate) {
-        setTimeLeft(null);
-        return;
-      }
-
-      const target = targetDate.getTime();
-      const now = Date.now();
-      const diff = target - now;
-
-      // Si l'heure du coup d'envoi est atteinte ou passée
-      if (diff <= 0) {
-        const elapsedMinutes = Math.floor(-diff / (1000 * 60));
-        // Durée normale d'une rencontre (90 min + pause et arrêts de jeu ~ 120 min)
-        if (elapsedMinutes <= 120) {
-          setTimeLeft({ d: 0, h: 0, m: 0, s: 0, isLive: true, isFinished: false });
-        } else {
-          setTimeLeft({ d: 0, h: 0, m: 0, s: 0, isLive: false, isFinished: true });
-        }
-        return;
-      }
-
-      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setTimeLeft({ d, h, m, s, isLive: false, isFinished: false });
-    };
-
-    calculateTime();
-    const interval = setInterval(calculateTime, 1000);
+    setNowTick(Date.now());
+    const interval = setInterval(() => setNowTick(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, [matchConfig]);
+  }, [matchConfig, activeMatches.length]);
 
   return (
     <div style={{ flex: 1, marginTop: '80px', overflowX: 'hidden' }}>
@@ -209,7 +205,7 @@ export default function Home() {
               border: '1px solid rgba(0,0,0,0.05)'
             }}
           >
-            {matchConfig.no_matches_now || !matchConfig.opponent ? (
+            {matchConfig.no_matches_now || activeMatches.length === 0 ? (
               /* État : Aucun match officiel pour le moment (Zéro donnée mockée) */
               <div style={{ textAlign: 'center', width: '100%', padding: '0.8rem 0' }}>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', fontSize: '0.9rem', marginBottom: '8px' }}>
@@ -223,89 +219,148 @@ export default function Home() {
                 </p>
               </div>
             ) : (
-              /* Match Officiel Réellement Configuré par l'Admin */
-              <>
-                {/* Logo Club (Gauche) */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '90px', height: '90px', background: 'var(--clr-gray-light)', borderRadius: '50%', padding: '10px', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-                  <img src={matchConfig.home_team_logo || "/condor_logo_transparent.png"} alt={matchConfig.home_team || "Condor FC"} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
-                </div>
-
-                {/* Infos Match (Centre) */}
-                <div style={{ flex: 1, minWidth: '250px', textAlign: 'center' }}>
-                  <div style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px', letterSpacing: '2px', fontSize: '0.9rem' }}>
-                    {matchConfig.competition || 'Prochain Match Officiel'}
-                  </div>
-                  <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.2rem', margin: '5px 0', textTransform: 'uppercase', color: 'var(--clr-black)' }}>
-                    {matchConfig.home_team || 'Condor FC'} <span style={{color: 'var(--clr-primary)'}}>VS</span> {matchConfig.opponent}
-                  </h3>
-                  <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--clr-gray)', marginTop: '8px', justifyContent: 'center', flexWrap: 'wrap', fontSize: '0.95rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                      <Calendar size={16} /> 
-                      {matchConfig.match_date}
-                      {matchConfig.match_time && !matchConfig.match_date.includes('à') ? ` à ${matchConfig.match_time}` : ''}
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><MapPin size={16} /> {matchConfig.location || 'Parc Sportif Delmas'}</span>
-                  </div>
-                </div>
-
-                {/* Compte à Rebours ou Statut du Match */}
-                {timeLeft ? (
-                  timeLeft.isLive ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                      <div style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        background: '#ca024f',
-                        color: '#ffffff',
-                        padding: '8px 20px',
-                        borderRadius: '30px',
-                        fontSize: '0.92rem',
-                        fontWeight: '800',
-                        letterSpacing: '1px',
-                        boxShadow: '0 4px 15px rgba(202, 2, 79, 0.4)'
-                      }}>
-                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ffffff', display: 'inline-block' }} />
-                        MATCH EN COURS · DIRECT
-                      </div>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--clr-gray)', fontWeight: '600' }}>
-                        Coup d'envoi donné à {matchConfig.match_time || '14h00'}
+              /* Match(s) Officiel(s) Réellement Configuré(s) par l'Admin */
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.8rem' }}>
+                {activeMatches.length > 1 && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '10px',
+                    paddingBottom: '1rem',
+                    borderBottom: '2px solid #f1f5f9'
+                  }}>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      background: 'rgba(202, 2, 79, 0.08)',
+                      color: 'var(--clr-primary)',
+                      padding: '6px 14px',
+                      borderRadius: '20px',
+                      fontSize: '0.82rem',
+                      fontWeight: '800',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px'
+                    }}>
+                      <Calendar size={15} /> Programme Officiel du Jour • {activeMatches.length} Matchs
+                    </div>
+                    {matchConfig.match_date && (
+                      <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#475569' }}>
+                        Journée du {matchConfig.match_date}
                       </span>
-                    </div>
-                  ) : timeLeft.isFinished ? (
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#1e293b', color: '#ffffff', padding: '8px 18px', borderRadius: '20px', fontSize: '0.88rem', fontWeight: '700' }}>
-                      ⚽ Rencontre Terminée
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', gap: '1rem', textAlign: 'center', justifyContent: 'center' }}>
-                      {[ { l: 'Jours', v: timeLeft.d }, { l: 'Heures', v: timeLeft.h }, { l: 'Min', v: timeLeft.m }, { l: 'Sec', v: timeLeft.s } ].map((t, i) => (
-                        <div key={i} style={{ minWidth: '55px', background: 'rgba(0,0,0,0.02)', padding: '6px 8px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
-                          <div style={{ fontSize: '2.2rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-black)', lineHeight: 1, fontWeight: '800' }}>
-                            {t.v.toString().padStart(2, '0')}
-                          </div>
-                          <div style={{ fontSize: '0.72rem', color: 'var(--clr-gray)', textTransform: 'uppercase', fontWeight: 'bold', marginTop: '3px', letterSpacing: '0.5px' }}>
-                            {t.l}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                ) : null}
+                    )}
+                  </div>
+                )}
 
-                {/* Logo Adversaire (Droite) */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '90px', height: '90px', background: 'var(--clr-gray-light)', borderRadius: '50%', padding: '15px', boxShadow: '0 5px 15px rgba(0,0,0,0.05)' }}>
-                  {matchConfig.opponent_logo ? (
-                    <img src={matchConfig.opponent_logo} alt={matchConfig.opponent} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
-                  ) : (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--clr-primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '100%', height: '100%' }}>
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(0,0,0,0.05)" />
-                      <circle cx="12" cy="11" r="3" />
-                      <path d="M12 2v6" />
-                      <path d="M12 14v8" />
-                    </svg>
-                  )}
-                </div>
-              </>
+                {activeMatches.map((m, idx) => {
+                  const mDate = m.match_date || matchConfig.match_date;
+                  const mLoc = m.location || matchConfig.location || 'Parc Sportif Delmas';
+                  const mHome = m.home_team || matchConfig.home_team || 'Condor FC';
+                  const mHomeLogo = m.home_team_logo || matchConfig.home_team_logo || '/condor_logo_transparent.png';
+                  const mTimeLeft = getMatchCountdown(mDate, m.match_time);
+
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '2rem',
+                        width: '100%',
+                        paddingTop: idx > 0 ? '1.8rem' : 0,
+                        borderTop: idx > 0 ? '1px solid #e2e8f0' : 'none'
+                      }}
+                    >
+                      {/* Logo Club (Gauche) */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '90px', height: '90px', background: 'var(--clr-gray-light)', borderRadius: '50%', padding: '10px', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+                        <img src={mHomeLogo} alt={mHome} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
+                      </div>
+
+                      {/* Infos Match (Centre) */}
+                      <div style={{ flex: 1, minWidth: '250px', textAlign: 'center' }}>
+                        <div style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '5px', letterSpacing: '2px', fontSize: '0.9rem' }}>
+                          {m.competition || 'Prochain Match Officiel'}
+                        </div>
+                        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.2rem', margin: '5px 0', textTransform: 'uppercase', color: 'var(--clr-black)' }}>
+                          {mHome} <span style={{ color: 'var(--clr-primary)' }}>VS</span> {m.opponent}
+                        </h3>
+                        <div style={{ display: 'flex', gap: '1.5rem', color: 'var(--clr-gray)', marginTop: '8px', justifyContent: 'center', flexWrap: 'wrap', fontSize: '0.95rem' }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <Calendar size={16} />
+                            {mDate}
+                            {m.match_time && (!mDate || !mDate.includes('à')) ? ` à ${m.match_time}` : ''}
+                          </span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <MapPin size={16} /> {mLoc}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Compte à Rebours ou Statut du Match */}
+                      {mTimeLeft ? (
+                        mTimeLeft.isLive ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                            <div style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              background: '#ca024f',
+                              color: '#ffffff',
+                              padding: '8px 20px',
+                              borderRadius: '30px',
+                              fontSize: '0.92rem',
+                              fontWeight: '800',
+                              letterSpacing: '1px',
+                              boxShadow: '0 4px 15px rgba(202, 2, 79, 0.4)'
+                            }}>
+                              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ffffff', display: 'inline-block' }} />
+                              MATCH EN COURS · DIRECT
+                            </div>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--clr-gray)', fontWeight: '600' }}>
+                              Coup d'envoi donné à {m.match_time || '14h00'}
+                            </span>
+                          </div>
+                        ) : mTimeLeft.isFinished ? (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#1e293b', color: '#ffffff', padding: '8px 18px', borderRadius: '20px', fontSize: '0.88rem', fontWeight: '700' }}>
+                            ⚽ Rencontre Terminée
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: '1rem', textAlign: 'center', justifyContent: 'center' }}>
+                            {[{ l: 'Jours', v: mTimeLeft.d }, { l: 'Heures', v: mTimeLeft.h }, { l: 'Min', v: mTimeLeft.m }, { l: 'Sec', v: mTimeLeft.s }].map((t, i) => (
+                              <div key={i} style={{ minWidth: '55px', background: 'rgba(0,0,0,0.02)', padding: '6px 8px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.06)' }}>
+                                <div style={{ fontSize: '2.2rem', fontFamily: 'var(--font-heading)', color: 'var(--clr-black)', lineHeight: 1, fontWeight: '800' }}>
+                                  {t.v.toString().padStart(2, '0')}
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--clr-gray)', textTransform: 'uppercase', fontWeight: 'bold', marginTop: '3px', letterSpacing: '0.5px' }}>
+                                  {t.l}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      ) : null}
+
+                      {/* Logo Adversaire (Droite) */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '90px', height: '90px', background: 'var(--clr-gray-light)', borderRadius: '50%', padding: '15px', boxShadow: '0 5px 15px rgba(0,0,0,0.05)' }}>
+                        {m.opponent_logo ? (
+                          <img src={m.opponent_logo} alt={m.opponent} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
+                        ) : (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="var(--clr-primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '100%', height: '100%' }}>
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(0,0,0,0.05)" />
+                            <circle cx="12" cy="11" r="3" />
+                            <path d="M12 2v6" />
+                            <path d="M12 14v8" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </motion.div>
         </div>

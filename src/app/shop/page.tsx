@@ -464,12 +464,7 @@ export default function Shop() {
                       <span style={{ fontSize: '0.82rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                         Équipement Officiel
                       </span>
-                      {product.is_available !== false ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', fontWeight: '700', color: '#15803d', background: 'rgba(22, 163, 74, 0.1)', padding: '4px 10px', borderRadius: '12px' }}>
-                          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a' }} />
-                          En vente
-                        </span>
-                      ) : (
+                      {product.is_available === false && (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', fontWeight: '700', color: '#b91c1c', background: 'rgba(220, 38, 38, 0.1)', padding: '4px 10px', borderRadius: '12px' }}>
                           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#dc2626' }} />
                           Hors vente
