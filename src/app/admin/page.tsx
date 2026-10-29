@@ -43,21 +43,13 @@ import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 import { printInscriptionDossier } from '@/lib/pdfPrintService';
 import { formatRelativeTime, formatFullDateTime } from '@/lib/timeUtils';
 
-const convertToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    // Validation de sécurité : taille max 10 Mo et type MIME d'image certifié
-    const validation = validateUploadFile(file);
-    if (!validation.valid) {
-      alert(validation.error || 'Fichier non valide.');
-      reject(new Error(validation.error || 'Fichier non valide.'));
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
+const convertToBase64 = async (file: File, maxDim = 1600): Promise<string> => {
+  const validation = validateUploadFile(file);
+  if (!validation.valid) {
+    alert(validation.error || 'Fichier non valide.');
+    throw new Error(validation.error || 'Fichier non valide.');
+  }
+  return await compressAndOptimizeImage(file, maxDim, 0.85);
 };
 
 const translateAuthError = (message: string): string => {

@@ -327,7 +327,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                 </h3>
 
                 <p style={{ fontSize: '0.82rem', color: '#94a3b8', margin: 0, lineHeight: 1.4 }}>
-                  Sacre suprême en tournois officiels avec les équipes du Condor FC.
+                  Sacre suprême en tournois officiels avec Condor EF.
                 </p>
               </motion.div>
 

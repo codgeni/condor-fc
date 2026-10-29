@@ -1928,7 +1928,8 @@ export async function fetchSiteContent(): Promise<SiteContent> {
 
   if (remoteData) {
     const unpacked = remoteData.data ? { ...DEFAULT_SITE_CONTENT, ...remoteData.data, ...remoteData } : { ...DEFAULT_SITE_CONTENT, ...remoteData };
-    const merged: SiteContent = { ...DEFAULT_SITE_CONTENT, ...unpacked, ...localCache };
+    // Les données distantes de Supabase sont prioritaires sur le cache local
+    const merged: SiteContent = { ...DEFAULT_SITE_CONTENT, ...localCache, ...unpacked };
     setLocalItem('site_content', merged);
     return merged;
   }
@@ -1936,7 +1937,7 @@ export async function fetchSiteContent(): Promise<SiteContent> {
   return localCache ? { ...DEFAULT_SITE_CONTENT, ...localCache } : DEFAULT_SITE_CONTENT;
 }
 
-export async function saveSiteContent(content: SiteContent): Promise<{ success: boolean; data?: SiteContent }> {
+export async function saveSiteContent(content: SiteContent): Promise<{ success: boolean; data?: SiteContent; error?: any }> {
   setLocalItem('site_content', content);
 
   try {
@@ -1954,31 +1955,18 @@ export async function saveSiteContent(content: SiteContent): Promise<{ success: 
     if (existing && existing.length > 0) {
       const res = await supabase.from('site_content').update(payload).eq('id', existing[0].id);
       if (res.error) {
-        await supabase.from('site_content').update({
-          hero_tag: content.hero_tag,
-          hero_title: content.hero_title,
-          hero_slogan: content.hero_slogan,
-          no_match_text: content.no_match_text,
-          about_title: content.about_title,
-          about_text: content.about_text,
-        }).eq('id', existing[0].id);
+        console.error('Supabase save site content update error:', res.error);
+        return { success: false, error: res.error.message || 'Erreur lors de la sauvegarde Supabase' };
       }
     } else {
-      const res = await supabase.from('site_content').insert(payload);
+      const res = await supabase.from('site_content').insert({ id: 'main', ...payload });
       if (res.error) {
-        await supabase.from('site_content').insert({
-          id: 'main',
-          hero_tag: content.hero_tag,
-          hero_title: content.hero_title,
-          hero_slogan: content.hero_slogan,
-          no_match_text: content.no_match_text,
-          about_title: content.about_title,
-          about_text: content.about_text,
-        });
+        console.error('Supabase save site content insert error:', res.error);
+        return { success: false, error: res.error.message || 'Erreur lors de la création Supabase' };
       }
     }
-  } catch (e) {
-    console.warn('Supabase save site content note, stored in local cache', e);
+  } catch (e: any) {
+    console.warn('Supabase save site content exception, stored in local cache', e);
   }
 
   return { success: true, data: content };

@@ -10,6 +10,7 @@ import {
   TrophyItem, fetchTrophies, saveTrophy, deleteTrophy, resetTrophiesToDefault,
   fetchSiteContent, saveSiteContent, SiteContent, DEFAULT_SITE_CONTENT
 } from '@/lib/dataService';
+import { validateUploadFile, compressAndOptimizeImage } from '@/lib/security';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 
 interface TimelineManagerProps {
@@ -52,28 +53,24 @@ export default function TimelineManager({ timeline, onRefresh, showToast }: Time
     loadSiteContent();
   }, []);
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleTrophyPhotoUpload = async (file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      showToast("L'image dépasse la taille maximale autorisée de 10 Mo.");
+  const handleTrophyPhotoUpload = async (file: File, inputElement?: HTMLInputElement) => {
+    const validation = validateUploadFile(file);
+    if (!validation.valid) {
+      showToast(validation.error || 'Fichier image non valide.');
+      if (inputElement) inputElement.value = '';
       return;
     }
     try {
-      const base64 = await convertFileToBase64(file);
+      showToast("Optimisation de la photo du tournoi...");
+      const compressed = await compressAndOptimizeImage(file, 1400, 0.85);
       if (editingTrophy) {
-        setEditingTrophy({ ...editingTrophy, image: base64 });
+        setEditingTrophy({ ...editingTrophy, image: compressed });
         showToast("Photo du tournoi chargée avec succès !");
       }
-    } catch (err) {
-      showToast("Erreur lors du chargement de la photo.");
+    } catch (err: any) {
+      showToast(err.message || "Erreur lors du chargement de la photo.");
+    } finally {
+      if (inputElement) inputElement.value = '';
     }
   };
 
@@ -503,7 +500,7 @@ export default function TimelineManager({ timeline, onRefresh, showToast }: Time
                           style={{ display: 'none' }}
                           onChange={e => {
                             const file = e.target.files?.[0];
-                            if (file) handleTrophyPhotoUpload(file);
+                            if (file) handleTrophyPhotoUpload(file, e.target);
                           }}
                         />
                       </label>

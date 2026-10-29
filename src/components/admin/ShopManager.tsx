@@ -14,7 +14,7 @@ import {
   toggleProductAvailability,
   DEFAULT_PRODUCTS 
 } from '@/lib/dataService';
-import { validateUploadFile, sanitizeInput } from '@/lib/security';
+import { validateUploadFile, sanitizeInput, compressAndOptimizeImage } from '@/lib/security';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 
 interface ShopManagerProps {
@@ -115,23 +115,27 @@ export default function ShopManager({
   };
 
   // Handle Image Upload with Security Validation
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !editingProduct) return;
 
     const validation = validateUploadFile(file);
     if (!validation.valid) {
-      alert(validation.error || 'Fichier image invalide.');
+      showToast(validation.error || 'Fichier image invalide.');
+      e.target.value = '';
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setEditingProduct({ ...editingProduct, img: reader.result });
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      showToast("Optimisation de la photo du produit...");
+      const compressed = await compressAndOptimizeImage(file, 1200, 0.85);
+      setEditingProduct({ ...editingProduct, img: compressed });
+      showToast("Photo du produit chargée avec succès !");
+    } catch (err: any) {
+      showToast(err.message || "Erreur lors du traitement de l'image.");
+    } finally {
+      e.target.value = '';
+    }
   };
 
   // Toggle size in array

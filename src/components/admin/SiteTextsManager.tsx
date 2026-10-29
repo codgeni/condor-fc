@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Type, Save, RotateCcw, Plus, Trash2, Shield, Heart, 
   FileText, Home, Award, Music, AlertTriangle, CheckCircle,
-  Image as ImageIcon, Upload, Share2, Landmark, Trophy, MapPin
+  Image as ImageIcon, Upload, Share2, Landmark, Trophy, MapPin, Loader2
 } from 'lucide-react';
 import { SiteContent, DEFAULT_SITE_CONTENT, DEFAULT_PILLARS, PillarItem, saveSiteContent } from '@/lib/dataService';
+import { validateUploadFile, compressAndOptimizeImage } from '@/lib/security';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 
 const BANNER_CONFIGS = [
@@ -78,6 +79,20 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
     inscr_conditions_items: content.inscr_conditions_items || DEFAULT_SITE_CONTENT.inscr_conditions_items || []
   });
   const [saving, setSaving] = useState(false);
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+
+  // Synchroniser le formulaire quand le parent rafraîchit les données
+  useEffect(() => {
+    if (content) {
+      setForm(prev => ({
+        ...DEFAULT_SITE_CONTENT,
+        ...content,
+        club_philo_objectives: content.club_philo_objectives || DEFAULT_SITE_CONTENT.club_philo_objectives || [],
+        club_pillars: content.club_pillars || DEFAULT_PILLARS,
+        inscr_conditions_items: content.inscr_conditions_items || DEFAULT_SITE_CONTENT.inscr_conditions_items || []
+      }));
+    }
+  }, [content]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,7 +113,7 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
             showToast("Textes, clauses et contenus enregistrés avec succès !");
             onRefresh();
           } else {
-            showToast("Erreur lors de la sauvegarde.");
+            showToast(res.error || "Erreur lors de la sauvegarde.");
           }
         } catch (err) {
           showToast("Erreur lors de l'enregistrement.");
@@ -109,26 +124,27 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
     });
   };
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleBannerUpload = async (key: keyof SiteContent, file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      showToast("L'image dépasse la taille maximale autorisée de 10 Mo.");
+  const handleBannerUpload = async (key: keyof SiteContent, file: File, inputElement?: HTMLInputElement) => {
+    const validation = validateUploadFile(file);
+    if (!validation.valid) {
+      showToast(validation.error || "Fichier d'image non valide.");
+      if (inputElement) inputElement.value = '';
       return;
     }
+
+    setUploadingKey(String(key));
+    showToast("Optimisation et compression de l'image en cours...");
+
     try {
-      const base64 = await convertFileToBase64(file);
-      setForm(prev => ({ ...prev, [key]: base64 }));
-      showToast("Bannière chargée avec succès ! Cliquez sur 'Enregistrer' pour valider.");
-    } catch (err) {
-      showToast("Erreur lors du chargement de l'image.");
+      // Compression proportionnelle à 1600px max, qualité 0.82 (réduit de 90-95% le poids sans perte visible)
+      const compressed = await compressAndOptimizeImage(file, 1600, 0.82);
+      setForm(prev => ({ ...prev, [key]: compressed }));
+      showToast("Image optimisée et chargée avec succès ! Cliquez sur 'Enregistrer' pour valider.");
+    } catch (err: any) {
+      showToast(err.message || "Erreur lors du traitement de l'image.");
+    } finally {
+      setUploadingKey(null);
+      if (inputElement) inputElement.value = '';
     }
   };
 
@@ -443,26 +459,28 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '6px',
-                            background: '#f1f5f9',
+                            background: uploadingKey === banner.key ? '#e2e8f0' : '#f1f5f9',
                             border: '1px solid #cbd5e1',
                             padding: '8px 14px',
                             borderRadius: '8px',
-                            cursor: 'pointer',
+                            cursor: uploadingKey === banner.key ? 'wait' : 'pointer',
                             fontSize: '0.85rem',
                             fontWeight: '600',
                             color: '#334155',
-                            transition: 'all 0.2s'
+                            transition: 'all 0.2s',
+                            opacity: uploadingKey === banner.key ? 0.7 : 1
                           }}
                         >
-                          <Upload size={15} />
-                          <span>Téléverser une image (Max 10 Mo)</span>
+                          {uploadingKey === banner.key ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />}
+                          <span>{uploadingKey === banner.key ? 'Optimisation en cours...' : 'Téléverser une image (Max 15 Mo)'}</span>
                           <input 
                             type="file" 
                             accept="image/*" 
+                            disabled={uploadingKey !== null}
                             style={{ display: 'none' }}
                             onChange={e => {
                               const file = e.target.files?.[0];
-                              if (file) handleBannerUpload(banner.key, file);
+                              if (file) handleBannerUpload(banner.key, file, e.target);
                             }}
                           />
                         </label>
@@ -1353,11 +1371,11 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
 
               {/* Aperçu et téléversement de la photo du terrain */}
               <div>
-                <label style={labelStyle}>Image d'Arrière-Plan du Terrain</label>
+                <label style={labelStyle}>Image d'Arrière-Plan du Terrain (Accueil)</label>
                 <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <div style={{ width: '160px', height: '90px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <img 
-                      src={form.terrain_img || '/stadium_hero_1780681869623.png'} 
+                      src={form.terrain_img || DEFAULT_SITE_CONTENT.terrain_img || '/stadium_hero_1780681869623.png'} 
                       alt="Terrain" 
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                     />
@@ -1370,33 +1388,58 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
                       placeholder="/stadium_hero_1780681869623.png"
                       style={{ ...inputStyle, marginBottom: '8px' }} 
                     />
-                    <label 
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        background: '#f1f5f9',
-                        border: '1px solid #cbd5e1',
-                        padding: '6px 14px',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '0.82rem',
-                        fontWeight: '600',
-                        color: '#334155'
-                      }}
-                    >
-                      <Upload size={14} />
-                      <span>Téléverser une nouvelle photo du terrain</span>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        style={{ display: 'none' }}
-                        onChange={e => {
-                          const file = e.target.files?.[0];
-                          if (file) handleBannerUpload('terrain_img', file);
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <label 
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: uploadingKey === 'terrain_img' ? '#e2e8f0' : '#f1f5f9',
+                          border: '1px solid #cbd5e1',
+                          padding: '8px 14px',
+                          borderRadius: '6px',
+                          cursor: uploadingKey === 'terrain_img' ? 'wait' : 'pointer',
+                          fontSize: '0.82rem',
+                          fontWeight: '600',
+                          color: '#334155',
+                          opacity: uploadingKey === 'terrain_img' ? 0.7 : 1
                         }}
-                      />
-                    </label>
+                      >
+                        {uploadingKey === 'terrain_img' ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                        <span>{uploadingKey === 'terrain_img' ? 'Optimisation en cours...' : 'Téléverser une nouvelle photo du terrain (Max 15 Mo)'}</span>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          disabled={uploadingKey !== null}
+                          style={{ display: 'none' }}
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) handleBannerUpload('terrain_img', file, e.target);
+                          }}
+                        />
+                      </label>
+
+                      {form.terrain_img && form.terrain_img !== DEFAULT_SITE_CONTENT.terrain_img && (
+                        <button
+                          type="button"
+                          onClick={() => setForm({ ...form, terrain_img: DEFAULT_SITE_CONTENT.terrain_img })}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--clr-primary)',
+                            fontSize: '0.82rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            textDecoration: 'underline'
+                          }}
+                        >
+                          Rétablir photo par défaut
+                        </button>
+                      )}
+                    </div>
+                    <span style={{ display: 'block', fontSize: '0.75rem', color: '#64748b', marginTop: '6px' }}>
+                      L'image sera automatiquement redimensionnée et compressée en haute définition pour un affichage rapide et instantané.
+                    </span>
                   </div>
                 </div>
               </div>

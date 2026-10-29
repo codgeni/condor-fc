@@ -7,9 +7,17 @@
 // Types MIME d'images autorisés en production
 export const ALLOWED_IMAGE_MIME_TYPES = [
   'image/jpeg',
+  'image/pjpeg',
+  'image/jfif',
   'image/png',
+  'image/x-png',
   'image/webp',
-  'image/gif'
+  'image/gif',
+  'image/avif',
+  'image/bmp',
+  'image/svg+xml',
+  'image/heic',
+  'image/heif'
 ];
 
 // Extensions d'images légitimes
@@ -18,11 +26,17 @@ export const ALLOWED_IMAGE_EXTENSIONS = [
   '.jpeg',
   '.png',
   '.webp',
-  '.gif'
+  '.gif',
+  '.jfif',
+  '.avif',
+  '.bmp',
+  '.svg',
+  '.heic',
+  '.heif'
 ];
 
-// Limite maximale de taille de fichier : 10 Mo
-export const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
+// Limite maximale de taille de fichier : 15 Mo
+export const MAX_UPLOAD_SIZE_BYTES = 15 * 1024 * 1024;
 
 /**
  * Assainit une chaîne de caractères pour neutraliser tout vecteur Cross-Site Scripting (XSS).
@@ -213,21 +227,24 @@ export function validateUploadFile(
     };
   }
 
-  // 2. Contrôle du type MIME
-  if (!allowedMimes.includes(file.type)) {
+  // 2. Contrôle du type MIME et de l'extension
+  const fileName = file.name.toLowerCase();
+  const hasAllowedExt = ALLOWED_IMAGE_EXTENSIONS.some(ext => fileName.endsWith(ext));
+  const hasAllowedMime = allowedMimes.includes(file.type);
+
+  // Accepter si le type MIME correspond OU si l'extension d'image est légitime
+  if (!hasAllowedMime && !hasAllowedExt) {
     return { 
       valid: false, 
-      error: `Format de fichier non autorisé (${file.type || 'inconnu'}). Formats acceptés : JPEG, PNG, WebP.` 
+      error: `Format de fichier non autorisé (${file.type || 'inconnu'}). Formats acceptés : JPEG, PNG, WebP, GIF.` 
     };
   }
 
-  // 3. Contrôle de l'extension et détection des doubles extensions (.php.png, .exe.jpg)
-  const fileName = file.name.toLowerCase();
-  const hasAllowedExt = ALLOWED_IMAGE_EXTENSIONS.some(ext => fileName.endsWith(ext));
-  if (!hasAllowedExt) {
+  // Si le type MIME est explicitement un binaire/script dangereux, refuser
+  if (file.type && (file.type.includes('html') || file.type.includes('script') || file.type.includes('executable'))) {
     return { 
       valid: false, 
-      error: 'Extension de fichier non autorisée.' 
+      error: 'Type de fichier non autorisé pour des raisons de sécurité.' 
     };
   }
 
@@ -353,6 +370,16 @@ export function compressAndOptimizeImage(
         ctx.drawImage(img, 0, 0, width, height);
 
         try {
+          // 1. Tenter l'exportation en WebP (ultra-léger, supporte la transparence et réduit de 90%)
+          const webpData = canvas.toDataURL('image/webp', quality);
+          if (webpData.startsWith('data:image/webp')) {
+            resolve(webpData);
+            return;
+          }
+        } catch {}
+
+        try {
+          // 2. Repli standard : JPEG pour photos, PNG pour logos/illustrations
           const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
           const compressed = canvas.toDataURL(mime, quality);
           resolve(compressed);

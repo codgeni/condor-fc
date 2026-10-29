@@ -237,7 +237,7 @@ export default function Teams() {
       >
         <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8 }} style={{ position: 'relative', zIndex: 10 }}>
           <span style={{ color: 'var(--clr-primary)', letterSpacing: '3px', textTransform: 'uppercase', fontWeight: 'bold' }}>Saison 2026/27</span>
-          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '4.5rem', textTransform: 'uppercase', margin: '15px 0', textShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>Les Équipes du Condor FC</h1>
+          <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '4.5rem', textTransform: 'uppercase', margin: '15px 0', textShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>Condor EF</h1>
           <p style={{ fontSize: '1.2rem', color: '#ccc', maxWidth: '750px', margin: '0 auto 2rem' }}>
             Sélectionnez une catégorie ci-dessous pour découvrir l'effectif complet et consulter la fiche détaillée de chaque joueur.
           </p>
