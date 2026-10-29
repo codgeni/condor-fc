@@ -1966,7 +1966,8 @@ export async function saveSiteContent(content: SiteContent): Promise<{ success: 
       }
     }
   } catch (e: any) {
-    console.warn('Supabase save site content exception, stored in local cache', e);
+    console.warn('Supabase save site content exception:', e);
+    return { success: false, error: e.message || 'Erreur lors de la sauvegarde Supabase' };
   }
 
   return { success: true, data: content };
@@ -1989,10 +1990,21 @@ export function markPlayerDeleted(id: string): void {
 export function unmarkPlayerDeleted(id: string): void {
   const current = getDeletedPlayerIds();
   setLocalItem('deleted_player_ids', current.filter(x => x !== id));
+  // Async cleanup in cloud
+  try {
+    supabase.from('site_content').select('data').limit(1).then(({ data: scData }) => {
+      if (scData?.[0]?.data?.deleted_player_ids && Array.isArray(scData[0].data.deleted_player_ids)) {
+        const filtered = scData[0].data.deleted_player_ids.filter((x: string) => String(x) !== String(id));
+        supabase.from('site_content').update({
+          data: { ...scData[0].data, deleted_player_ids: filtered }
+        }).eq('id', 'main');
+      }
+    });
+  } catch (e) {}
 }
 
 export async function fetchMergedPlayers(): Promise<Record<string, any>> {
-  const deletedIds = new Set(getDeletedPlayerIds());
+  const deletedIds = new Set<string>(getDeletedPlayerIds());
   const merged: Record<string, any> = {};
 
   // 1. Initial base from playersDB
@@ -2005,10 +2017,17 @@ export async function fetchMergedPlayers(): Promise<Record<string, any>> {
     }
   }
 
-  // 2. Fetch from Supabase
+  // 2. Fetch from Supabase (SOURCE OF TRUTH)
   try {
-    const { data } = await supabase.from('players').select('*');
-    if (data && data.length > 0) {
+    // Cloud sync deleted players from site_content if present
+    const { data: scData } = await supabase.from('site_content').select('data').limit(1);
+    if (scData?.[0]?.data?.deleted_player_ids && Array.isArray(scData[0].data.deleted_player_ids)) {
+      scData[0].data.deleted_player_ids.forEach((did: string) => deletedIds.add(String(did)));
+      setLocalItem('deleted_player_ids', Array.from(deletedIds));
+    }
+
+    const { data, error } = await supabase.from('players').select('*');
+    if (!error && data && data.length > 0) {
       data.forEach((player: any) => {
         const strId = String(player.id);
         if (!deletedIds.has(strId)) {
@@ -2027,13 +2046,15 @@ export async function fetchMergedPlayers(): Promise<Record<string, any>> {
               if (parsed.custom_stat_label !== undefined) extraStats.custom_stat_label = parsed.custom_stat_label;
               if (parsed.custom_stat_val !== undefined) extraStats.custom_stat_val = parsed.custom_stat_val;
             } catch (e) {
-              // Ignore JSON parse error, keep actualFilter
+              // Ignore JSON parse error
             }
           }
 
           const supCats = Array.isArray(player.categories) && player.categories.length > 0
             ? player.categories
             : (player.category ? [player.category] : ['U17']);
+
+          // Supabase is authoritative and overrides default
           merged[strId] = {
             ...(merged[strId] || {}),
             ...player,
@@ -2042,14 +2063,20 @@ export async function fetchMergedPlayers(): Promise<Record<string, any>> {
             categories: supCats,
             is_spotlight: Boolean(player.is_spotlight || player.spotlight)
           };
+        } else {
+          delete merged[strId];
         }
       });
+
+      // Synchronize local cache to match the cloud state so stale local edits are purged
+      setLocalItem('players_custom', merged);
+      return merged;
     }
   } catch (err) {
     console.warn('Supabase fetch players fallback to local', err);
   }
 
-  // 3. Merge custom local cache
+  // 3. Fallback ONLY if Supabase is offline/unreachable
   const localCache = getLocalItem<Record<string, any>>('players_custom', {});
   for (const [id, player] of Object.entries(localCache)) {
     const strId = String(id);
@@ -2106,11 +2133,6 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
     custom_stat_label: player.custom_stat_label || '',
     custom_stat_val: player.custom_stat_val !== undefined ? Number(player.custom_stat_val) : 0
   };
-
-  // Update local cache
-  const localCache = getLocalItem<Record<string, any>>('players_custom', {});
-  localCache[strId] = fullPlayer;
-  setLocalItem('players_custom', localCache);
 
   // Encode extra fields into filter column to persist safely on Supabase
   const filterMeta = JSON.stringify({
@@ -2180,13 +2202,19 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
 
       if (res?.error) {
         console.error('Supabase player update error:', res.error.message);
-        return { success: true, error: res.error.message };
+        return { success: false, error: res.error.message };
       }
     }
+
+    // Update local cache on confirmed save
+    const localCache = getLocalItem<Record<string, any>>('players_custom', {});
+    localCache[strId] = fullPlayer;
+    setLocalItem('players_custom', localCache);
+
     return { success: true };
   } catch (e: any) {
     console.error('Player save exception:', e);
-    return { success: true };
+    return { success: false, error: e.message || 'Erreur lors de la sauvegarde sur le serveur' };
   }
 }
 
@@ -2201,9 +2229,22 @@ export async function deletePlayerRecord(id: string): Promise<{ success: boolean
   }
 
   try {
+    // 1. Delete row from players table in Supabase
     const { error } = await supabase.from('players').delete().eq('id', strId);
     if (error) {
       console.warn('Supabase delete player note:', error.message);
+    }
+
+    // 2. Persist deleted id to cloud site_content.data.deleted_player_ids
+    const { data: scData } = await supabase.from('site_content').select('data').limit(1);
+    const existingDeleted = Array.isArray(scData?.[0]?.data?.deleted_player_ids)
+      ? scData![0].data.deleted_player_ids
+      : [];
+    if (!existingDeleted.includes(strId)) {
+      const updatedDeleted = [...existingDeleted, strId];
+      await supabase.from('site_content').update({
+        data: { ...(scData?.[0]?.data || {}), deleted_player_ids: updatedDeleted }
+      }).eq('id', 'main');
     }
   } catch (e: any) {
     console.warn('Supabase delete player fallback note', e);

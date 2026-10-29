@@ -136,8 +136,8 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
     showToast("Optimisation et compression de l'image en cours...");
 
     try {
-      // Compression proportionnelle à 1600px max, qualité 0.82 (réduit de 90-95% le poids sans perte visible)
-      const compressed = await compressAndOptimizeImage(file, 1600, 0.82);
+      // Compression proportionnelle à 1200px max, qualité 0.76 (ultra-léger, chargement immédiat et sans limite de stockage)
+      const compressed = await compressAndOptimizeImage(file, 1200, 0.76);
       setForm(prev => ({ ...prev, [key]: compressed }));
       showToast("Image optimisée et chargée avec succès ! Cliquez sur 'Enregistrer' pour valider.");
     } catch (err: any) {
