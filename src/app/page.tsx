@@ -1071,14 +1071,30 @@ export default function Home() {
       </section>
 
       {/* 10. Infinite Marquee Sponsors */}
-      <section style={{ padding: '3rem 0', background: 'var(--clr-black)', borderTop: '1px solid #333', borderBottom: '1px solid #333', overflow: 'hidden' }}>
+      <section style={{ padding: '2.5rem 0', background: 'var(--clr-black)', borderTop: '1px solid #333', borderBottom: '1px solid #333', overflow: 'hidden' }}>
         <motion.div 
-          animate={{ x: [0, -1000] }} 
-          transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
-          style={{ display: 'flex', gap: '6rem', whiteSpace: 'nowrap', width: 'max-content', opacity: 0.5 }}
+          animate={{ x: [0, -1200] }} 
+          transition={{ repeat: Infinity, duration: 22, ease: 'linear' }}
+          style={{ display: 'flex', gap: '6rem', whiteSpace: 'nowrap', width: 'max-content', alignItems: 'center' }}
         >
-          {Array(4).fill(['CONDOR ACADEMY', 'EDU-SPORT', 'DELMAS 77', 'FOOTBALL HAITI', 'CONDOR ECOLE']).flat().map((sponsor, i) => (
-            <h3 key={i} style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', color: 'white', margin: 0 }}>{sponsor}</h3>
+          {Array(8).fill([
+            { name: 'CONDOR ACADEMY', logo: '/condor_logo_transparent.png' },
+            { name: 'DNC', logo: '/logo-dnc.png' }
+          ]).flat().map((sponsor, i) => (
+            <div key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '1.2rem' }}>
+              <img 
+                src={sponsor.logo} 
+                alt={sponsor.name} 
+                style={{ 
+                  height: sponsor.name === 'DNC' ? '46px' : '52px', 
+                  width: 'auto', 
+                  objectFit: 'contain'
+                }} 
+              />
+              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', color: 'white', margin: 0, letterSpacing: '1px' }}>
+                {sponsor.name}
+              </h3>
+            </div>
           ))}
         </motion.div>
       </section>
