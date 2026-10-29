@@ -303,9 +303,11 @@ export function checkRateLimit(actionKey: string, cooldownMs = 3000): { allowed:
  */
 export function compressAndOptimizeImage(
   file: File,
-  maxDimension = 1600,
-  quality = 0.85
+  maxDimension = 900,
+  quality = 0.72
 ): Promise<string> {
+  const effectiveMaxDim = Math.min(maxDimension, 900);
+  const effectiveQuality = Math.min(quality, 0.75);
   return new Promise((resolve, reject) => {
     const validation = validateUploadFile(file);
     if (!validation.valid) {
@@ -345,13 +347,13 @@ export function compressAndOptimizeImage(
         }
 
         // Calcul des dimensions proportionnelles
-        if (width > maxDimension || height > maxDimension) {
+        if (width > effectiveMaxDim || height > effectiveMaxDim) {
           if (width > height) {
-            height = Math.round((height * maxDimension) / width);
-            width = maxDimension;
+            height = Math.round((height * effectiveMaxDim) / width);
+            width = effectiveMaxDim;
           } else {
-            width = Math.round((width * maxDimension) / height);
-            height = maxDimension;
+            width = Math.round((width * effectiveMaxDim) / height);
+            height = effectiveMaxDim;
           }
         }
 
@@ -371,7 +373,7 @@ export function compressAndOptimizeImage(
 
         try {
           // 1. Tenter l'exportation en WebP (ultra-léger, supporte la transparence et réduit de 90%)
-          const webpData = canvas.toDataURL('image/webp', quality);
+          const webpData = canvas.toDataURL('image/webp', effectiveQuality);
           if (webpData.startsWith('data:image/webp')) {
             resolve(webpData);
             return;
@@ -381,7 +383,7 @@ export function compressAndOptimizeImage(
         try {
           // 2. Repli standard : JPEG pour photos, PNG pour logos/illustrations
           const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-          const compressed = canvas.toDataURL(mime, quality);
+          const compressed = canvas.toDataURL(mime, effectiveQuality);
           resolve(compressed);
         } catch {
           resolve(src);

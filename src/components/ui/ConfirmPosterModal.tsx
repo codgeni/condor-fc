@@ -95,11 +95,11 @@ export function ConfirmPosterProvider({ children }: { children: React.ReactNode 
     });
   }, []);
 
-  // Auto-dismiss countdown for success poster (3.5 seconds)
+  // Auto-dismiss countdown for success poster (1.8 seconds for snappy UX)
   useEffect(() => {
     if (!successPoster.isOpen) return;
 
-    const duration = 3500;
+    const duration = 1800;
     const intervalTime = 50;
     const step = (intervalTime / duration) * 100;
 
@@ -169,8 +169,7 @@ export function ConfirmPosterProvider({ children }: { children: React.ReactNode 
               left: 0,
               width: '100vw',
               height: '100vh',
-              background: 'rgba(0, 0, 0, 0.78)',
-              backdropFilter: 'blur(8px)',
+              background: 'rgba(0, 0, 0, 0.82)',
               zIndex: 999999,
               display: 'flex',
               alignItems: 'center',
@@ -180,10 +179,10 @@ export function ConfirmPosterProvider({ children }: { children: React.ReactNode 
             }}
           >
             <motion.div
-              initial={{ scale: 0.85, opacity: 0, y: 30 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.1, ease: 'easeOut' }}
               onClick={e => e.stopPropagation()}
               style={{
                 background: 'linear-gradient(145deg, #161616 0%, #1a050f 100%)',
@@ -390,8 +389,7 @@ export function ConfirmPosterProvider({ children }: { children: React.ReactNode 
               left: 0,
               width: '100vw',
               height: '100vh',
-              background: 'rgba(0, 0, 0, 0.78)',
-              backdropFilter: 'blur(8px)',
+              background: 'rgba(0, 0, 0, 0.82)',
               zIndex: 999999,
               display: 'flex',
               alignItems: 'center',
@@ -401,10 +399,10 @@ export function ConfirmPosterProvider({ children }: { children: React.ReactNode 
             }}
           >
             <motion.div
-              initial={{ scale: 0.85, opacity: 0, y: 30 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.1, ease: 'easeOut' }}
               onClick={e => e.stopPropagation()}
               style={{
                 background: 'linear-gradient(145deg, #161616 0%, #1e0914 100%)',

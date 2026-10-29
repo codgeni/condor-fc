@@ -409,12 +409,12 @@ export default function PlayersManager({
       },
       onConfirm: async () => {
         setSaving(true);
+        setEditingPlayer(null);
+        setIsCreating(false);
         try {
           const res = await savePlayerRecord(payload);
           if (res.success) {
             showToast(`Fiche de ${payload.name} enregistrée avec succès !`);
-            setEditingPlayer(null);
-            setIsCreating(false);
             onRefresh();
           } else {
             showToast(`Erreur lors de l'enregistrement : ${res.error || 'Veuillez réessayer'}`);
@@ -428,20 +428,33 @@ export default function PlayersManager({
     });
   };
 
-  const handleRestoreAll = async () => {
-    setSaving(true);
-    try {
-      showToast("Restauration et synchronisation de tous les joueurs en cours...");
-      const res = await restoreAllPlayers();
-      if (res.success) {
-        showToast(`✅ Effectif complet restauré et synchronisé (${res.count} joueurs) !`);
-        onRefresh();
-      } else {
-        showToast(`Erreur lors de la restauration : ${res.error || ''}`);
+  const handleRestoreAll = () => {
+    askConfirm({
+      title: "SYNCHRONISER / RESTAURER L'EFFECTIF",
+      message: "Confirmez-vous la synchronisation et la restauration complète de l'effectif des joueurs depuis la base de données ?",
+      confirmLabel: "OUI, SYNCHRONISER",
+      itemDetails: {
+        type: 'Synchronisation',
+        title: "Restauration de l'Effectif Complet",
+        subtitle: "Récupération et synchronisation de tous les joueurs du club",
+        image: '/condor_logo_transparent.png',
+        badge: 'Base de données'
+      },
+      onConfirm: async () => {
+        setSaving(true);
+        try {
+          const res = await restoreAllPlayers();
+          if (res.success) {
+            showToast(`✅ Effectif complet restauré et synchronisé (${res.count} joueurs) !`);
+            onRefresh();
+          } else {
+            showToast(`Erreur lors de la restauration : ${res.error || ''}`);
+          }
+        } finally {
+          setSaving(false);
+        }
       }
-    } finally {
-      setSaving(false);
-    }
+    });
   };
 
   // Delete player

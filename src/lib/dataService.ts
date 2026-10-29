@@ -2194,6 +2194,7 @@ export function markPlayerDeleted(id: string): void {
 
 export function unmarkPlayerDeleted(id: string): void {
   const current = getDeletedPlayerIds();
+  if (!current.includes(id)) return;
   setLocalItem('deleted_player_ids', current.filter(x => x !== id));
   // Async cleanup in cloud
   try {
@@ -2215,24 +2216,26 @@ export async function fetchMergedPlayers(): Promise<Record<string, any>> {
   const merged: Record<string, any> = {};
   const priorLocalCache = getLocalItem<Record<string, any>>('players_custom', {});
 
-  // 1. Fetch from Supabase (SOURCE OF TRUTH)
+  // 1. Fetch from Supabase in parallel (SOURCE OF TRUTH)
   let supabaseReachable = false;
   let supaRows: any[] = [];
   try {
-    // Cloud deleted_player_ids is authoritative over stale browser localStorage
-    const { data: scData, error: scErr } = await supabase.from('site_content').select('data').limit(1);
-    if (!scErr && scData) {
-      const cloudDeleted = Array.isArray(scData[0]?.data?.deleted_player_ids)
-        ? scData[0].data.deleted_player_ids.map(String)
+    const [scRes, playersRes] = await Promise.all([
+      supabase.from('site_content').select('data').limit(1),
+      supabase.from('players').select('*')
+    ]);
+
+    if (!scRes.error && scRes.data) {
+      const cloudDeleted = Array.isArray(scRes.data[0]?.data?.deleted_player_ids)
+        ? scRes.data[0].data.deleted_player_ids.map(String)
         : [];
       deletedIds = new Set<string>(cloudDeleted);
       setLocalItem('deleted_player_ids', cloudDeleted);
     }
 
-    const { data, error } = await supabase.from('players').select('*');
-    if (!error && data && data.length > 0) {
+    if (!playersRes.error && playersRes.data && playersRes.data.length > 0) {
       supabaseReachable = true;
-      supaRows = data;
+      supaRows = playersRes.data;
     }
   } catch (err) {
     console.warn('Supabase fetch players fallback to local', err);
@@ -2400,13 +2403,7 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
   };
 
   try {
-    const { data: existing } = await supabase.from('players').select('id').eq('id', strId);
-    let res;
-    if (existing && existing.length > 0) {
-      res = await supabase.from('players').update(dbPayload).eq('id', strId);
-    } else {
-      res = await supabase.from('players').insert(dbPayload);
-    }
+    let res = await supabase.from('players').upsert(dbPayload, { onConflict: 'id' });
 
     if (res?.error) {
       console.warn('Supabase save player notice, attempting fallback:', res.error.message);
@@ -2421,11 +2418,7 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
         delete retryPayload.categories;
       }
 
-      if (existing && existing.length > 0) {
-        res = await supabase.from('players').update(retryPayload).eq('id', strId);
-      } else {
-        res = await supabase.from('players').insert(retryPayload);
-      }
+      res = await supabase.from('players').upsert(retryPayload, { onConflict: 'id' });
 
       if (res?.error) {
         console.error('Supabase player update error:', res.error.message);

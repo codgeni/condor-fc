@@ -18,16 +18,16 @@ import {
   fetchCurrentMatch, saveMatchConfig, MatchConfig,
   fetchVideos, saveVideo, deleteVideo, VideoItem, parseVideoUrl,
   fetchStages, saveStage, deleteStage, StageSession,
-  fetchProducts, saveProduct, deleteProduct, ShopProduct,
+  fetchProducts, saveProduct, deleteProduct, ShopProduct, DEFAULT_PRODUCTS,
   fetchShopOrders, ShopOrder,
   savePlayerRecord, deletePlayerRecord,
-  fetchUnits, UnitItem,
-  fetchRoles, RoleItem,
-  fetchStaff, StaffMember,
-  fetchTimeline, TimelineItem,
+  fetchUnits, UnitItem, DEFAULT_UNITS,
+  fetchRoles, RoleItem, DEFAULT_ROLES,
+  fetchStaff, StaffMember, DEFAULT_STAFF,
+  fetchTimeline, TimelineItem, DEFAULT_TIMELINE,
   fetchSiteContent, saveSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
   fetchMergedPlayers, fetchNews, isRealNews,
-  parseMatchDateTime
+  parseMatchDateTime, getLocalItem
 } from '@/lib/dataService';
 import { validateUploadFile, sanitizeFormRecord, compressAndOptimizeImage } from '@/lib/security';
 
@@ -106,7 +106,7 @@ export default function AdminPanel() {
   const [appointments, setAppointments] = useState<any[]>([]);
 
   // 4. Boutique / Products State
-  const [products, setProducts] = useState<ShopProduct[]>([]);
+  const [products, setProducts] = useState<ShopProduct[]>(DEFAULT_PRODUCTS);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [shopOrders, setShopOrders] = useState<ShopOrder[]>([]);
 
@@ -114,8 +114,8 @@ export default function AdminPanel() {
   const [newsList, setNewsList] = useState<any[]>([]);
   const [editingNews, setEditingNews] = useState<any>(null);
 
-  // 6. Players State
-  const [players, setPlayers] = useState<Record<string, any>>({});
+  // 6. Players State (hydrated immediately from playersDB for 0ms render)
+  const [players, setPlayers] = useState<Record<string, any>>(playersDB);
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
   const [creatingPlayer, setCreatingPlayer] = useState(false);
 
@@ -126,76 +126,97 @@ export default function AdminPanel() {
   const [supporters, setSupporters] = useState<any[]>([]);
 
   // 8. Units, Roles, Staff, Timeline, Site Content States
-  const [units, setUnits] = useState<UnitItem[]>([]);
-  const [roles, setRoles] = useState<RoleItem[]>([]);
-  const [staff, setStaff] = useState<StaffMember[]>([]);
-  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+  const [units, setUnits] = useState<UnitItem[]>(DEFAULT_UNITS);
+  const [roles, setRoles] = useState<RoleItem[]>(DEFAULT_ROLES);
+  const [staff, setStaff] = useState<StaffMember[]>(DEFAULT_STAFF);
+  const [timeline, setTimeline] = useState<TimelineItem[]>(DEFAULT_TIMELINE);
   const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
 
   const showToast = (msg: string) => {
     showConfirmed(msg);
   };
 
-  // Load all data
-  const fetchData = async () => {
-    // 1. Fetch Match & Slides
-    const currentMatch = await fetchCurrentMatch();
-    if (currentMatch) setMatchConfig(currentMatch);
-
-    const { data: slidesData } = await supabase.from('slides').select('*').order('created_at', { ascending: true });
-    if (slidesData) setSlides(slidesData);
-
-    // 2. Fetch Videos
-    const videosData = await fetchVideos();
-    if (videosData) setVideos(videosData);
-
-    // 3. Fetch Stages
-    const stagesData = await fetchStages();
-    if (stagesData) setStages(stagesData);
-
-    const { data: stageInscriptions } = await supabase.from('stages_inscriptions').select('*').order('created_at', { ascending: false });
-    if (stageInscriptions) setStageRegistrations(stageInscriptions);
-
-    const { data: rdvData } = await supabase.from('appointments').select('*').order('created_at', { ascending: false });
-    if (rdvData) setAppointments(rdvData);
-
-    // 4. Fetch Products & Commandes Boutique
-    const [productsData, ordersData] = await Promise.all([
-      fetchProducts(),
-      fetchShopOrders()
-    ]);
-    if (productsData) setProducts(productsData);
-    if (ordersData) setShopOrders(ordersData);
-
-    // 5. Fetch News
-    const newsData = await fetchNews();
-    if (newsData) setNewsList(newsData);
-
-    // 6. Fetch Players (Merged with Supabase & local cache, excluding deleted players)
+  // Fast targeted refresh callbacks so edits only reload the modified table
+  const refreshPlayers = async () => {
     const mergedPlayers = await fetchMergedPlayers();
     if (mergedPlayers) setPlayers(mergedPlayers);
+  };
 
-    // 7. Fetch Units, Roles, Staff, Timeline, Site Content
-    const [unitsData, rolesData, staffData, timelineData, siteContentData] = await Promise.all([
+  const refreshUnits = async () => {
+    const [unitsData, mergedPlayers] = await Promise.all([
       fetchUnits(),
-      fetchRoles(),
-      fetchStaff(),
-      fetchTimeline(),
-      fetchSiteContent()
+      fetchMergedPlayers()
     ]);
-
     if (unitsData) setUnits(unitsData);
+    if (mergedPlayers) setPlayers(mergedPlayers);
+  };
+
+  const refreshRoles = async () => {
+    const rolesData = await fetchRoles();
     if (rolesData) setRoles(rolesData);
+  };
+
+  const refreshStaff = async () => {
+    const staffData = await fetchStaff();
     if (staffData) setStaff(staffData);
+  };
+
+  const refreshTimeline = async () => {
+    const timelineData = await fetchTimeline();
     if (timelineData) setTimeline(timelineData);
+  };
+
+  const refreshSiteContent = async () => {
+    const siteContentData = await fetchSiteContent();
     if (siteContentData) setSiteContent(siteContentData);
+  };
 
-    // 8. Fetch Inscriptions & Supporters
-    const { data: inscriptionsData } = await supabase.from('inscriptions').select('*').order('created_at', { ascending: false });
-    if (inscriptionsData) setInscriptions(inscriptionsData);
+  const refreshProducts = async () => {
+    const productsData = await fetchProducts();
+    if (productsData) setProducts(productsData);
+  };
 
-    const { data: supportersData } = await supabase.from('supporters').select('*').order('created_at', { ascending: false });
-    if (supportersData) setSupporters(supportersData);
+  const refreshOrders = async () => {
+    const ordersData = await fetchShopOrders();
+    if (ordersData) setShopOrders(ordersData);
+  };
+
+  // Load all data in parallel (non-blocking)
+  const fetchData = async () => {
+    // Hydrate from local cache first for instant display
+    const cachedPlayers = getLocalItem<Record<string, any>>('players_custom', {});
+    if (cachedPlayers && Object.keys(cachedPlayers).length > 0) {
+      setPlayers({ ...playersDB, ...cachedPlayers });
+    }
+    const cachedNews = getLocalItem<any[]>('news_list', []);
+    if (cachedNews && cachedNews.length > 0) setNewsList(cachedNews);
+    const cachedUnits = getLocalItem<UnitItem[]>('units_list', DEFAULT_UNITS);
+    if (cachedUnits && cachedUnits.length > 0) setUnits(cachedUnits);
+
+    // Fetch all tables in parallel — each updates its state as soon as it resolves
+    fetchMergedPlayers().then(p => { if (p) setPlayers(p); });
+    fetchNews().then(n => { if (n) setNewsList(n); });
+    fetchUnits().then(u => { if (u) setUnits(u); });
+    fetchRoles().then(r => { if (r) setRoles(r); });
+    fetchStaff().then(s => { if (s) setStaff(s); });
+    fetchTimeline().then(t => { if (t) setTimeline(t); });
+    fetchSiteContent().then(sc => { if (sc) setSiteContent(sc); });
+    fetchCurrentMatch().then(m => { if (m) setMatchConfig(m); });
+    fetchVideos().then(v => { if (v) setVideos(v); });
+    fetchStages().then(st => { if (st) setStages(st); });
+    fetchProducts().then(pr => { if (pr) setProducts(pr); });
+    fetchShopOrders().then(or => { if (or) setShopOrders(or); });
+
+    supabase.from('slides').select('*').order('created_at', { ascending: true })
+      .then(({ data }) => { if (data) setSlides(data); });
+    supabase.from('stages_inscriptions').select('*').order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setStageRegistrations(data); });
+    supabase.from('appointments').select('*').order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setAppointments(data); });
+    supabase.from('inscriptions').select('*').order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setInscriptions(data); });
+    supabase.from('supporters').select('*').order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setSupporters(data); });
   };
 
   useEffect(() => {
@@ -546,6 +567,7 @@ export default function AdminPanel() {
         badge: payload.cat
       },
       onConfirm: async () => {
+        setEditingNews(null);
         let error;
         if (editingNews.id) {
           const res = await supabase.from('news').update(payload).eq('id', editingNews.id);
@@ -559,8 +581,7 @@ export default function AdminPanel() {
           showToast('Erreur lors de l\'enregistrement de l\'article.');
         } else {
           showToast('Article de presse enregistré avec succès !');
-          setEditingNews(null);
-          fetchData();
+          fetchNews().then(n => { if (n) setNewsList(n); });
         }
       }
     });
@@ -580,12 +601,14 @@ export default function AdminPanel() {
         badge: article?.cat || 'Club'
       },
       onConfirm: async () => {
+        setNewsList(prev => prev.filter(n => n.id !== id));
         const { error } = await supabase.from('news').delete().eq('id', id);
         if (error) {
           showToast("Impossible de supprimer l'article.");
+          fetchNews().then(n => { if (n) setNewsList(n); });
         } else {
           showToast('Article supprimé avec succès.');
-          fetchData();
+          fetchNews().then(n => { if (n) setNewsList(n); });
         }
       }
     });
@@ -2110,7 +2133,7 @@ export default function AdminPanel() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <ShopManager
               products={products}
-              onRefresh={fetchData}
+              onRefresh={refreshProducts}
               showToast={showToast}
               onViewOrders={() => setActiveTab('orders')}
               ordersCount={shopOrders.length}
@@ -2126,7 +2149,7 @@ export default function AdminPanel() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <OrdersManager
               orders={shopOrders}
-              onRefresh={fetchData}
+              onRefresh={refreshOrders}
               showToast={showToast}
             />
           </motion.div>
@@ -2339,7 +2362,7 @@ export default function AdminPanel() {
             <UnitsManager 
               units={units} 
               players={players} 
-              onRefresh={fetchData} 
+              onRefresh={refreshUnits} 
               showToast={showToast} 
             />
           </motion.div>
@@ -2353,7 +2376,7 @@ export default function AdminPanel() {
             <RolesManager 
               roles={roles} 
               players={players} 
-              onRefresh={fetchData} 
+              onRefresh={refreshRoles} 
               showToast={showToast} 
             />
           </motion.div>
@@ -2368,7 +2391,7 @@ export default function AdminPanel() {
               players={players} 
               units={units} 
               roles={roles} 
-              onRefresh={fetchData} 
+              onRefresh={refreshPlayers} 
               showToast={showToast} 
             />
           </motion.div>
@@ -2381,7 +2404,7 @@ export default function AdminPanel() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <StaffManager 
               staff={staff} 
-              onRefresh={fetchData} 
+              onRefresh={refreshStaff} 
               showToast={showToast} 
             />
           </motion.div>
@@ -2394,7 +2417,7 @@ export default function AdminPanel() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <TimelineManager 
               timeline={timeline} 
-              onRefresh={fetchData} 
+              onRefresh={refreshTimeline} 
               showToast={showToast} 
             />
           </motion.div>
@@ -2407,7 +2430,7 @@ export default function AdminPanel() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <SiteTextsManager 
               content={siteContent} 
-              onRefresh={fetchData} 
+              onRefresh={refreshSiteContent} 
               showToast={showToast} 
             />
           </motion.div>
