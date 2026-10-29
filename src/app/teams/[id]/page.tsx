@@ -18,12 +18,6 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
   useEffect(() => {
     const fetchPlayer = async () => {
       const pid = unwrappedParams.id;
-      const deletedIds = getDeletedPlayerIds();
-      if (deletedIds.includes(String(pid))) {
-        setPlayer(null);
-        setHasAttemptedFetch(true);
-        return;
-      }
 
       try {
         const merged = await fetchMergedPlayers();

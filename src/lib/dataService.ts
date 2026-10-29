@@ -851,8 +851,28 @@ export function setLocalItem<T>(key: string, value: T): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(`condor_${key}`, JSON.stringify(value));
-  } catch (e) {
-    console.error('LocalStorage error:', e);
+  } catch (e: any) {
+    // Handle QuotaExceededError gracefully (e.g., when players have large base64 photos)
+    if (key === 'players_custom' && value && typeof value === 'object') {
+      try {
+        const slim: Record<string, any> = {};
+        for (const [k, v] of Object.entries(value as Record<string, any>)) {
+          if (v && typeof v === 'object') {
+            slim[k] = {
+              ...v,
+              img: typeof v.img === 'string' && v.img.length > 2000 ? '/condor_logo_transparent.png' : v.img,
+              detail_img: typeof v.detail_img === 'string' && v.detail_img.length > 2000 ? '/condor_logo_transparent.png' : v.detail_img,
+              detailImg: typeof v.detailImg === 'string' && v.detailImg.length > 2000 ? '/condor_logo_transparent.png' : v.detailImg,
+            };
+          }
+        }
+        localStorage.setItem(`condor_${key}`, JSON.stringify(slim));
+        return;
+      } catch {
+        // Ignore secondary storage error
+      }
+    }
+    console.warn('LocalStorage notice:', e?.message || e);
   }
 }
 
@@ -978,16 +998,28 @@ export async function fetchCurrentMatch(): Promise<MatchConfig> {
 export async function saveMatchConfig(config: MatchConfig): Promise<{ success: boolean; data?: any; error?: string }> {
   setLocalItem('current_match', config);
 
+  const dbPayload: Record<string, any> = {
+    home_team: config.home_team || 'Condor Ecole de Football',
+    opponent: config.opponent || 'Adversaire',
+    opponent_logo: config.opponent_logo || null,
+    match_date: config.match_date || '',
+    match_time: config.match_time || '',
+    location: config.location || '',
+    competition: config.competition || '',
+    no_matches_now: Boolean(config.no_matches_now),
+    is_active: config.is_active !== false
+  };
+
   try {
     let result;
     if (config.id && typeof config.id === 'number') {
-      result = await supabase.from('matches').update(config).eq('id', config.id).select();
+      result = await supabase.from('matches').update(dbPayload).eq('id', config.id).select();
     } else {
       const { data: existing } = await supabase.from('matches').select('id').limit(1);
       if (existing && existing.length > 0) {
-        result = await supabase.from('matches').update(config).eq('id', existing[0].id).select();
+        result = await supabase.from('matches').update(dbPayload).eq('id', existing[0].id).select();
       } else {
-        result = await supabase.from('matches').insert(config).select();
+        result = await supabase.from('matches').insert(dbPayload).select();
       }
     }
 
@@ -996,7 +1028,7 @@ export async function saveMatchConfig(config: MatchConfig): Promise<{ success: b
       return { success: true, data: config };
     }
 
-    return { success: true, data: result.data?.[0] || config };
+    return { success: true, data: result.data?.[0] ? { ...config, ...result.data[0] } : config };
   } catch (e: any) {
     return { success: true, data: config };
   }
@@ -1227,7 +1259,15 @@ export async function fetchProducts(): Promise<ShopProduct[]> {
   // Superposer les enregistrements Supabase
   dbProducts.forEach(p => {
     const existing = map.get(p.id);
-    map.set(p.id, { ...(existing || {}), ...p });
+    const isAvail = p.formatted_price === 'INDISPONIBLE'
+      ? false
+      : (p.is_available !== undefined ? p.is_available : (existing?.is_available !== false));
+    map.set(p.id, {
+      ...(existing || {}),
+      ...p,
+      formatted_price: '',
+      is_available: isAvail
+    });
   });
 
   const merged = Array.from(map.values());
@@ -1239,16 +1279,28 @@ export async function saveProduct(product: ShopProduct): Promise<{ success: bool
   const currentList = await fetchProducts();
   const targetProduct: ShopProduct = {
     ...product,
+    is_available: product.is_available !== false,
     price: 0,
     formatted_price: ''
   };
 
+  const dbPayload = {
+    id: String(targetProduct.id),
+    title: targetProduct.title,
+    price: 0,
+    formatted_price: targetProduct.is_available === false ? 'INDISPONIBLE' : '',
+    tag: targetProduct.tag || null,
+    img: targetProduct.img,
+    description: targetProduct.description || '',
+    sizes: Array.isArray(targetProduct.sizes) ? targetProduct.sizes : ['S', 'M', 'L', 'XL']
+  };
+
   try {
-    const { data: existing } = await supabase.from('products').select('id').eq('id', targetProduct.id);
+    const { data: existing } = await supabase.from('products').select('id').eq('id', dbPayload.id);
     if (existing && existing.length > 0) {
-      await supabase.from('products').update(targetProduct).eq('id', targetProduct.id);
+      await supabase.from('products').update(dbPayload).eq('id', dbPayload.id);
     } else {
-      await supabase.from('products').insert(targetProduct);
+      await supabase.from('products').insert(dbPayload);
     }
   } catch (e) {
     console.warn('Supabase save product note, stored in local cache', e);
@@ -1291,13 +1343,22 @@ export async function toggleProductAvailability(id: string, is_available: boolea
   setLocalItem('products_list', updated);
 
   if (target) {
-    const updatedProd = { ...target, is_available, price: 0, formatted_price: '' };
+    const dbPayload = {
+      id: String(target.id),
+      title: target.title,
+      price: 0,
+      formatted_price: is_available === false ? 'INDISPONIBLE' : '',
+      tag: target.tag || null,
+      img: target.img,
+      description: target.description || '',
+      sizes: Array.isArray(target.sizes) ? target.sizes : ['S', 'M', 'L', 'XL']
+    };
     try {
       const { data: existing } = await supabase.from('products').select('id').eq('id', id);
       if (existing && existing.length > 0) {
-        await supabase.from('products').update({ is_available }).eq('id', id);
+        await supabase.from('products').update({ formatted_price: dbPayload.formatted_price }).eq('id', id);
       } else {
-        await supabase.from('products').insert(updatedProd);
+        await supabase.from('products').insert(dbPayload);
       }
     } catch (e) {
       console.warn('Supabase toggle product availability note', e);
@@ -1591,6 +1652,9 @@ export async function saveUnit(unit: UnitItem): Promise<{ success: boolean; data
     is_active: unit.is_active !== undefined ? unit.is_active : true
   };
 
+  const localOld = currentList.find(u => String(u.id) === String(targetUnit.id));
+  let oldName = localOld?.name;
+
   const dbPayload = {
     id: String(targetUnit.id),
     name: targetUnit.name,
@@ -1601,15 +1665,32 @@ export async function saveUnit(unit: UnitItem): Promise<{ success: boolean; data
   };
 
   try {
-    const { data: existing } = await supabase.from('units').select('id').eq('id', dbPayload.id);
+    const { data: existing } = await supabase.from('units').select('id, name').eq('id', dbPayload.id);
     let res;
     if (existing && existing.length > 0) {
+      if (!oldName && existing[0].name) {
+        oldName = existing[0].name;
+      }
       res = await supabase.from('units').update(dbPayload).eq('id', dbPayload.id);
     } else {
       res = await supabase.from('units').insert(dbPayload);
     }
     if (res?.error) {
       console.warn('Supabase save unit notice (saved to local cache):', res.error.message);
+    }
+
+    // If unit name changed, migrate all players belonging to oldName so they never disappear
+    if (oldName && oldName !== targetUnit.name) {
+      const allPlayers = await fetchMergedPlayers();
+      for (const p of Object.values(allPlayers)) {
+        const cats: string[] = Array.isArray(p.categories) ? p.categories : (p.category ? [p.category] : []);
+        if (p.category === oldName || cats.includes(oldName)) {
+          const newCats = Array.from(new Set(cats.map(c => c === oldName ? targetUnit.name : c)));
+          if (!newCats.includes(targetUnit.name)) newCats.push(targetUnit.name);
+          const newPrimary = p.category === oldName ? targetUnit.name : p.category;
+          await savePlayerRecord({ ...p, category: newPrimary, categories: newCats });
+        }
+      }
     }
   } catch (e) {
     console.warn('Supabase save unit exception, stored in local cache', e);
@@ -1927,21 +2008,33 @@ export async function fetchSiteContent(): Promise<SiteContent> {
   const localCache = getLocalItem<SiteContent>('site_content', DEFAULT_SITE_CONTENT);
 
   if (remoteData) {
-    const unpacked = remoteData.data ? { ...DEFAULT_SITE_CONTENT, ...remoteData.data, ...remoteData } : { ...DEFAULT_SITE_CONTENT, ...remoteData };
+    const rawInner = (remoteData.data && typeof remoteData.data === 'object') ? { ...remoteData.data } : {};
+    delete rawInner.data;
+    const rawOuter = { ...remoteData };
+    delete rawOuter.data;
+    const unpacked = { ...DEFAULT_SITE_CONTENT, ...rawInner, ...rawOuter };
     // Les données distantes de Supabase sont prioritaires sur le cache local
     const merged: SiteContent = { ...DEFAULT_SITE_CONTENT, ...localCache, ...unpacked };
+    delete (merged as any).data;
     setLocalItem('site_content', merged);
     return merged;
   }
 
-  return localCache ? { ...DEFAULT_SITE_CONTENT, ...localCache } : DEFAULT_SITE_CONTENT;
+  const cleanLocal = localCache ? { ...DEFAULT_SITE_CONTENT, ...localCache } : { ...DEFAULT_SITE_CONTENT };
+  delete (cleanLocal as any).data;
+  return cleanLocal;
 }
 
 export async function saveSiteContent(content: SiteContent): Promise<{ success: boolean; data?: SiteContent; error?: any }> {
-  setLocalItem('site_content', content);
+  const cleanContent: Record<string, any> = { ...content };
+  delete cleanContent.data;
+  setLocalItem('site_content', cleanContent as SiteContent);
 
   try {
-    const { data: existing } = await supabase.from('site_content').select('id').limit(1);
+    const { data: existing } = await supabase.from('site_content').select('id, data').limit(1);
+    if (existing?.[0]?.data?.deleted_player_ids && !cleanContent.deleted_player_ids) {
+      cleanContent.deleted_player_ids = existing[0].data.deleted_player_ids;
+    }
     const payload: any = {
       hero_tag: content.hero_tag,
       hero_title: content.hero_title,
@@ -1949,7 +2042,7 @@ export async function saveSiteContent(content: SiteContent): Promise<{ success: 
       no_match_text: content.no_match_text,
       about_title: content.about_title,
       about_text: content.about_text,
-      data: content
+      data: cleanContent
     };
 
     if (existing && existing.length > 0) {
@@ -1970,12 +2063,124 @@ export async function saveSiteContent(content: SiteContent): Promise<{ success: 
     return { success: false, error: e.message || 'Erreur lors de la sauvegarde Supabase' };
   }
 
-  return { success: true, data: content };
+  return { success: true, data: cleanContent as SiteContent };
 }
 
 // =============================================================
 // 10. DELETED PLAYERS TRACKING & PLAYERS CRUD
 // =============================================================
+const STAT_SHORT_MAP: Record<string, string> = {
+  goals: 'g',
+  assists: 'a',
+  matches: 'm',
+  passes: 'p',
+  saves: 's',
+  cleansheets: 'c',
+  tackles: 't',
+  minutes: 'n',
+  custom: 'u'
+};
+
+const STAT_LONG_MAP: Record<string, string> = {
+  g: 'goals',
+  a: 'assists',
+  m: 'matches',
+  p: 'passes',
+  s: 'saves',
+  c: 'cleansheets',
+  t: 'tackles',
+  n: 'minutes',
+  u: 'custom'
+};
+
+function encodePlayerFilterMeta(player: PlayerData): string {
+  let css = player.filter || 'none';
+  if (typeof css === 'string' && css.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(css);
+      css = parsed.f || parsed.css || 'none';
+    } catch {
+      css = 'none';
+    }
+  }
+  const isGK = (player.pos || '').toLowerCase().includes('gardien') || player.stat2lbl === 'Arrêts';
+  const defaultStats = isGK ? ['saves', 'cleansheets', 'matches'] : ['goals', 'assists', 'matches'];
+  const displayed = Array.isArray(player.displayed_stats) && player.displayed_stats.length > 0
+    ? player.displayed_stats
+    : defaultStats;
+  const dCodes = displayed.map(s => STAT_SHORT_MAP[s] || s).join(',');
+  const vals = [
+    Number(player.passes) || 0,
+    Number(player.saves) || 0,
+    Number(player.cleansheets) || 0,
+    Number(player.tackles) || 0,
+    Number(player.minutes) || 0
+  ];
+  const baseObj: Record<string, any> = { f: css, d: dCodes, v: vals };
+  if (player.custom_stat_label) {
+    const withCustom = {
+      ...baseObj,
+      cl: String(player.custom_stat_label).slice(0, 18),
+      cv: Number(player.custom_stat_val) || 0
+    };
+    const strWithCustom = JSON.stringify(withCustom);
+    if (strWithCustom.length <= 100) {
+      return strWithCustom;
+    }
+  }
+  const compact = JSON.stringify(baseObj);
+  return compact.length <= 100 ? compact : String(css).slice(0, 100);
+}
+
+function decodePlayerFilterMeta(rawFilter: any): { actualFilter: string; extraStats: Record<string, any> } {
+  const extraStats: Record<string, any> = {};
+  let actualFilter = typeof rawFilter === 'string' && rawFilter ? rawFilter : 'none';
+
+  if (typeof actualFilter === 'string' && actualFilter.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(actualFilter);
+      actualFilter = parsed.f || parsed.css || 'none';
+      if (typeof parsed.d === 'string' && parsed.d.length > 0) {
+        extraStats.displayed_stats = parsed.d.split(',').map((code: string) => STAT_LONG_MAP[code] || code);
+      } else if (Array.isArray(parsed.displayed_stats)) {
+        extraStats.displayed_stats = parsed.displayed_stats;
+      }
+      if (Array.isArray(parsed.v)) {
+        extraStats.passes = Number(parsed.v[0]) || 0;
+        extraStats.saves = Number(parsed.v[1]) || 0;
+        extraStats.cleansheets = Number(parsed.v[2]) || 0;
+        extraStats.tackles = Number(parsed.v[3]) || 0;
+        extraStats.minutes = Number(parsed.v[4]) || 0;
+      } else {
+        if (parsed.passes !== undefined) extraStats.passes = Number(parsed.passes) || 0;
+        if (parsed.saves !== undefined) extraStats.saves = Number(parsed.saves) || 0;
+        if (parsed.cleansheets !== undefined) extraStats.cleansheets = Number(parsed.cleansheets) || 0;
+        if (parsed.tackles !== undefined) extraStats.tackles = Number(parsed.tackles) || 0;
+        if (parsed.minutes !== undefined) extraStats.minutes = Number(parsed.minutes) || 0;
+      }
+      if (parsed.cl !== undefined) extraStats.custom_stat_label = parsed.cl;
+      else if (parsed.custom_stat_label !== undefined) extraStats.custom_stat_label = parsed.custom_stat_label;
+      if (parsed.cv !== undefined) extraStats.custom_stat_val = Number(parsed.cv) || 0;
+      else if (parsed.custom_stat_val !== undefined) extraStats.custom_stat_val = Number(parsed.custom_stat_val) || 0;
+    } catch {
+      actualFilter = 'none';
+    }
+  }
+
+  return { actualFilter, extraStats };
+}
+
+function sanitizePlayerCategories(rawCategories: any, primaryCategory?: string): { category: string; categories: string[] } {
+  const isNotPremiere = (c: string) => Boolean(c) && !String(c).toLowerCase().includes('premi');
+  const filtered = Array.isArray(rawCategories)
+    ? rawCategories.map(String).filter(isNotPremiere)
+    : [];
+  const validPrimary = primaryCategory && isNotPremiere(primaryCategory) ? primaryCategory : '';
+  const categories = Array.from(new Set(filtered.length > 0 ? filtered : [validPrimary || 'U17']));
+  const category = validPrimary && categories.includes(validPrimary) ? validPrimary : categories[0];
+  return { category, categories };
+}
+
 export function getDeletedPlayerIds(): string[] {
   return getLocalItem<string[]>('deleted_player_ids', []);
 }
@@ -1992,101 +2197,127 @@ export function unmarkPlayerDeleted(id: string): void {
   setLocalItem('deleted_player_ids', current.filter(x => x !== id));
   // Async cleanup in cloud
   try {
-    supabase.from('site_content').select('data').limit(1).then(({ data: scData }) => {
+    supabase.from('site_content').select('id, data').limit(1).then(({ data: scData }) => {
       if (scData?.[0]?.data?.deleted_player_ids && Array.isArray(scData[0].data.deleted_player_ids)) {
         const filtered = scData[0].data.deleted_player_ids.filter((x: string) => String(x) !== String(id));
+        const cleanData = { ...scData[0].data, deleted_player_ids: filtered };
+        delete cleanData.data;
         supabase.from('site_content').update({
-          data: { ...scData[0].data, deleted_player_ids: filtered }
-        }).eq('id', 'main');
+          data: cleanData
+        }).eq('id', scData[0].id || 'main');
       }
     });
   } catch (e) {}
 }
 
 export async function fetchMergedPlayers(): Promise<Record<string, any>> {
-  const deletedIds = new Set<string>(getDeletedPlayerIds());
+  let deletedIds = new Set<string>(getDeletedPlayerIds());
   const merged: Record<string, any> = {};
+  const priorLocalCache = getLocalItem<Record<string, any>>('players_custom', {});
 
-  // 1. Initial base from playersDB
-  for (const [id, player] of Object.entries(playersDB)) {
-    if (!deletedIds.has(String(id))) {
-      merged[id] = {
-        ...player,
-        categories: (player as any).categories || (player.category ? [player.category] : ['U17'])
-      };
-    }
-  }
-
-  // 2. Fetch from Supabase (SOURCE OF TRUTH)
+  // 1. Fetch from Supabase (SOURCE OF TRUTH)
+  let supabaseReachable = false;
+  let supaRows: any[] = [];
   try {
-    // Cloud sync deleted players from site_content if present
-    const { data: scData } = await supabase.from('site_content').select('data').limit(1);
-    if (scData?.[0]?.data?.deleted_player_ids && Array.isArray(scData[0].data.deleted_player_ids)) {
-      scData[0].data.deleted_player_ids.forEach((did: string) => deletedIds.add(String(did)));
-      setLocalItem('deleted_player_ids', Array.from(deletedIds));
+    // Cloud deleted_player_ids is authoritative over stale browser localStorage
+    const { data: scData, error: scErr } = await supabase.from('site_content').select('data').limit(1);
+    if (!scErr && scData) {
+      const cloudDeleted = Array.isArray(scData[0]?.data?.deleted_player_ids)
+        ? scData[0].data.deleted_player_ids.map(String)
+        : [];
+      deletedIds = new Set<string>(cloudDeleted);
+      setLocalItem('deleted_player_ids', cloudDeleted);
     }
 
     const { data, error } = await supabase.from('players').select('*');
     if (!error && data && data.length > 0) {
-      data.forEach((player: any) => {
-        const strId = String(player.id);
-        if (!deletedIds.has(strId)) {
-          let extraStats: Record<string, any> = {};
-          let actualFilter = player.filter || 'none';
-          if (typeof actualFilter === 'string' && actualFilter.startsWith('{')) {
-            try {
-              const parsed = JSON.parse(actualFilter);
-              actualFilter = parsed.css || 'none';
-              if (parsed.displayed_stats) extraStats.displayed_stats = parsed.displayed_stats;
-              if (parsed.passes !== undefined) extraStats.passes = parsed.passes;
-              if (parsed.saves !== undefined) extraStats.saves = parsed.saves;
-              if (parsed.cleansheets !== undefined) extraStats.cleansheets = parsed.cleansheets;
-              if (parsed.tackles !== undefined) extraStats.tackles = parsed.tackles;
-              if (parsed.minutes !== undefined) extraStats.minutes = parsed.minutes;
-              if (parsed.custom_stat_label !== undefined) extraStats.custom_stat_label = parsed.custom_stat_label;
-              if (parsed.custom_stat_val !== undefined) extraStats.custom_stat_val = parsed.custom_stat_val;
-            } catch (e) {
-              // Ignore JSON parse error
-            }
-          }
-
-          const supCats = Array.isArray(player.categories) && player.categories.length > 0
-            ? player.categories
-            : (player.category ? [player.category] : ['U17']);
-
-          // Supabase is authoritative and overrides default
-          merged[strId] = {
-            ...(merged[strId] || {}),
-            ...player,
-            ...extraStats,
-            filter: actualFilter,
-            categories: supCats,
-            is_spotlight: Boolean(player.is_spotlight || player.spotlight)
-          };
-        } else {
-          delete merged[strId];
-        }
-      });
-
-      // Synchronize local cache to match the cloud state so stale local edits are purged
-      setLocalItem('players_custom', merged);
-      return merged;
+      supabaseReachable = true;
+      supaRows = data;
     }
   } catch (err) {
     console.warn('Supabase fetch players fallback to local', err);
   }
 
-  // 3. Fallback ONLY if Supabase is offline/unreachable
-  const localCache = getLocalItem<Record<string, any>>('players_custom', {});
-  for (const [id, player] of Object.entries(localCache)) {
+  // 2. Base from playersDB (excluding only confirmed deletedIds)
+  for (const [id, player] of Object.entries(playersDB)) {
     const strId = String(id);
     if (!deletedIds.has(strId)) {
+      const { category, categories } = sanitizePlayerCategories((player as any).categories, player.category);
+      merged[strId] = {
+        ...player,
+        id: strId,
+        category,
+        categories
+      };
+    }
+  }
+
+  if (supabaseReachable) {
+    const supaIds = new Set<string>();
+    supaRows.forEach((player: any) => {
+      const strId = String(player.id);
+      supaIds.add(strId);
+      if (!deletedIds.has(strId)) {
+        const { actualFilter, extraStats } = decodePlayerFilterMeta(player.filter);
+        const dbDefault = playersDB[strId];
+        const rawCats = Array.isArray(player.categories) && player.categories.length > 0
+          ? [...player.categories]
+          : (player.category ? [player.category] : (dbDefault?.categories || ['U17']));
+        const { category, categories } = sanitizePlayerCategories(rawCats, player.category || dbDefault?.category);
+
+        merged[strId] = {
+          ...(merged[strId] || {}),
+          ...player,
+          ...extraStats,
+          id: strId,
+           detailImg: player.detail_img || player.detailImg || player.img || merged[strId]?.detailImg || '/condor_logo_transparent.png',
+          filter: actualFilter,
+          category,
+          categories,
+          is_spotlight: Boolean(player.is_spotlight || player.spotlight)
+        };
+      } else {
+        delete merged[strId];
+      }
+    });
+
+    // Recover any unsynced custom players from priorLocalCache that failed to upload previously
+    for (const [id, localP] of Object.entries(priorLocalCache)) {
+      const strId = String(id);
+      if (!deletedIds.has(strId) && !supaIds.has(strId) && localP && localP.name) {
+        const { category, categories } = sanitizePlayerCategories(localP.categories, localP.category);
+        const recovered = {
+          ...(merged[strId] || {}),
+          ...localP,
+          id: strId,
+          category,
+          categories,
+          is_spotlight: Boolean(localP.is_spotlight || localP.spotlight)
+        };
+        merged[strId] = recovered;
+        // Background sync to Supabase
+        savePlayerRecord(recovered).catch(() => {});
+      }
+    }
+
+    setLocalItem('players_custom', merged);
+    return merged;
+  }
+
+  // 3. Fallback ONLY if Supabase is offline/unreachable
+  for (const [id, player] of Object.entries(priorLocalCache)) {
+    const strId = String(id);
+    if (!deletedIds.has(strId) && player) {
+      const { category, categories } = sanitizePlayerCategories(
+        player.categories || merged[strId]?.categories,
+        player.category || merged[strId]?.category
+      );
       merged[strId] = {
         ...(merged[strId] || {}),
         ...player,
-        categories: Array.isArray(player.categories) && player.categories.length > 0
-          ? player.categories
-          : (player.category ? [player.category] : (merged[strId]?.categories || ['U17'])),
+        id: strId,
+        category,
+        categories,
         is_spotlight: Boolean(player.is_spotlight || player.spotlight || merged[strId]?.is_spotlight)
       };
     }
@@ -2099,13 +2330,7 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
   const strId = String(player.id);
   unmarkPlayerDeleted(strId);
 
-  const rawCats = Array.isArray(player.categories) && player.categories.length > 0
-    ? player.categories
-    : (player.category ? [player.category] : ['U17']);
-  const categories = Array.from(new Set(rawCats.filter(Boolean)));
-  const primaryCategory = player.category && categories.includes(player.category)
-    ? player.category
-    : (categories[0] || 'U17');
+  const { category: primaryCategory, categories } = sanitizePlayerCategories(player.categories, player.category);
 
   const fullPlayer: PlayerData = {
     ...player,
@@ -2134,41 +2359,40 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
     custom_stat_val: player.custom_stat_val !== undefined ? Number(player.custom_stat_val) : 0
   };
 
-  // Encode extra fields into filter column to persist safely on Supabase
-  const filterMeta = JSON.stringify({
-    css: fullPlayer.filter || 'none',
-    displayed_stats: fullPlayer.displayed_stats,
-    passes: fullPlayer.passes,
-    saves: fullPlayer.saves,
-    cleansheets: fullPlayer.cleansheets,
-    tackles: fullPlayer.tackles,
-    minutes: fullPlayer.minutes,
-    custom_stat_label: fullPlayer.custom_stat_label,
-    custom_stat_val: fullPlayer.custom_stat_val
-  });
+  // Encode extra fields into compact filter string (<= 100 chars for VARCHAR(100) column)
+  const filterMeta = encodePlayerFilterMeta(fullPlayer);
+  const { actualFilter } = decodePlayerFilterMeta(fullPlayer.filter);
+  fullPlayer.filter = actualFilter;
 
-  // Exact database columns present in Supabase 'players' table
+  const effectiveStat2Lbl = fullPlayer.custom_stat_label
+    ? String(fullPlayer.custom_stat_label).slice(0, 100)
+    : String(fullPlayer.stat2lbl || 'Buts').slice(0, 100);
+  const effectiveStat2Val = fullPlayer.custom_stat_label
+    ? (Number(fullPlayer.custom_stat_val) || 0)
+    : (Number(fullPlayer.stat2val) || 0);
+
+  // Exact database columns present in Supabase 'players' table (respecting VARCHAR limits)
   const dbPayload: Record<string, any> = {
-    id: strId,
-    name: fullPlayer.name,
-    pos: fullPlayer.pos || 'Joueur',
+    id: strId.slice(0, 50),
+    name: String(fullPlayer.name || 'Joueur').slice(0, 255),
+    pos: String(fullPlayer.pos || 'Joueur').slice(0, 100),
     num: Number(fullPlayer.num) || 0,
     img: fullPlayer.img || '/condor_logo_transparent.png',
     detail_img: fullPlayer.detail_img,
     filter: filterMeta,
-    dob: fullPlayer.dob || '',
-    category: primaryCategory,
+    dob: String(fullPlayer.dob || '').slice(0, 50),
+    category: String(primaryCategory || 'U17').slice(0, 100),
     categories: categories,
-    height: fullPlayer.height || null,
-    weight: fullPlayer.weight || null,
+    height: fullPlayer.height ? String(fullPlayer.height).slice(0, 50) : null,
+    weight: fullPlayer.weight ? String(fullPlayer.weight).slice(0, 50) : null,
     matches: fullPlayer.matches,
     goals: fullPlayer.goals,
     assists: fullPlayer.assists,
-    stat2lbl: fullPlayer.stat2lbl || 'Buts',
-    stat2val: fullPlayer.stat2val,
-    pob: fullPlayer.pob || 'Port-au-Prince, Haïti',
-    foot: fullPlayer.foot || 'Droit',
-    nationality: fullPlayer.nationality || 'Haïtienne',
+    stat2lbl: effectiveStat2Lbl,
+    stat2val: effectiveStat2Val,
+    pob: String(fullPlayer.pob || 'Port-au-Prince, Haïti').slice(0, 255),
+    foot: String(fullPlayer.foot || 'Droit').slice(0, 50),
+    nationality: String(fullPlayer.nationality || 'Haïtienne').slice(0, 100),
     bio: fullPlayer.bio || '',
     honours1: fullPlayer.honours1,
     honours2: fullPlayer.honours2,
@@ -2185,8 +2409,11 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
     }
 
     if (res?.error) {
-      console.warn('Supabase save player notice, attempting fallback without new columns:', res.error.message);
-      const retryPayload = { ...dbPayload };
+      console.warn('Supabase save player notice, attempting fallback:', res.error.message);
+      const retryPayload: Record<string, any> = {
+        ...dbPayload,
+        filter: String(actualFilter || 'none').slice(0, 50)
+      };
       if (res.error.message?.includes('is_spotlight')) {
         delete retryPayload.is_spotlight;
       }
@@ -2218,6 +2445,34 @@ export async function savePlayerRecord(player: PlayerData): Promise<{ success: b
   }
 }
 
+export async function restoreAllPlayers(): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    setLocalItem('deleted_player_ids', []);
+    const { data: scData } = await supabase.from('site_content').select('id, data').limit(1);
+    if (scData && scData.length > 0) {
+      const cleanData = { ...(scData[0].data || {}) };
+      delete cleanData.data;
+      delete cleanData.deleted_player_ids;
+      await supabase.from('site_content').update({ data: cleanData }).eq('id', scData[0].id || 'main');
+    }
+
+    const { data: supaPlayers } = await supabase.from('players').select('id');
+    const existingIds = new Set((supaPlayers || []).map((p: any) => String(p.id)));
+
+    for (const [id, dbP] of Object.entries(playersDB)) {
+      const strId = String(id);
+      if (!existingIds.has(strId)) {
+        await savePlayerRecord({ ...(dbP as any), id: strId });
+      }
+    }
+
+    const merged = await fetchMergedPlayers();
+    return { success: true, count: Object.keys(merged).length };
+  } catch (e: any) {
+    return { success: false, count: 0, error: e.message };
+  }
+}
+
 export async function deletePlayerRecord(id: string): Promise<{ success: boolean; error?: string }> {
   const strId = String(id);
   markPlayerDeleted(strId);
@@ -2236,15 +2491,17 @@ export async function deletePlayerRecord(id: string): Promise<{ success: boolean
     }
 
     // 2. Persist deleted id to cloud site_content.data.deleted_player_ids
-    const { data: scData } = await supabase.from('site_content').select('data').limit(1);
+    const { data: scData } = await supabase.from('site_content').select('id, data').limit(1);
     const existingDeleted = Array.isArray(scData?.[0]?.data?.deleted_player_ids)
       ? scData![0].data.deleted_player_ids
       : [];
     if (!existingDeleted.includes(strId)) {
       const updatedDeleted = [...existingDeleted, strId];
+      const cleanData = { ...(scData?.[0]?.data || {}), deleted_player_ids: updatedDeleted };
+      delete cleanData.data;
       await supabase.from('site_content').update({
-        data: { ...(scData?.[0]?.data || {}), deleted_player_ids: updatedDeleted }
-      }).eq('id', 'main');
+        data: cleanData
+      }).eq('id', scData?.[0]?.id || 'main');
     }
   } catch (e: any) {
     console.warn('Supabase delete player fallback note', e);

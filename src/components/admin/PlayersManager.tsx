@@ -8,7 +8,7 @@ import {
 import { 
   PlayerData, UnitItem, RoleItem, 
   savePlayerRecord, deletePlayerRecord, transferPlayerCategory,
-  addPlayerCategory, removePlayerCategory
+  addPlayerCategory, removePlayerCategory, restoreAllPlayers
 } from '@/lib/dataService';
 import { validateUploadFile, compressAndOptimizeImage } from '@/lib/security';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
@@ -199,10 +199,10 @@ export default function PlayersManager({
         showToast(nextSpotlight ? `⭐ ${player.name} mis en avant sur la page d'accueil !` : `⭐ ${player.name} retiré des joueurs mis en avant.`);
         onRefresh();
       } else {
-        showToast("Erreur lors de la mise à jour.");
+        showToast(`Erreur lors de la mise à jour : ${res.error || 'Veuillez réessayer'}`);
       }
-    } catch (err) {
-      showToast("Erreur lors de la mise à jour.");
+    } catch (err: any) {
+      showToast(`Erreur lors de la mise à jour : ${err?.message || ''}`);
     }
   };
 
@@ -417,15 +417,31 @@ export default function PlayersManager({
             setIsCreating(false);
             onRefresh();
           } else {
-            showToast("Erreur lors de l'enregistrement du joueur.");
+            showToast(`Erreur lors de l'enregistrement : ${res.error || 'Veuillez réessayer'}`);
           }
-        } catch (err) {
-          showToast("Erreur lors de la sauvegarde.");
+        } catch (err: any) {
+          showToast(`Erreur lors de la sauvegarde : ${err?.message || ''}`);
         } finally {
           setSaving(false);
         }
       }
     });
+  };
+
+  const handleRestoreAll = async () => {
+    setSaving(true);
+    try {
+      showToast("Restauration et synchronisation de tous les joueurs en cours...");
+      const res = await restoreAllPlayers();
+      if (res.success) {
+        showToast(`✅ Effectif complet restauré et synchronisé (${res.count} joueurs) !`);
+        onRefresh();
+      } else {
+        showToast(`Erreur lors de la restauration : ${res.error || ''}`);
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Delete player
@@ -476,13 +492,36 @@ export default function PlayersManager({
           </p>
         </div>
 
-        <button 
-          onClick={handleOpenCreate}
-          className="btn btn-primary"
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
-        >
-          <Plus size={18} /> Ajouter un Nouveau Joueur
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={handleRestoreAll}
+            disabled={saving}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: saving ? 'not-allowed' : 'pointer',
+              padding: '10px 16px',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+              background: '#f9fafb',
+              color: '#1f2937',
+              fontWeight: 'bold',
+              fontSize: '0.88rem'
+            }}
+          >
+            <RefreshCw size={16} /> Synchroniser / Restaurer l'Effectif
+          </button>
+
+          <button 
+            onClick={handleOpenCreate}
+            className="btn btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+          >
+            <Plus size={18} /> Ajouter un Nouveau Joueur
+          </button>
+        </div>
       </div>
 
       {/* Barre de Filtres par Unité & Recherche */}
