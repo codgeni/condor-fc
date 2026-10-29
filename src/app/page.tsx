@@ -1078,22 +1078,24 @@ export default function Home() {
           style={{ display: 'flex', gap: '6rem', whiteSpace: 'nowrap', width: 'max-content', alignItems: 'center' }}
         >
           {Array(8).fill([
-            { name: 'CONDOR ACADEMY', logo: '/condor_logo_transparent.png' },
-            { name: 'DNC', logo: '/logo-dnc.png' }
+            { name: 'CONDOR ACADEMY', logo: '/condor_logo_transparent.png', showName: true },
+            { name: 'DNC', logo: '/logo-dnc.png', showName: false }
           ]).flat().map((sponsor, i) => (
             <div key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: '1.2rem' }}>
               <img 
                 src={sponsor.logo} 
                 alt={sponsor.name} 
                 style={{ 
-                  height: sponsor.name === 'DNC' ? '46px' : '52px', 
+                  height: sponsor.name === 'DNC' ? '54px' : '52px', 
                   width: 'auto', 
                   objectFit: 'contain'
                 }} 
               />
-              <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', color: 'white', margin: 0, letterSpacing: '1px' }}>
-                {sponsor.name}
-              </h3>
+              {sponsor.showName && (
+                <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.5rem', color: 'white', margin: 0, letterSpacing: '1px' }}>
+                  {sponsor.name}
+                </h3>
+              )}
             </div>
           ))}
         </motion.div>
