@@ -45,6 +45,7 @@ import OrdersManager from '@/components/admin/OrdersManager';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
 import { printInscriptionDossier } from '@/lib/pdfPrintService';
 import { formatRelativeTime, formatFullDateTime } from '@/lib/timeUtils';
+import { verifyAdminStatus } from '@/lib/adminAuth';
 
 const convertToBase64 = async (file: File, maxDim = 1600): Promise<string> => {
   const validation = validateUploadFile(file);
@@ -81,6 +82,7 @@ export default function AdminPanel() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // 1. Matches & Slider State (Accueil)
@@ -209,29 +211,33 @@ export default function AdminPanel() {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
+    const verifySession = async (session: any) => {
+      if (!session?.access_token) {
+        setUser(null);
+        setIsAdmin(false);
+        setLoading(false);
+        return;
+      }
+      const validAdmin = await verifyAdminStatus(session.access_token);
+      if (validAdmin) {
         setUser(session.user);
-        if (session.user.email === 'admin@gmail.com') {
-          // Nettoyage de l'ancien cookie de bypass si présent
-          document.cookie = "condor_bypass_maintenance=; path=/; max-age=0";
-          fetchData();
-        }
+        setIsAdmin(true);
+        // Nettoyage de l'ancien cookie de bypass si présent
+        document.cookie = "condor_bypass_maintenance=; path=/; max-age=0";
+        fetchData();
+      } else {
+        setUser(null);
+        setIsAdmin(false);
       }
       setLoading(false);
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      verifySession(session);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        if (session.user.email === 'admin@gmail.com') {
-          document.cookie = "condor_bypass_maintenance=; path=/; max-age=0";
-          fetchData();
-        }
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
+      verifySession(session);
     });
 
     return () => subscription.unsubscribe();
@@ -754,8 +760,8 @@ export default function AdminPanel() {
     );
   }
 
-  if (!user || user.email !== 'admin@gmail.com') {
-    return <AdminLoginGate onLoginSuccess={() => fetchData()} />;
+  if (!user || !isAdmin) {
+    return <AdminLoginGate onLoginSuccess={() => { setIsAdmin(true); fetchData(); }} />;
   }
 
   return (
@@ -3214,30 +3220,46 @@ function AdminLoginGate({ onLoginSuccess }: { onLoginSuccess: () => void }) {
     setError('');
     setLoading(true);
 
-    if (email !== 'admin@gmail.com') {
-      setError("Cet e-mail n'est pas autorisé à accéder à l'administration.");
-      setLoading(false);
-      return;
-    }
+    const inputEmail = email.trim();
+    const inputPassword = password;
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    // Immédiatement effacer le mot de passe de la mémoire / état React
+    setPassword('');
 
-    if (authError) {
-      setError(translateAuthError(authError.message));
-    } else {
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: inputEmail,
+        password: inputPassword,
+      });
+
+      if (authError || !data?.session) {
+        setError(translateAuthError(authError?.message || 'Identifiants incorrects.'));
+        setLoading(false);
+        return;
+      }
+
+      // Vérification serveur du statut administrateur
+      const validAdmin = await verifyAdminStatus(data.session.access_token);
+      if (!validAdmin) {
+        await supabase.auth.signOut();
+        setError("Cet utilisateur n'a pas les autorisations nécessaires pour accéder à l'administration.");
+        setLoading(false);
+        return;
+      }
+
       onLoginSuccess();
+    } catch {
+      setError("Erreur lors de la tentative de connexion.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
     <div style={{ flex: 1, marginTop: '80px', background: '#f8f9fa', minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
       <div style={{ background: 'white', borderRadius: '16px', padding: '3rem', boxShadow: '0 15px 35px rgba(0,0,0,0.08)', maxWidth: '450px', width: '100%', border: '1px solid #eee', color: 'black' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.2rem', margin: 0, color: 'var(--clr-primary)' }}>PORTAIL</h2>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: '2.2rem', margin: 0, color: 'var(--clr-primary)' }}>PORTAIL ADMIN</h2>
         </div>
 
         {error && (
@@ -3254,8 +3276,9 @@ function AdminLoginGate({ onLoginSuccess }: { onLoginSuccess: () => void }) {
               value={email} 
               onChange={e => setEmail(e.target.value)} 
               required 
+              autoComplete="username"
               style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.03)', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} 
-              placeholder="john.doe@gmail.com" 
+              placeholder="Adresse e-mail..." 
             />
           </div>
 
@@ -3266,6 +3289,7 @@ function AdminLoginGate({ onLoginSuccess }: { onLoginSuccess: () => void }) {
               value={password} 
               onChange={e => setPassword(e.target.value)} 
               required 
+              autoComplete="current-password"
               style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.03)', border: '1px solid #ddd', borderRadius: '8px', fontSize: '1rem', outline: 'none' }} 
               placeholder="••••••••" 
             />

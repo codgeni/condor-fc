@@ -124,9 +124,12 @@ export default function SupporterPortal() {
             notify_half_time: formData.notifyHalfTime,
             notify_final_score: formData.notifyFinalScore
           });
-        } catch (dbError) {
-          console.warn('Error inserting supporter profile:', dbError);
+        } catch {
+          // Handled silently
         }
+
+        // Clear sensitive password from memory
+        setFormData(prev => ({ ...prev, password: '' }));
 
         if (authData.session) {
           setRegisteredUser({
@@ -141,15 +144,15 @@ export default function SupporterPortal() {
           setIsLoggedIn(false);
           setIsLogin(true);
           setMessageType('success');
-          setMessage("Compte créé avec succès ! Un e-mail de confirmation vous a été envoyé. Veuillez cliquer sur le lien reçu pour activer votre compte avant de vous connecter. (Vous pouvez aussi désactiver la confirmation d'email dans votre console Supabase : Authentication > Providers > Email).");
+          setMessage("Compte créé avec succès ! Un e-mail de confirmation vous a été envoyé. Veuillez cliquer sur le lien reçu pour activer votre compte avant de vous connecter.");
         }
       }
     } catch (err: any) {
-      console.warn('Registration attempt failed:', err);
+      setFormData(prev => ({ ...prev, password: '' }));
       setMessageType('error');
       setMessage(
         err.message?.includes('fetch')
-          ? "Impossible de joindre le serveur Supabase. Vérifiez que votre projet Supabase est actif et que vos clés dans .env.local sont valides."
+          ? "Impossible de joindre le serveur Supabase. Vérifiez la connexion réseau."
           : `Erreur : ${err.message}`
       );
     }
@@ -170,9 +173,14 @@ export default function SupporterPortal() {
     }
 
     try {
+      const emailToSubmit = formData.email;
+      const passwordToSubmit = formData.password;
+      // Immediately clear password from component state
+      setFormData(prev => ({ ...prev, password: '' }));
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password
+        email: emailToSubmit,
+        password: passwordToSubmit
       });
 
       if (error) {
@@ -199,11 +207,10 @@ export default function SupporterPortal() {
         setMessage('Connexion réussie !');
       }
     } catch (err: any) {
-      console.warn('Login attempt failed:', err);
       setMessageType('error');
       setMessage(
         err.message?.includes('fetch')
-          ? "Impossible de joindre le serveur Supabase. Vérifiez que votre projet Supabase est actif et que vos clés dans .env.local sont valides."
+          ? "Impossible de joindre le serveur Supabase. Vérifiez la connexion réseau."
           : `Erreur de connexion : ${err.message}`
       );
     }
@@ -326,7 +333,7 @@ export default function SupporterPortal() {
               <strong style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', fontSize: '0.95rem' }}>
                 <AlertTriangle size={16} /> Configuration Supabase Requise
               </strong>
-              Pour vous connecter avec <code>admin@gmail.com</code>, renseignez votre <code>NEXT_PUBLIC_SUPABASE_URL</code> et votre clé <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> dans le fichier <code>.env.local</code> situé à la racine du projet, puis redémarrez votre serveur.
+              Pour vous connecter à votre compte, renseignez vos paramètres de configuration dans le fichier d'environnement serveur <code>.env.local</code> puis redémarrez votre serveur.
             </div>
           )}
 

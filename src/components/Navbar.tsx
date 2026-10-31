@@ -5,21 +5,42 @@ import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { verifyAdminStatus } from '@/lib/adminAuth';
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    const checkAdmin = async (token?: string) => {
+      if (!token) {
+        setIsAdmin(false);
+        return;
+      }
+      const admin = await verifyAdminStatus(token);
+      setIsAdmin(admin);
+    };
+
     // Check if there is an active session on load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.access_token) {
+        checkAdmin(session.access_token);
+      } else {
+        setIsAdmin(false);
+      }
     });
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.access_token) {
+        checkAdmin(session.access_token);
+      } else {
+        setIsAdmin(false);
+      }
     });
 
     // Automatically close mobile menu if resized back to desktop
@@ -81,8 +102,8 @@ export default function Navbar() {
             <>
               {user ? (
                 <>
-                  <Link href={user.email === 'admin@gmail.com' ? '/admin' : '/login'} onClick={handleNavClick} style={{ color: 'var(--clr-primary)' }}>
-                    {user.email === 'admin@gmail.com' ? 'Admin' : 'Mon Espace'}
+                  <Link href={isAdmin ? '/admin' : '/login'} onClick={handleNavClick} style={{ color: 'var(--clr-primary)' }}>
+                    {isAdmin ? 'Admin' : 'Mon Espace'}
                   </Link>
                   <button 
                     onClick={async () => {
@@ -106,11 +127,11 @@ export default function Navbar() {
           {user ? (
             <>
               <Link 
-                href={user.email === 'admin@gmail.com' ? '/admin' : '/login'} 
+                href={isAdmin ? '/admin' : '/login'} 
                 className="btn btn-primary"
                 onClick={handleNavClick}
               >
-                {user.email === 'admin@gmail.com' ? 'Admin' : 'Mon Espace'}
+                {isAdmin ? 'Admin' : 'Mon Espace'}
               </Link>
               <button 
                 onClick={async () => {
