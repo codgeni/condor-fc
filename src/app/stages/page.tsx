@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { Calendar, Phone, Mail, MapPin, CheckCircle, Clock, User, PhoneCall, AlertTriangle, Loader2 } from 'lucide-react';
+import { Calendar, Phone, Mail, MapPin, CheckCircle, Clock, User, PhoneCall, AlertTriangle, Loader2, Award } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { fetchStages, StageSession, fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT, getInitialStages, getInitialSiteContent } from '@/lib/dataService';
 import { 
@@ -331,8 +331,8 @@ export default function Stages() {
                     <label style={labelStyle}>Modalité de Paiement & Demande de Bourse</label>
                     <select name="payment_mode" required value={stageFormData.payment_mode} onChange={handleStageChange} style={{ ...inputStyle, padding: '14px' }}>
                       <option value="Paiement Direct (Comptant / Virement)">Paiement Direct (Comptant au secrétariat / Virement)</option>
-                      <option value="🎓 Demande de Bourse Stage (Aide financière Condor)">🎓 Demande de Bourse Stage (Aide financière Condor)</option>
-                      <option value="🎓 Demande de Bourse d'Excellence (Prise en charge à 100%)">🎓 Demande de Bourse d'Excellence (Prise en charge à 100%)</option>
+                      <option value="Demande de Bourse Stage (Aide financière Condor)">Demande de Bourse Stage (Aide financière Condor)</option>
+                      <option value="Demande de Bourse d'Excellence (Prise en charge à 100%)">Demande de Bourse d'Excellence (Prise en charge à 100%)</option>
                       <option value="Paiement Échelonné (2 versements sans frais)">Paiement Échelonné (2 versements sans frais)</option>
                       <option value="Prise en charge Partenaire / Parrainage">Prise en charge Partenaire / Parrainage</option>
                     </select>
@@ -353,7 +353,7 @@ export default function Stages() {
                         gap: '12px'
                       }}
                     >
-                      <div style={{ fontSize: '1.3rem' }}>🎓</div>
+                      <Award size={22} color="#b45309" style={{ flexShrink: 0, marginTop: '2px' }} />
                       <div>
                         <div style={{ fontWeight: 'bold', color: '#b45309', fontSize: '0.9rem', marginBottom: '2px' }}>
                           Programme Bourses & Solidarité Stages Condor

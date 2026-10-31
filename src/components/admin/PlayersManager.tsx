@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react';
 import { 
   Users, Plus, Edit2, Trash2, Check, X, Search, 
-  ArrowRightLeft, Shield, Award, Upload, Image, RefreshCw, AlertTriangle, Star
+  ArrowRightLeft, Shield, Award, Upload, Image, RefreshCw, AlertTriangle, Star,
+  Trophy, Target, Zap, Clock, Activity, Medal
 } from 'lucide-react';
 import { 
   PlayerData, UnitItem, RoleItem, 
@@ -29,23 +30,48 @@ const convertToBase64 = async (file: File, maxDim = 1200): Promise<string> => {
   return await compressAndOptimizeImage(file, maxDim, 0.85);
 };
 
+const renderStatIcon = (id: string, size = 14) => {
+  switch (id) {
+    case 'goals': return <Target size={size} color="var(--clr-primary)" />;
+    case 'assists': return <Activity size={size} color="#3b82f6" />;
+    case 'matches': return <Shield size={size} color="#6366f1" />;
+    case 'passes': return <Zap size={size} color="#10b981" />;
+    case 'saves': return <Shield size={size} color="#f59e0b" />;
+    case 'cleansheets': return <Award size={size} color="#10b981" />;
+    case 'tackles': return <Zap size={size} color="#ef4444" />;
+    case 'minutes': return <Clock size={size} color="#64748b" />;
+    case 'custom': return <Star size={size} color="#eab308" />;
+    default: return <Activity size={size} />;
+  }
+};
+
+const renderPresetIcon = (role: string, size = 13) => {
+  switch (role) {
+    case 'fw': return <Zap size={size} />;
+    case 'mf': return <Target size={size} />;
+    case 'df': return <Shield size={size} />;
+    case 'gk': return <Award size={size} />;
+    default: return <Activity size={size} />;
+  }
+};
+
 const AVAILABLE_STATS = [
-  { id: 'goals', label: 'Buts Marqués', icon: '⚽' },
-  { id: 'assists', label: 'Passes Décisives', icon: '👟' },
-  { id: 'matches', label: 'Matchs Joués', icon: '🏟️' },
-  { id: 'passes', label: 'Passes Réussies', icon: '🎯' },
-  { id: 'saves', label: 'Arrêts / Ballons Arrêtés', icon: '🧤' },
-  { id: 'cleansheets', label: 'Clean Sheets', icon: '🛡️' },
-  { id: 'tackles', label: 'Tacles Réussis', icon: '⚡' },
-  { id: 'minutes', label: 'Minutes Jouées', icon: '⏱️' },
-  { id: 'custom', label: 'Statistique Personnalisée', icon: '⭐' }
+  { id: 'goals', label: 'Buts Marqués' },
+  { id: 'assists', label: 'Passes Décisives' },
+  { id: 'matches', label: 'Matchs Joués' },
+  { id: 'passes', label: 'Passes Réussies' },
+  { id: 'saves', label: 'Arrêts / Ballons Arrêtés' },
+  { id: 'cleansheets', label: 'Clean Sheets' },
+  { id: 'tackles', label: 'Tacles Réussis' },
+  { id: 'minutes', label: 'Minutes Jouées' },
+  { id: 'custom', label: 'Statistique Personnalisée' }
 ];
 
 const STAT_PRESETS = [
-  { name: 'Attaquant', icon: '⚡', stats: ['goals', 'assists', 'matches'] },
-  { name: 'Milieu', icon: '🎯', stats: ['goals', 'assists', 'passes', 'matches'] },
-  { name: 'Défenseur', icon: '🛡️', stats: ['tackles', 'cleansheets', 'passes', 'matches'] },
-  { name: 'Gardien', icon: '🧤', stats: ['saves', 'cleansheets', 'matches'] }
+  { name: 'Attaquant', role: 'fw', stats: ['goals', 'assists', 'matches'] },
+  { name: 'Milieu', role: 'mf', stats: ['goals', 'assists', 'passes', 'matches'] },
+  { name: 'Défenseur', role: 'df', stats: ['tackles', 'cleansheets', 'passes', 'matches'] },
+  { name: 'Gardien', role: 'gk', stats: ['saves', 'cleansheets', 'matches'] }
 ];
 
 export default function PlayersManager({
@@ -196,7 +222,7 @@ export default function PlayersManager({
         is_spotlight: nextSpotlight
       });
       if (res.success) {
-        showToast(nextSpotlight ? `⭐ ${player.name} mis en avant sur la page d'accueil !` : `⭐ ${player.name} retiré des joueurs mis en avant.`);
+        showToast(nextSpotlight ? `${player.name} mis en avant sur la page d'accueil !` : `${player.name} retiré des joueurs mis en avant.`);
         onRefresh();
       } else {
         showToast(`Erreur lors de la mise à jour : ${res.error || 'Veuillez réessayer'}`);
@@ -445,7 +471,7 @@ export default function PlayersManager({
         try {
           const res = await restoreAllPlayers();
           if (res.success) {
-            showToast(`✅ Effectif complet restauré et synchronisé (${res.count} joueurs) !`);
+            showToast(`Effectif complet restauré et synchronisé (${res.count} joueurs) !`);
             onRefresh();
           } else {
             showToast(`Erreur lors de la restauration : ${res.error || ''}`);
@@ -666,8 +692,8 @@ export default function PlayersManager({
               <label style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#0f172a' }}>
                 Unités & Catégories d'affectation * (Sélection multiple possible)
               </label>
-              <span style={{ fontSize: '0.78rem', color: 'var(--clr-primary)', fontWeight: 'bold' }}>
-                ⭐ Cliquez sur l'étoile pour définir l'unité principale
+              <span style={{ fontSize: '0.78rem', color: 'var(--clr-primary)', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Star size={13} fill="currentColor" /> Cliquez sur l'étoile pour définir l'unité principale
               </span>
             </div>
             <p style={{ margin: '0 0 12px', fontSize: '0.82rem', color: '#64748b' }}>
@@ -725,7 +751,7 @@ export default function PlayersManager({
                           gap: '3px'
                         }}
                       >
-                        ★ {isPrimary ? 'Principale' : 'Définir'}
+                        <Star size={11} fill={isPrimary ? 'currentColor' : 'none'} /> {isPrimary ? 'Principale' : 'Définir'}
                       </button>
                     )}
                   </div>
@@ -763,12 +789,12 @@ export default function PlayersManager({
                     cursor: 'pointer'
                   }}
                 >
-                  {r.order === 1 && '⭐ '} {r.name}
+                  {r.order === 1 && <Star size={11} fill="currentColor" style={{ display: 'inline', marginRight: '4px' }} />} {r.name}
                 </button>
               ))}
             </div>
             <span style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', marginTop: '6px' }}>
-              ⭐ Les joueurs avec le rôle "Gardiens de but" sont automatiquement affichés tout en haut de la page Équipe.
+              Note : Les joueurs avec le rôle "Gardiens de but" sont automatiquement affichés tout en haut de la page Équipe.
             </span>
           </div>
 
@@ -792,7 +818,9 @@ export default function PlayersManager({
                 onChange={e => setEditingPlayer({ ...editingPlayer, is_spotlight: e.target.checked })}
                 style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#eab308' }}
               />
-              <span>⭐ Joueur Mis en Avant sur la Page d'Accueil (Spotlight)</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Star size={16} color="#eab308" fill="#eab308" /> Joueur Mis en Avant sur la Page d'Accueil (Spotlight)
+              </span>
             </label>
             <span style={{ 
               fontSize: '0.82rem', 
@@ -912,8 +940,8 @@ export default function PlayersManager({
             <div style={{ marginBottom: '1.5rem', background: '#ffffff', padding: '1.2rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 'bold', color: '#0f172a' }}>
-                    📊 Choisissez les statistiques à afficher pour ce joueur
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: 'bold', color: '#0f172a' }}>
+                    <Activity size={16} color="var(--clr-primary)" /> Choisissez les statistiques à afficher pour ce joueur
                   </label>
                   <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
                     Cochez les statistiques pertinentes qui apparaîtront sur sa page publique (Buts, Passes décisives, Arrêts, etc.).
@@ -950,7 +978,7 @@ export default function PlayersManager({
                         transition: 'all 0.2s'
                       }}
                     >
-                      {preset.icon} {preset.name}
+                      {renderPresetIcon(preset.role)} {preset.name}
                     </button>
                   ))}
                 </div>
@@ -998,7 +1026,7 @@ export default function PlayersManager({
                       }}
                     >
                       <span style={{ fontSize: '0.82rem', fontWeight: isChecked ? 'bold' : 'normal', color: isChecked ? 'var(--clr-primary)' : '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>{stat.icon}</span> {stat.label}
+                        {renderStatIcon(stat.id, 14)} {stat.label}
                       </span>
                       <span style={{
                         width: '18px',
@@ -1022,16 +1050,16 @@ export default function PlayersManager({
 
             {/* Saisie des valeurs des statistiques sélectionnées */}
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#0f172a', marginBottom: '10px' }}>
-                ✏️ Valeurs des Statistiques Sélectionnées
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 'bold', color: '#0f172a', marginBottom: '10px' }}>
+                <Edit2 size={15} /> Valeurs des Statistiques Sélectionnées
               </label>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.2rem' }}>
                 {/* 1. Buts */}
                 {(editingPlayer.displayed_stats || ['goals', 'assists', 'matches']).includes('goals') && (
                   <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
-                      ⚽ Buts Marqués
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      <Target size={14} color="var(--clr-primary)" /> Buts Marqués
                     </label>
                     <input 
                       type="number" 
@@ -1053,8 +1081,8 @@ export default function PlayersManager({
                 {/* 2. Passes Décisives */}
                 {(editingPlayer.displayed_stats || ['goals', 'assists', 'matches']).includes('assists') && (
                   <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
-                      👟 Passes Décisives
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      <Activity size={14} color="#3b82f6" /> Passes Décisives
                     </label>
                     <input 
                       type="number" 
@@ -1069,8 +1097,8 @@ export default function PlayersManager({
                 {/* 3. Matchs Joués */}
                 {(editingPlayer.displayed_stats || ['goals', 'assists', 'matches']).includes('matches') && (
                   <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
-                      🏟️ Matchs Joués
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      <Shield size={14} color="#6366f1" /> Matchs Joués
                     </label>
                     <input 
                       type="number" 
@@ -1085,8 +1113,8 @@ export default function PlayersManager({
                 {/* 4. Passes Réussies */}
                 {(editingPlayer.displayed_stats || []).includes('passes') && (
                   <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
-                      🎯 Passes Réussies
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      <Zap size={14} color="#10b981" /> Passes Réussies
                     </label>
                     <input 
                       type="number" 
@@ -1101,8 +1129,8 @@ export default function PlayersManager({
                 {/* 5. Arrêts / Ballons Arrêtés */}
                 {(editingPlayer.displayed_stats || []).includes('saves') && (
                   <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
-                      🧤 Ballons Arrêtés / Arrêts
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      <Shield size={14} color="#f59e0b" /> Ballons Arrêtés / Arrêts
                     </label>
                     <input 
                       type="number" 
@@ -1125,8 +1153,8 @@ export default function PlayersManager({
                 {/* 6. Clean Sheets */}
                 {(editingPlayer.displayed_stats || []).includes('cleansheets') && (
                   <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
-                      🛡️ Clean Sheets
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      <Award size={14} color="#10b981" /> Clean Sheets
                     </label>
                     <input 
                       type="number" 
@@ -1141,8 +1169,8 @@ export default function PlayersManager({
                 {/* 7. Tacles Réussis */}
                 {(editingPlayer.displayed_stats || []).includes('tackles') && (
                   <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
-                      ⚡ Tacles Réussis
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      <Zap size={14} color="#ef4444" /> Tacles Réussis
                     </label>
                     <input 
                       type="number" 
@@ -1157,8 +1185,8 @@ export default function PlayersManager({
                 {/* 8. Minutes Jouées */}
                 {(editingPlayer.displayed_stats || []).includes('minutes') && (
                   <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
-                      ⏱️ Minutes Jouées
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      <Clock size={14} color="#64748b" /> Minutes Jouées
                     </label>
                     <input 
                       type="number" 
@@ -1173,8 +1201,8 @@ export default function PlayersManager({
                 {/* 9. Statistique Personnalisée */}
                 {(editingPlayer.displayed_stats || []).includes('custom') && (
                   <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', gridColumn: 'span 2' }}>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
-                      ⭐ Statistique Personnalisée
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                      <Star size={14} color="#eab308" /> Statistique Personnalisée
                     </label>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <input 
@@ -1200,14 +1228,14 @@ export default function PlayersManager({
 
             {/* Palmarès & Trophées */}
             <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1.2rem' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#0f172a', marginBottom: '10px' }}>
-                🏆 Palmarès & Trophées Remportés
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 'bold', color: '#0f172a', marginBottom: '10px' }}>
+                <Trophy size={16} color="#d97706" /> Palmarès & Trophées Remportés
               </label>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.2rem' }}>
                 <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
-                    🥇 Titres de Champion (Trophées Or)
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                    <Award size={14} color="#eab308" /> Titres de Champion (Trophées Or)
                   </label>
                   <input 
                     type="number" 
@@ -1219,8 +1247,8 @@ export default function PlayersManager({
                 </div>
 
                 <div style={{ background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
-                    🥈 Finales / Podiums (Trophées Argent)
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.82rem', fontWeight: 'bold', marginBottom: '5px', color: '#334155' }}>
+                    <Medal size={14} color="#94a3b8" /> Finales / Podiums (Trophées Argent)
                   </label>
                   <input 
                     type="number" 
@@ -1407,10 +1435,10 @@ export default function PlayersManager({
 
                   {/* Statistiques Rapides */}
                   <div style={{ display: 'flex', gap: '8px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', fontSize: '0.76rem', color: '#475569', marginBottom: '10px', fontWeight: '600', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                    <span>⚽ {player.goals ?? 0} buts</span>
-                    <span>👟 {player.assists ?? 0} passes</span>
-                    <span>🧤 {player.saves ?? (player.stat2lbl === "Arrêts" ? player.stat2val ?? 0 : 0)} arrêts</span>
-                    <span>🏆 {player.honours1 ?? 0} titres</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Target size={12} color="var(--clr-primary)" /> {player.goals ?? 0} buts</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Activity size={12} color="#3b82f6" /> {player.assists ?? 0} passes</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Shield size={12} color="#f59e0b" /> {player.saves ?? (player.stat2lbl === "Arrêts" ? player.stat2val ?? 0 : 0)} arrêts</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Trophy size={12} color="#d97706" /> {player.honours1 ?? 0} titres</span>
                   </div>
 
                   {/* Multi-Unit Badges & Quick Add */}
@@ -1465,7 +1493,11 @@ export default function PlayersManager({
                               fontWeight: '600'
                             }}
                           >
-                            {isPrimary && <span title="Unité principale" style={{ fontSize: '0.7rem' }}>⭐</span>}
+                            {isPrimary && (
+                              <span title="Unité principale" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                <Star size={11} fill="currentColor" color="var(--clr-primary)" />
+                              </span>
+                            )}
                             {cat}
                             {playerCats.length > 1 && (
                               <button

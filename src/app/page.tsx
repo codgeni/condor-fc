@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import HeroSlider from '@/components/HeroSlider';
-import { Play, ArrowRight, Calendar, MapPin, ShoppingBag, Landmark, Heart, Trophy, Tv, ChevronLeft, ChevronRight, Award, Star, Activity, X, Clock, ExternalLink } from 'lucide-react';
+import { Play, ArrowRight, Calendar, MapPin, ShoppingBag, Landmark, Heart, Trophy, Tv, ChevronLeft, ChevronRight, Award, Star, Activity, X, Clock, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { playersDB } from '@/lib/playersDB';
 import { 
@@ -318,8 +318,8 @@ export default function Home() {
                             </span>
                           </div>
                         ) : mTimeLeft.isFinished ? (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#1e293b', color: '#ffffff', padding: '8px 18px', borderRadius: '20px', fontSize: '0.88rem', fontWeight: '700' }}>
-                            ⚽ Rencontre Terminée
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#1e293b', color: '#ffffff', padding: '8px 18px', borderRadius: '20px', fontSize: '0.88rem', fontWeight: '700' }}>
+                            <CheckCircle2 size={16} color="#10b981" /> Rencontre Terminée
                           </div>
                         ) : (
                           <div style={{ display: 'flex', gap: '1rem', textAlign: 'center', justifyContent: 'center' }}>

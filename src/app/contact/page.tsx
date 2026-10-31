@@ -482,9 +482,9 @@ export default function Contact() {
                     <option value="V1: Paiement intégral de la session (10 mois + inscription)" style={{background: '#111'}}>V1: Paiement intégral de la session (10 mois + inscription)</option>
                     <option value="V2: Paiement de la moitié de la session (5 mois + inscription)" style={{background: '#111'}}>V2: Paiement de la moitié de la session (5 mois + inscription)</option>
                     <option value="V3: Paiement trimestriel de la session (3 mois + inscription)" style={{background: '#111'}}>V3: Paiement trimestriel de la session (3 mois + inscription)</option>
-                    <option value="🎓 Bourse d'Excellence Sportive Condor (Prise en charge à 100%)" style={{background: '#111'}}>🎓 Bourse d'Excellence Sportive Condor (Prise en charge à 100%)</option>
-                    <option value="🎓 Bourse Sociale & Sportive Condor (Réduction de 50% sur l'année)" style={{background: '#111'}}>🎓 Bourse Sociale & Sportive Condor (Réduction de 50% sur l'année)</option>
-                    <option value="🎓 Demande d'Aide Financière / Bourse Partielle" style={{background: '#111'}}>🎓 Demande d'Aide Financière / Bourse Partielle</option>
+                    <option value="Bourse d'Excellence Sportive Condor (Prise en charge à 100%)" style={{background: '#111'}}>Bourse d'Excellence Sportive Condor (Prise en charge à 100%)</option>
+                    <option value="Bourse Sociale & Sportive Condor (Réduction de 50% sur l'année)" style={{background: '#111'}}>Bourse Sociale & Sportive Condor (Réduction de 50% sur l'année)</option>
+                    <option value="Demande d'Aide Financière / Bourse Partielle" style={{background: '#111'}}>Demande d'Aide Financière / Bourse Partielle</option>
                     <option value="Boursier: Montant annuel réduit de 50 %" style={{background: '#111'}}>Boursier: Montant annuel réduit de 50 %</option>
                     <option value="Parrainage: Prise en charge à 100% par sponsor" style={{background: '#111'}}>Parrainage: Prise en charge à 100% par sponsor</option>
                   </select>
@@ -505,7 +505,7 @@ export default function Contact() {
                       gap: '12px'
                     }}
                   >
-                    <div style={{ fontSize: '1.4rem' }}>🎓</div>
+                    <Award size={24} color="#fbbf24" style={{ flexShrink: 0, marginTop: '2px' }} />
                     <div>
                       <div style={{ fontWeight: 'bold', color: '#fbbf24', fontSize: '0.95rem', marginBottom: '4px' }}>
                         Option Bourse & Solidarité Condor Activée

@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Check, 
-  X, 
+import {
+  Check,
+  X,
   AlertCircle,
   MessageCircle,
   FileText
@@ -308,14 +308,14 @@ export default function Shop() {
 
   return (
     <div style={{ flex: 1, marginTop: '80px', overflowX: 'hidden', background: '#f8f9fa', minHeight: '100vh' }}>
-      
+
       {/* 1. Shop Hero */}
-      <section 
-        style={{ 
-          background: `linear-gradient(rgba(17,17,17,0.78), rgba(17,17,17,0.95)), url(${siteContent.shop_hero_bg || '/uploads/site-data-shop_hero_bg.webp'}) center/cover no-repeat`, 
-          color: 'white', 
-          padding: '7rem 0 5rem', 
-          position: 'relative' 
+      <section
+        style={{
+          background: `linear-gradient(rgba(17,17,17,0.78), rgba(17,17,17,0.95)), url(${siteContent.shop_hero_bg || '/uploads/site-data-shop_hero_bg.webp'}) center/cover no-repeat`,
+          color: 'white',
+          padding: '7rem 0 5rem',
+          position: 'relative'
         }}
       >
         <div className="container" style={{ textAlign: 'center', position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -323,7 +323,7 @@ export default function Shop() {
             <h1 style={{ fontFamily: 'var(--font-heading)', fontSize: '4.8rem', margin: '0 0 15px', lineHeight: 1.05, textShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
               ÉQUIPEMENTS OFFICIELS
             </h1>
-            
+
             <p style={{ fontSize: '1.25rem', color: '#e2e8f0', maxWidth: '750px', margin: '0 auto', lineHeight: 1.65 }}>
               Portez fièrement les couleurs officielles du Condor FC. Retrouvez l'ensemble de nos maillots, tenues de match officielles et équipements d'entraînement de la saison 2026/27.
             </p>
@@ -334,7 +334,7 @@ export default function Shop() {
       {/* 2. Filtres & Catalogue */}
       <section className="section-padding" style={{ background: '#f8f9fa', paddingTop: '3.5rem' }}>
         <div className="container" style={{ maxWidth: '1280px' }}>
-          
+
           {/* Header & Categories Filter */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '3rem' }}>
             <span style={{ color: 'var(--clr-primary)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1.5px', fontSize: '0.9rem', marginBottom: '8px' }}>
@@ -397,7 +397,7 @@ export default function Shop() {
                 }}
               >
                 {/* Image Showcase */}
-                <div 
+                <div
                   onClick={() => openOrderModal(product)}
                   style={{
                     height: '340px',
@@ -581,207 +581,207 @@ export default function Shop() {
                 <X size={20} color="#475569" />
               </button>
 
-                <div style={{ padding: '2rem' }}>
-                  
-                  {/* Top Preview */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1.8rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1.5rem' }}>
-                    <div style={{ width: '150px', height: '180px', background: '#f8fafc', borderRadius: '12px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0' }}>
-                      <img src={activeProduct.img} alt={activeProduct.title} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
-                    </div>
+              <div style={{ padding: '2rem' }}>
 
-                    <div style={{ flex: 1, minWidth: '240px' }}>
-                      <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--clr-primary)', fontWeight: 'bold', letterSpacing: '1px', display: 'block', marginBottom: '4px' }}>
-                        {activeProduct.categoryLabel}
-                      </span>
-                      {activeProduct.title ? (
-                        <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', margin: '0 0 8px', color: '#0f172a' }}>
-                          {activeProduct.title}
-                        </h3>
-                      ) : null}
-                      <p style={{ color: '#64748b', fontSize: '0.88rem', margin: '0 0 12px', lineHeight: 1.5 }}>
-                        {activeProduct.description}
-                      </p>
-                      
-                      {/* Disponibilité Badge */}
-                      {activeProduct.is_available !== false ? (
-                        <div
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            background: '#ecfdf5',
-                            border: '1px solid #a7f3d0',
-                            color: '#065f46',
-                            padding: '6px 14px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: '700'
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: '8px',
-                              height: '8px',
-                              borderRadius: '50%',
-                              background: '#10b981',
-                              display: 'inline-block'
-                            }}
-                          />
-                          <span>Disponible à la commande</span>
-                        </div>
-                      ) : (
-                        <div
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            background: '#fef2f2',
-                            border: '1px solid #fecaca',
-                            color: '#991b1b',
-                            padding: '6px 14px',
-                            borderRadius: '8px',
-                            fontSize: '0.85rem',
-                            fontWeight: '700'
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: '8px',
-                              height: '8px',
-                              borderRadius: '50%',
-                              background: '#ef4444',
-                              display: 'inline-block'
-                            }}
-                          />
-                          <span>Hors vente</span>
-                        </div>
-                      )}
-                    </div>
+                {/* Top Preview */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1.8rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1.5rem' }}>
+                  <div style={{ width: '150px', height: '180px', background: '#f8fafc', borderRadius: '12px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0' }}>
+                    <img src={activeProduct.img} alt={activeProduct.title} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
                   </div>
 
-                  {/* Highlights */}
-                  {activeProduct.highlights && activeProduct.highlights.length > 0 && (
-                    <div style={{ marginBottom: '1.5rem' }}>
-                      <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', color: '#1e293b' }}>
-                        Caractéristiques techniques :
-                      </label>
-                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {activeProduct.highlights.map((hl, i) => (
-                          <li key={i} style={{ fontSize: '0.85rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Check size={14} color="#16a34a" style={{ flexShrink: 0 }} />
-                            <span>{hl}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--clr-primary)', fontWeight: 'bold', letterSpacing: '1px', display: 'block', marginBottom: '4px' }}>
+                      {activeProduct.categoryLabel}
+                    </span>
+                    {activeProduct.title ? (
+                      <h3 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.6rem', margin: '0 0 8px', color: '#0f172a' }}>
+                        {activeProduct.title}
+                      </h3>
+                    ) : null}
+                    <p style={{ color: '#64748b', fontSize: '0.88rem', margin: '0 0 12px', lineHeight: 1.5 }}>
+                      {activeProduct.description}
+                    </p>
 
-                  {/* Size Selector */}
-                  <div style={{ marginBottom: '1.8rem' }}>
-                    <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', color: '#1e293b' }}>
-                      Choisir votre taille :
-                    </label>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {activeProduct.sizes.map((sz) => (
-                        <button
-                          key={sz}
-                          type="button"
-                          onClick={() => setSelectedSize(sz)}
-                          style={{
-                            padding: '8px 16px',
-                            borderRadius: '8px',
-                            border: selectedSize === sz ? '2px solid var(--clr-primary)' : '1px solid #cbd5e1',
-                            background: selectedSize === sz ? 'rgba(202, 2, 79, 0.08)' : '#f8fafc',
-                            color: selectedSize === sz ? 'var(--clr-primary)' : '#334155',
-                            fontWeight: '700',
-                            fontSize: '0.88rem',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
-                          {sz}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Action Commande */}
-                  {activeProduct.is_available !== false ? (
-                    <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1.6rem', textAlign: 'center' }}>
-                      <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3rem', margin: '0 0 8px', color: '#0f172a' }}>
-                        Commander cet équipement officiel
-                      </h4>
-                      <p style={{ margin: '0 0 1.2rem', color: '#64748b', fontSize: '0.9rem', lineHeight: 1.5, maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto' }}>
-                        Équipement officiel certifié Condor FC. Remplissez simplement le bon de commande en ligne : aucun paiement immédiat n'est requis.
-                      </p>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '440px', margin: '0 auto' }}>
-                        <Link
-                          href={`/shop/order?id=${activeProduct.id}&size=${encodeURIComponent(selectedSize)}`}
-                          className="btn btn-primary"
-                          style={{
-                            padding: '13px 22px',
-                            borderRadius: '10px',
-                            fontWeight: '800',
-                            fontSize: '0.98rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            textDecoration: 'none',
-                            boxShadow: '0 4px 14px rgba(202, 2, 79, 0.3)'
-                          }}
-                        >
-                          <FileText size={18} />
-                          Remplir le bon de commande (Sans paiement)
-                        </Link>
-
-                        <a
-                          href={`https://wa.me/50946055757?text=${encodeURIComponent(`Bonjour Condor FC, j'ai une question sur l'équipement : ${activeProduct.title || ''}${selectedSize ? ` (Taille : ${selectedSize})` : ''}. Merci !`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="btn btn-outline"
-                          style={{
-                            padding: '10px 18px',
-                            borderRadius: '10px',
-                            fontWeight: '700',
-                            fontSize: '0.86rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            color: '#1e293b',
-                            borderColor: '#cbd5e1',
-                            textDecoration: 'none'
-                          }}
-                        >
-                          <MessageCircle size={16} />
-                          Poser une question via WhatsApp (+509 4605 5757)
-                        </a>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '14px', padding: '1.6rem', textAlign: 'center' }}>
-                      <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#fee2e2', color: '#b91c1c', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
-                        <AlertCircle size={22} />
-                      </div>
-                      <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', margin: '0 0 6px', color: '#991b1b' }}>
-                        Équipement Hors Vente
-                      </h4>
-                      <p style={{ margin: '0 0 1.2rem', color: '#7f1d1d', fontSize: '0.9rem', lineHeight: 1.6, maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto' }}>
-                        Cet article est actuellement hors vente ou réservé. Contactez le secrétariat pour toute question.
-                      </p>
-                      <button
-                        onClick={closeModal}
-                        className="btn btn-outline"
-                        style={{ padding: '10px 24px', borderRadius: '8px', fontSize: '0.9rem', color: '#1e293b', borderColor: '#cbd5e1' }}
+                    {/* Disponibilité Badge */}
+                    {activeProduct.is_available !== false ? (
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          background: '#ecfdf5',
+                          border: '1px solid #a7f3d0',
+                          color: '#065f46',
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: '700'
+                        }}
                       >
-                        Fermer l'aperçu
-                      </button>
-                    </div>
-                  )}
-
+                        <span
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: '#10b981',
+                            display: 'inline-block'
+                          }}
+                        />
+                        <span>Disponible à la commande</span>
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          background: '#fef2f2',
+                          border: '1px solid #fecaca',
+                          color: '#991b1b',
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem',
+                          fontWeight: '700'
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: '#ef4444',
+                            display: 'inline-block'
+                          }}
+                        />
+                        <span>Hors vente</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Highlights */}
+                {activeProduct.highlights && activeProduct.highlights.length > 0 && (
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', color: '#1e293b' }}>
+                      Caractéristiques techniques :
+                    </label>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {activeProduct.highlights.map((hl, i) => (
+                        <li key={i} style={{ fontSize: '0.85rem', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Check size={14} color="#16a34a" style={{ flexShrink: 0 }} />
+                          <span>{hl}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Size Selector */}
+                <div style={{ marginBottom: '1.8rem' }}>
+                  <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', color: '#1e293b' }}>
+                    Choisir votre taille :
+                  </label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {activeProduct.sizes.map((sz) => (
+                      <button
+                        key={sz}
+                        type="button"
+                        onClick={() => setSelectedSize(sz)}
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '8px',
+                          border: selectedSize === sz ? '2px solid var(--clr-primary)' : '1px solid #cbd5e1',
+                          background: selectedSize === sz ? 'rgba(202, 2, 79, 0.08)' : '#f8fafc',
+                          color: selectedSize === sz ? 'var(--clr-primary)' : '#334155',
+                          fontWeight: '700',
+                          fontSize: '0.88rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        {sz}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action Commande */}
+                {activeProduct.is_available !== false ? (
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '1.6rem', textAlign: 'center' }}>
+                    <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.3rem', margin: '0 0 8px', color: '#0f172a' }}>
+                      Commander cet équipement officiel
+                    </h4>
+                    <p style={{ margin: '0 0 1.2rem', color: '#64748b', fontSize: '0.9rem', lineHeight: 1.5, maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto' }}>
+                      Équipement officiel certifié Condor FC. Remplissez simplement le bon de commande en ligne : aucun paiement immédiat n'est requis.
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '440px', margin: '0 auto' }}>
+                      <Link
+                        href={`/shop/order?id=${activeProduct.id}&size=${encodeURIComponent(selectedSize)}`}
+                        className="btn btn-primary"
+                        style={{
+                          padding: '13px 22px',
+                          borderRadius: '10px',
+                          fontWeight: '800',
+                          fontSize: '0.98rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          textDecoration: 'none',
+                          boxShadow: '0 4px 14px rgba(202, 2, 79, 0.3)'
+                        }}
+                      >
+                        <FileText size={18} />
+                        Remplir le bon de commande (Sans paiement)
+                      </Link>
+
+                      <a
+                        href={`https://wa.me/50946055757?text=${encodeURIComponent(`Bonjour Condor FC, j'ai une question sur l'équipement : ${activeProduct.title || ''}${selectedSize ? ` (Taille : ${selectedSize})` : ''}. Merci !`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-outline"
+                        style={{
+                          padding: '10px 18px',
+                          borderRadius: '10px',
+                          fontWeight: '700',
+                          fontSize: '0.86rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          color: '#1e293b',
+                          borderColor: '#cbd5e1',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        <MessageCircle size={16} />
+                        Poser une question via WhatsApp (+509 4605 5757)
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '14px', padding: '1.6rem', textAlign: 'center' }}>
+                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#fee2e2', color: '#b91c1c', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
+                      <AlertCircle size={22} />
+                    </div>
+                    <h4 style={{ fontFamily: 'var(--font-heading)', fontSize: '1.25rem', margin: '0 0 6px', color: '#991b1b' }}>
+                      Équipement Hors Vente
+                    </h4>
+                    <p style={{ margin: '0 0 1.2rem', color: '#7f1d1d', fontSize: '0.9rem', lineHeight: 1.6, maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto' }}>
+                      Cet article est actuellement hors vente ou réservé. Contactez le secrétariat pour toute question.
+                    </p>
+                    <button
+                      onClick={closeModal}
+                      className="btn btn-outline"
+                      style={{ padding: '10px 24px', borderRadius: '8px', fontSize: '0.9rem', color: '#1e293b', borderColor: '#cbd5e1' }}
+                    >
+                      Fermer l'aperçu
+                    </button>
+                  </div>
+                )}
+
+              </div>
             </motion.div>
           </div>
         )}

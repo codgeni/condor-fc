@@ -1040,7 +1040,7 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.2rem' }}>
                 {/* Dieu */}
                 <div style={{ background: '#fff', padding: '1.2rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                  <label style={{ ...labelStyle, color: 'var(--clr-primary)' }}>✝ Pilier 1 : Titre</label>
+                  <label style={{ ...labelStyle, color: 'var(--clr-primary)' }}>Pilier 1 : Titre</label>
                   <input 
                     type="text" 
                     value={form.club_val_god_title || ''} 
@@ -1057,7 +1057,7 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
 
                 {/* Patrie */}
                 <div style={{ background: '#fff', padding: '1.2rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                  <label style={{ ...labelStyle, color: 'var(--clr-primary)' }}>🇭🇹 Pilier 2 : Titre</label>
+                  <label style={{ ...labelStyle, color: 'var(--clr-primary)' }}>Pilier 2 : Titre</label>
                   <input 
                     type="text" 
                     value={form.club_val_patrie_title || ''} 
@@ -1074,7 +1074,7 @@ export default function SiteTextsManager({ content, onRefresh, showToast }: Site
 
                 {/* Discipline */}
                 <div style={{ background: '#fff', padding: '1.2rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-                  <label style={{ ...labelStyle, color: 'var(--clr-primary)' }}>⚡ Pilier 3 : Titre</label>
+                  <label style={{ ...labelStyle, color: 'var(--clr-primary)' }}>Pilier 3 : Titre</label>
                   <input 
                     type="text" 
                     value={form.club_val_discipline_title || ''} 

@@ -441,8 +441,8 @@ export default function TimelineManager({ timeline, onRefresh, showToast }: Time
 
               {/* SECTION PHOTO DU TOURNOI */}
               <div style={{ background: '#f8fafc', padding: '18px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--clr-primary)', marginBottom: '8px' }}>
-                  📸 Photo Réelle du Tournoi / de l'Équipe Victorieuse
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--clr-primary)', marginBottom: '8px' }}>
+                  <ImageIcon size={15} /> Photo Réelle du Tournoi / de l'Équipe Victorieuse
                 </label>
                 <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 12px 0' }}>
                   Cette photo remplacera le trophée 3D dans la vitrine principale de la page d'accueil ainsi que sur le socle défilant en dessous.

@@ -252,7 +252,7 @@ export function printInscriptionDossier(inscription: any) {
 <body>
 
   <div class="action-bar">
-    <button class="btn-print" onclick="window.print()">📥 TÉLÉCHARGER EN PDF / IMPRIMER CE DOSSIER</button>
+    <button class="btn-print" onclick="window.print()">TÉLÉCHARGER EN PDF / IMPRIMER CE DOSSIER</button>
     <div style="font-size: 9pt; color: #64748b; margin-top: 6px;">
       Choisissez "Enregistrer au format PDF" dans la boîte de dialogue d'impression pour télécharger le fichier PDF.
     </div>

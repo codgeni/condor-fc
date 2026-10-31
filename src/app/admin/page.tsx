@@ -1129,8 +1129,8 @@ export default function AdminPanel() {
                               const parsed = parseMatchDateTime(mDate, m.match_time);
                               if (!parsed) {
                                 return (
-                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
-                                    ⚠️ Format non reconnu
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
+                                    <AlertCircle size={13} /> Format non reconnu
                                   </span>
                                 );
                               }
@@ -1139,14 +1139,14 @@ export default function AdminPanel() {
                                 const elapsed = Math.floor(-diff / (1000 * 60));
                                 if (elapsed <= 120) {
                                   return (
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
-                                      🔴 Match en direct
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
+                                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#dc2626', display: 'inline-block' }} /> Match en direct
                                     </span>
                                   );
                                 }
                                 return (
-                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '600' }}>
-                                    ⚽ Match terminé
+                                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '600' }}>
+                                    <CheckCircle size={13} color="#10b981" /> Match terminé
                                   </span>
                                 );
                               }
@@ -1154,8 +1154,8 @@ export default function AdminPanel() {
                               const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                               const min = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                               return (
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
-                                  ⏱️ Rebours : {d > 0 ? `${d}j ` : ''}{h}h {min}min
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: '700' }}>
+                                  <Clock size={13} /> Rebours : {d > 0 ? `${d}j ` : ''}{h}h {min}min
                                 </span>
                               );
                             })()}
@@ -2246,8 +2246,8 @@ export default function AdminPanel() {
                     <p style={{ marginBottom: '8px' }}>
                       <strong>Paiement / Bourse : </strong> 
                       {(selectedStageRegistration.note?.includes('Bourse') || selectedStageRegistration.payment_mode?.includes('Bourse')) ? (
-                        <span style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b', padding: '3px 8px', borderRadius: '4px', fontSize: '0.82rem', fontWeight: 'bold' }}>
-                          🎓 Demande de Bourse Condor
+                        <span style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b', padding: '3px 8px', borderRadius: '4px', fontSize: '0.82rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <Award size={13} /> Demande de Bourse Condor
                         </span>
                       ) : (
                         <span style={{ color: '#475569', fontSize: '0.88rem' }}>
@@ -2316,8 +2316,8 @@ export default function AdminPanel() {
                           </td>
                           <td style={{ padding: '10px' }}>
                             {isBourse ? (
-                              <span style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b', padding: '3px 7px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                                🎓 Bourse Demandée
+                              <span style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b', padding: '3px 7px', borderRadius: '4px', fontSize: '0.78rem', fontWeight: 'bold', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <Award size={13} /> Bourse Demandée
                               </span>
                             ) : (
                               <span style={{ color: '#64748b', fontSize: '0.82rem' }}>Standard</span>
@@ -2749,8 +2749,8 @@ export default function AdminPanel() {
                           {fd.planAdhesion?.split(':')[0] || 'Plan Standard'}
                         </span>
                       </div>
-                      <p style={{ margin: '8px 0 0', color: '#475569', fontSize: '0.9rem' }}>
-                        📅 <strong>Formulaire envoyé le :</strong> {formatFullDateTime(selectedInscription.created_at || fd.submittedAt)} • ✍️ <strong>Signature déclarée :</strong> {fd.dateSignature || 'N/A'}
+                      <p style={{ margin: '8px 0 0', color: '#475569', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <Calendar size={14} style={{ verticalAlign: 'middle' }} /> <strong>Formulaire envoyé le :</strong> {formatFullDateTime(selectedInscription.created_at || fd.submittedAt)} • <FileText size={14} style={{ verticalAlign: 'middle' }} /> <strong>Signature déclarée :</strong> {fd.dateSignature || 'N/A'}
                       </p>
                     </div>
 
@@ -3118,7 +3118,7 @@ export default function AdminPanel() {
                             <td style={{ padding: '12px 15px' }}>
                               {ins.form_data?.planAdhesion && (ins.form_data.planAdhesion.includes('Bourse') || ins.form_data.planAdhesion.includes('Boursier')) ? (
                                 <span style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #f59e0b', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  🎓 {ins.form_data?.planAdhesion?.split(':')[0]?.replace(/^[🎓\s]+/, '') || 'Boursier'}
+                                  <Award size={13} /> {ins.form_data?.planAdhesion?.split(':')[0]?.replace(/^[🎓\s]+/, '') || 'Boursier'}
                                 </span>
                               ) : (
                                 <span style={{ background: 'var(--clr-gray-light)', color: 'var(--clr-primary)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>

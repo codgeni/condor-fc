@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { Bell, ShieldCheck, LogIn, UserPlus } from 'lucide-react';
+import { Bell, ShieldCheck, LogIn, UserPlus, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 
@@ -323,7 +323,9 @@ export default function SupporterPortal() {
 
           {!isSupabaseConfigured && (
             <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '1rem', marginBottom: '1.5rem', color: '#991b1b', fontSize: '0.88rem', lineHeight: 1.5 }}>
-              <strong style={{ display: 'block', marginBottom: '4px', fontSize: '0.95rem' }}>⚠️ Configuration Supabase Requise</strong>
+              <strong style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', fontSize: '0.95rem' }}>
+                <AlertTriangle size={16} /> Configuration Supabase Requise
+              </strong>
               Pour vous connecter avec <code>admin@gmail.com</code>, renseignez votre <code>NEXT_PUBLIC_SUPABASE_URL</code> et votre clé <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> dans le fichier <code>.env.local</code> situé à la racine du projet, puis redémarrez votre serveur.
             </div>
           )}

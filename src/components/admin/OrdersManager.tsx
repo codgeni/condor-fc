@@ -297,8 +297,8 @@ export default function OrdersManager({ orders, onRefresh, showToast }: OrdersMa
 
                     {/* Phone Number in prominent styling with 1-click CALL and WHATSAPP */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '6px' }}>
-                      <span style={{ fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', fontFamily: 'monospace', letterSpacing: '0.5px' }}>
-                        📞 {order.customer_phone}
+                      <span style={{ fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', fontFamily: 'monospace', letterSpacing: '0.5px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <Phone size={15} /> {order.customer_phone}
                       </span>
 
                       {/* Direct Call Button */}
