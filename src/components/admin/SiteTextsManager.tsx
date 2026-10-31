@@ -15,49 +15,49 @@ const BANNER_CONFIGS = [
     key: 'news_hero_bg' as const,
     title: 'Actualités Officielles',
     route: '/news',
-    defaultImg: '/news_hero.png',
+    defaultImg: DEFAULT_SITE_CONTENT.news_hero_bg || '/uploads/site-data-news_hero_bg.webp',
     description: "Bandeau officiel de la page Actualités et communiqués du club."
   },
   {
     key: 'club_hero_bg' as const,
     title: "L'Académie",
     route: '/club',
-    defaultImg: '/club_hero.png',
+    defaultImg: DEFAULT_SITE_CONTENT.club_hero_bg || '/uploads/site-data-club_hero_bg.webp',
     description: "Bandeau de présentation de l'académie (Histoire, philosophie et valeurs)."
   },
   {
     key: 'teams_hero_bg' as const,
     title: 'Équipes & Joueurs',
     route: '/teams',
-    defaultImg: '/kick_hero.png',
+    defaultImg: DEFAULT_SITE_CONTENT.teams_hero_bg || '/uploads/site-data-teams_hero_bg.webp',
     description: "Bandeau d'en-tête des effectifs et catégories de joueurs."
   },
   {
     key: 'stages_hero_bg' as const,
     title: 'Stages & Pré-inscriptions',
     route: '/stages',
-    defaultImg: '/stadium_hero_1780681869623.png',
+    defaultImg: DEFAULT_SITE_CONTENT.stages_hero_bg || '/uploads/site-data-stages_hero_bg.webp',
     description: "Bandeau d'en-tête des sessions de stages et prises de rendez-vous."
   },
   {
     key: 'shop_hero_bg' as const,
     title: 'Boutique Officielle',
     route: '/shop',
-    defaultImg: '/shop_hero.png',
+    defaultImg: DEFAULT_SITE_CONTENT.shop_hero_bg || '/uploads/site-data-shop_hero_bg.webp',
     description: "Bandeau d'en-tête de la boutique d'équipements officiels."
   },
   {
     key: 'tv_hero_bg' as const,
     title: 'Condor TV',
     route: '/tv',
-    defaultImg: '/stadium_hero_1780681869623.png',
+    defaultImg: DEFAULT_SITE_CONTENT.tv_hero_bg || '/uploads/site-data-tv_hero_bg.webp',
     description: "Bandeau d'en-tête de la vidéothèque et reportages vidéo."
   },
   {
     key: 'inscr_hero_bg' as const,
     title: 'Formulaire d\'Inscription',
     route: '/contact',
-    defaultImg: '/stadium_hero_1780681869623.png',
+    defaultImg: DEFAULT_SITE_CONTENT.inscr_hero_bg || '',
     description: "Bandeau d'en-tête du grand formulaire d'inscription annuelle."
   }
 ];

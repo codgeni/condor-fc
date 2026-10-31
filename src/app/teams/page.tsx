@@ -7,17 +7,22 @@ import {
   fetchUnits, UnitItem, DEFAULT_UNITS,
   fetchRoles, RoleItem, DEFAULT_ROLES, matchPlayerToRole,
   fetchMergedPlayers,
-  fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT
+  fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
+  getInitialUnits, getInitialRoles, getInitialPlayers, getInitialSiteContent
 } from '@/lib/dataService';
 import { ArrowRight } from 'lucide-react';
 
 export default function Teams() {
-  const [units, setUnits] = useState<UnitItem[]>(DEFAULT_UNITS);
-  const [roles, setRoles] = useState<RoleItem[]>(DEFAULT_ROLES);
-  const [selectedCategory, setSelectedCategory] = useState('U17');
-  const [db, setDb] = useState<Record<string, any>>({});
-  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
-  const [loading, setLoading] = useState(true);
+  const [units, setUnits] = useState<UnitItem[]>(() => getInitialUnits());
+  const [roles, setRoles] = useState<RoleItem[]>(() => getInitialRoles());
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    const initUnits = getInitialUnits();
+    const firstActive = initUnits.find(u => u.is_active !== false) || initUnits[0];
+    return firstActive ? firstActive.name : 'U19';
+  });
+  const [db, setDb] = useState<Record<string, any>>(() => getInitialPlayers());
+  const [siteContent, setSiteContent] = useState<SiteContent>(() => getInitialSiteContent());
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -36,10 +41,13 @@ export default function Teams() {
         if (loadedUnits && loadedUnits.length > 0) {
           const validUnits = loadedUnits.filter(u => !u.name.toLowerCase().includes('premi'));
           setUnits(validUnits);
-          if (!validUnits.some(u => u.name === selectedCategory)) {
-            const firstActive = validUnits.find(u => u.is_active !== false) || validUnits[0];
-            if (firstActive) setSelectedCategory(firstActive.name);
-          }
+          setSelectedCategory(prev => {
+            if (!validUnits.some(u => u.name === prev)) {
+              const firstActive = validUnits.find(u => u.is_active !== false) || validUnits[0];
+              return firstActive ? firstActive.name : prev;
+            }
+            return prev;
+          });
         }
 
         if (loadedRoles && loadedRoles.length > 0) {
@@ -63,7 +71,7 @@ export default function Teams() {
   const activeUnit = units.find(u => u.name === selectedCategory) || {
     name: selectedCategory,
     description: `Catégorie ${selectedCategory}`,
-    image: '/kick_hero.png'
+    image: siteContent.teams_hero_bg || '/uploads/site-data-teams_hero_bg.webp'
   };
 
   const handleCategoryChange = (categoryName: string) => {
@@ -231,7 +239,7 @@ export default function Teams() {
           position: 'relative', 
           overflow: 'hidden', 
           padding: '110px 0 70px',
-          background: `linear-gradient(rgba(11,11,14,0.72), rgba(11,11,14,0.92)), url(${activeUnit.image || siteContent.teams_hero_bg || '/kick_hero.png'}) center/cover no-repeat`,
+          background: `linear-gradient(rgba(11,11,14,0.72), rgba(11,11,14,0.92)), url(${activeUnit.image || siteContent.teams_hero_bg || '/uploads/site-data-teams_hero_bg.webp'}) center/cover no-repeat`,
           transition: 'background 0.4s ease'
         }}
       >

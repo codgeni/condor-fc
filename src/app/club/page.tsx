@@ -7,13 +7,14 @@ import {
   fetchStaff, StaffMember, DEFAULT_STAFF,
   fetchTimeline, TimelineItem, DEFAULT_TIMELINE,
   fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
-  DEFAULT_PILLARS
+  DEFAULT_PILLARS,
+  getInitialStaff, getInitialTimeline, getInitialSiteContent
 } from '@/lib/dataService';
 
 export default function Club() {
-  const [staff, setStaff] = useState<StaffMember[]>(DEFAULT_STAFF);
-  const [timeline, setTimeline] = useState<TimelineItem[]>(DEFAULT_TIMELINE);
-  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+  const [staff, setStaff] = useState<StaffMember[]>(() => getInitialStaff());
+  const [timeline, setTimeline] = useState<TimelineItem[]>(() => getInitialTimeline());
+  const [siteContent, setSiteContent] = useState<SiteContent>(() => getInitialSiteContent());
   const [selectedStaffCat, setSelectedStaffCat] = useState<string>('all');
   const [staffSearch, setStaffSearch] = useState<string>('');
   const [activeModalMember, setActiveModalMember] = useState<StaffMember | null>(null);
@@ -68,7 +69,7 @@ export default function Club() {
           padding: '100px 0', 
           position: 'relative', 
           overflow: 'hidden',
-          background: `linear-gradient(rgba(17,17,17,0.7), rgba(17,17,17,0.9)), url(${siteContent.club_hero_bg || '/club_hero.png'}) center/cover no-repeat`
+          background: `linear-gradient(rgba(17,17,17,0.7), rgba(17,17,17,0.9)), url(${siteContent.club_hero_bg || '/uploads/site-data-club_hero_bg.webp'}) center/cover no-repeat`
         }}
       >
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }} style={{ position: 'relative', zIndex: 10 }}>

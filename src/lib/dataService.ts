@@ -308,11 +308,12 @@ export interface SiteContent {
 // DEFAULTS
 // -------------------------------------------------------------
 export const DEFAULT_UNITS: UnitItem[] = [
-  { id: 'unit-2', name: 'U17', description: 'Moins de 17 ans (Cadets)', order: 1, is_active: true, image: '/kick_hero.png' },
-  { id: 'unit-3', name: 'U15', description: 'Moins de 15 ans (Minimes)', order: 2, is_active: true, image: '/player_action_1_1780681882713.png' },
-  { id: 'unit-4', name: 'U13', description: 'Moins de 13 ans (Benjamins)', order: 3, is_active: true, image: '/trophy_moment_1780681956500.png' },
-  { id: 'unit-5', name: 'U9', description: 'Moins de 9 ans (Poussins / École)', order: 4, is_active: true, image: '/player_action_2_1780681894021.png' },
-  { id: 'unit-6', name: 'U8', description: 'Moins de 8 ans (Poussins)', order: 5, is_active: true, image: '/club_hero.png' },
+  { id: 'unit-1793276675662', name: 'U19', description: '', order: 1, is_active: true, image: '/uploads/units-unit-1793276675662-image.webp' },
+  { id: 'unit-2', name: 'U17', description: 'Moins de 17 ans (Cadets)', order: 2, is_active: true, image: '/uploads/units-unit-2-image.webp' },
+  { id: 'unit-3', name: 'U15', description: 'Moins de 15 ans (Minimes)', order: 3, is_active: true, image: '/uploads/units-unit-3-image.webp' },
+  { id: 'unit-1793138014490', name: 'U11', description: '', order: 4, is_active: true, image: '/uploads/units-unit-1793138014490-image.webp' },
+  { id: 'unit-4', name: 'U13', description: 'Moins de 13 ans (Benjamins)', order: 4, is_active: true, image: '/uploads/unit-unit-4.webp' },
+  { id: 'unit-5', name: 'U9', description: 'Moins de 9 ans (Poussins / École)', order: 5, is_active: true, image: '/uploads/units-unit-5-image.webp' },
   { id: 'unit-7', name: 'U7', description: 'Moins de 7 ans (Débutants / École de Football)', order: 6, is_active: true, image: '/soccer.png' },
 ];
 
@@ -337,10 +338,8 @@ export const DEFAULT_STAFF: StaffMember[] = [
   { id: 'staff-guerline-guerrier', name: 'Guerline Guerrier', role: 'Formatrice Adjointe', img: '/staff/guerline-guerrier.jpg', order: 10 },
   { id: 'staff-jacklin-pierre', name: 'Jacklin Pierre', role: 'Formateur Adjoint', img: '/staff/jacklin-pierre.jpg', order: 11 },
   { id: 'staff-mayico-franck', name: 'Mayico Franck', role: 'Formateur Adjoint', img: '/staff/mayico-franck.jpg', order: 12 },
-  { id: 'staff-christina-similien', name: 'Christina Similien', role: 'Assistante Administrative', img: '/staff/christina-similien.jpg', order: 13 },
   { id: 'staff-wesnide-victor', name: 'Wesnide Victor', role: 'Réceptionniste', img: '/staff/wesnide-victor.jpg', order: 14 },
   { id: 'staff-kimberline-chery', name: 'Kimberline Chery', role: 'Massothérapeute', img: '/staff/kimberline-chery.jpg', order: 15 },
-  { id: 'staff-valdyrsen-deris', name: 'Valdyrsen Deris', role: 'Responsable Journal', img: '/staff/valdyrsen-deris.jpg', order: 16 },
   { id: 'staff-jameson-cassamajor', name: 'Jameson Cassamajor', role: 'Assistant Logistique', img: '/staff/jameson-cassamajor.jpg', order: 17 },
   { id: 'staff-erncon-justin', name: 'Erncon Justin', role: 'Outilleur', img: '/staff/erncon-justin.jpg', order: 18 },
   { id: 'staff-jetson-devallon', name: 'Jetson Devallon', role: 'Outilleur', img: '/staff/jetson-devallon.jpg', order: 19 },
@@ -492,12 +491,12 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   inscr_success_desc: "Votre dossier a été transmis avec succès. Notre équipe administrative traitera votre demande dans les plus brefs délais.",
 
   // 4. Arrière-plans des bannières de sections (Navbar)
-  news_hero_bg: '/news_hero.png',
-  club_hero_bg: '/club_hero.png',
-  teams_hero_bg: '/kick_hero.png',
-  stages_hero_bg: '/stadium_hero_1780681869623.png',
-  shop_hero_bg: '/shop_hero.png',
-  tv_hero_bg: '/stadium_hero_1780681869623.png',
+  news_hero_bg: '/uploads/site-data-news_hero_bg.webp',
+  club_hero_bg: '/uploads/site-data-club_hero_bg.webp',
+  teams_hero_bg: '/uploads/site-data-teams_hero_bg.webp',
+  stages_hero_bg: '/uploads/site-data-stages_hero_bg.webp',
+  shop_hero_bg: '/uploads/site-data-shop_hero_bg.webp',
+  tv_hero_bg: '/uploads/site-data-tv_hero_bg.webp',
   inscr_hero_bg: '',
 
   // 5. Section Palmarès & Chiffres Clés (Page d'accueil)
@@ -515,8 +514,8 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   // 6. Section Terrain d'Entraînement
   terrain_title: "Notre Terrain d'Entraînement",
   terrain_tag: "Infrastructures & Localisation",
-  terrain_desc: "Retrouvez-nous chaque week-end à l'entrée de Delmas 77 (à côté de BIWI). Nos installations permettent un apprentissage structuré et sécurisé pour toutes les tranches d'âge.",
-  terrain_img: "/stadium_hero_1780681869623.png",
+  terrain_desc: "Retrouvez-nous aux séances d′entrainement à Quisqueya Christian School (Delmas 75)‚ au Parc Saint-Clair (Delmas 33) et à Quisqueya Chapel (Delmas 75). Nos installations permettent un apprentissage structuré et sécurisé pour toutes les tranches d'âge.",
+  terrain_img: "/uploads/site-terrain_img.webp",
   terrain_location: "Entrée de Delmas 77 (à côté de BIWI), Port-au-Prince",
   terrain_btn_text: "Nous Contacter & Localiser",
   terrain_btn_link: "/contact"
@@ -839,22 +838,54 @@ export function getVideoPlatform(video: Partial<VideoItem>): 'youtube' | 'tiktok
 }
 
 // -------------------------------------------------------------
-// Fallback Local Storage Helpers
+// In-Memory + Versioned Local Storage Helpers
 // -------------------------------------------------------------
-export function getLocalItem<T>(key: string, defaultValue: T): T {
-  if (typeof window === 'undefined') return defaultValue;
+const STORAGE_PREFIX = 'condor_v3_';
+const memCache: Record<string, any> = {};
+let legacyCleaned = false;
+
+function cleanLegacyCacheOnce(): void {
+  if (legacyCleaned || typeof window === 'undefined') return;
+  legacyCleaned = true;
   try {
-    const saved = localStorage.getItem(`condor_${key}`);
-    return saved ? JSON.parse(saved) : defaultValue;
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('condor_') && !k.startsWith(STORAGE_PREFIX)) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+  } catch {
+    // Ignore storage access errors
+  }
+}
+
+export function getLocalItem<T>(key: string, defaultValue: T): T {
+  if (key in memCache && memCache[key] !== undefined) {
+    return memCache[key] as T;
+  }
+  if (typeof window === 'undefined') return defaultValue;
+  cleanLegacyCacheOnce();
+  try {
+    const saved = localStorage.getItem(`${STORAGE_PREFIX}${key}`);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      memCache[key] = parsed;
+      return parsed;
+    }
+    return defaultValue;
   } catch (e) {
     return defaultValue;
   }
 }
 
 export function setLocalItem<T>(key: string, value: T): void {
+  memCache[key] = value;
   if (typeof window === 'undefined') return;
+  cleanLegacyCacheOnce();
   try {
-    localStorage.setItem(`condor_${key}`, JSON.stringify(value));
+    localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(value));
   } catch (e: any) {
     // Handle QuotaExceededError gracefully (e.g., when players have large base64 photos)
     if (key === 'players_custom' && value && typeof value === 'object') {
@@ -870,7 +901,7 @@ export function setLocalItem<T>(key: string, value: T): void {
             };
           }
         }
-        localStorage.setItem(`condor_${key}`, JSON.stringify(slim));
+        localStorage.setItem(`${STORAGE_PREFIX}${key}`, JSON.stringify(slim));
         return;
       } catch {
         // Ignore secondary storage error
@@ -963,13 +994,15 @@ export function parseMatchDateTime(dateStr?: string, timeStr?: string): Date | n
 // =============================================================
 // 1. MATCH SERVICE
 // =============================================================
-const DEFAULT_MATCH: MatchConfig = {
+export const DEFAULT_MATCH: MatchConfig = {
+  id: 1,
   home_team: 'Condor Ecole de Football',
-  opponent: 'Fc Colonne Academy',
-  match_date: '2026-10-24',
-  match_time: '14h00',
+  opponent: 'Sainte-Union Sportif Club',
+  match_date: '2026-10-31',
+  match_time: '12h00 ',
   location: 'Quisqueya Christian School, Delmas 75',
-  competition: 'Match Officiel',
+  competition: 'Matchs Amicaux',
+  opponent_logo: '/uploads/matches-1-opponent_logo.webp',
   no_matches_now: false,
   is_active: true
 };
@@ -1065,6 +1098,35 @@ export async function saveMatchConfig(config: MatchConfig): Promise<{ success: b
 // =============================================================
 // 2. VIDEOS SERVICE (Condor TV)
 // =============================================================
+export const DEFAULT_VIDEOS: VideoItem[] = [
+  {
+    id: 8,
+    title: "After Match (Condor vs Fc Colonne)",
+    url: "https://www.instagram.com/reel/De60MbFiNY9/?utm_source=ig_web_copy_link&xtok=MzRlODBiNWFlZA==&srtk=MzRlODBiNWFlZA==",
+    category: "Condor TV",
+    duration: "",
+    thumbnail: "/uploads/video-8.jpg",
+    tag: "",
+    description: "",
+    format: "16:9",
+    platform: "other",
+    created_at: "2026-10-25T18:39:11.425159+00:00"
+  },
+  {
+    id: 7,
+    title: "Condor Ecole de Football vs Selection Haïtienne",
+    url: "https://www.instagram.com/reel/Dea9QqzuApL/?psln=MTdjYTZxdWpuOHpkOA==",
+    category: "Condor TV",
+    duration: "",
+    thumbnail: "/uploads/video-7.jpg",
+    tag: "",
+    description: "",
+    format: "16:9",
+    platform: "other",
+    created_at: "2026-10-17T20:12:24.301731+00:00"
+  }
+];
+
 export async function fetchVideos(): Promise<VideoItem[]> {
   try {
     const { data, error } = await supabase
@@ -1085,7 +1147,7 @@ export async function fetchVideos(): Promise<VideoItem[]> {
     console.warn('Supabase videos fetch error, fallback to local', err);
   }
 
-  const local = getLocalItem<VideoItem[]>('videos_list', []);
+  const local = getLocalItem<VideoItem[]>('videos_list', DEFAULT_VIDEOS);
   return local.map(v => ({
     ...v,
     format: getVideoFormat(v),
@@ -2637,6 +2699,54 @@ export async function transferPlayerCategory(
 // =============================================================
 // 12. NEWS / ACTUALITÉS SERVICE
 // =============================================================
+export const DEFAULT_NEWS: any[] = [
+  {
+    id: 15,
+    cat: "Match",
+    date: "31/10/2026",
+    title: "Condor Ecole de Football vs Saint-Union Sportif Club ",
+    desc_text: "Venez supporter notre club aujourd'hui !",
+    img: "/uploads/news-15-img.webp",
+    created_at: "2026-10-31T15:07:35.22+00:00"
+  },
+  {
+    id: 14,
+    cat: "Stages",
+    date: "30/10/2026",
+    title: "Stages de détection de talents ",
+    desc_text: "Nous vous attendons !!",
+    img: "/uploads/news-14-img.webp",
+    created_at: "2026-10-30T22:42:12.119+00:00"
+  },
+  {
+    id: 13,
+    cat: "Match",
+    date: "29/10/2026",
+    title: "Confor Ecole de Football Vs Fc Colonne",
+    desc_text: "DES GRANDS DÉFIS, UNE SEULE FAMILLE ! \nNos guerriers ont tout donné sur le terrain face à FC Colonne Academy! \n\nU9 : 1–2\nU13 : 0–0\nU15 : 0–0\n\nAu-delà des résultats, chaque rencontre est une occasion de grandir, d’apprendre et de renforcer notre esprit d’équipe. Nos guerriers continuent de progresser, avec la même détermination et la même passion.\n\nLe chemin continue, le travail ne s’arrête pas et notre ambition reste intacte.\n\nPlus qu’un club, une famille. ",
+    img: "/uploads/news-13-img.webp",
+    created_at: "2026-10-30T00:24:03.922+00:00"
+  },
+  {
+    id: 12,
+    cat: "Match",
+    date: "17/10/2026",
+    title: "Les U15/U17 de Condor en amicale face aux U15 d'Haïti ",
+    desc_text: "Du terrain aux nouvelles tenues, notre 4e saison prend forme !\n\nDu 2 au 10 octobre, nos jeunes ont fait match nul face aux vétérans (0–0), avant de livrer une prestation convaincante contre les U15 de la sélection haïtienne, malgré une courte défaite (1–0).\n\nDe nouvelles tenues pour nos joueurs et de nouveaux uniformes pour nos masseuses complètent les nouvelles de la deuxième semaine du mois d’octobre de la famille Condor.🖤❤️",
+    img: "/uploads/news-12.jpg",
+    created_at: "2026-10-17T22:05:16.721+00:00"
+  },
+  {
+    id: 9,
+    cat: "Stages",
+    date: "À l'instant",
+    title: "De Condor à Gremio",
+    desc_text: "Messi Frederic et Josué Dérat, deux jeunes de la catégorie U17 de Condor École de Football, s'apprêtent à vivre une expérience enrichissante lors d'un stage de 15 jours au Grêmio Foot-Ball Porto Alegrense, au Brésil.\nIls participeront également à un tournoi au cours duquel ils affronteront notamment le club formateur du légendaire Ronaldinho.\nUne belle occasion pour ces jeunes de démontrer leur talent et leur détermination. Nous leur souhaitons beaucoup de réussite dans cette grande aventure !",
+    img: "/uploads/news-9.jpg",
+    created_at: "2026-10-04T21:13:48.126867+00:00"
+  }
+];
+
 export function isRealNews(item: any): boolean {
   if (!item || !item.title) return false;
   const t = (item.title || '').trim().toLowerCase();
@@ -2669,8 +2779,84 @@ export async function fetchNews(): Promise<any[]> {
     console.warn('Supabase fetch news note', err);
   }
 
-  const cached = getLocalItem<any[]>('news_list', []);
+  const cached = getLocalItem<any[]>('news_list', DEFAULT_NEWS);
   return cached.filter(isRealNews);
 }
+
+// =============================================================
+// 13. SYNCHRONOUS INITIALIZERS (Zero-Flash Instant Render)
+// =============================================================
+export function getInitialSiteContent(): SiteContent {
+  const local = getLocalItem<SiteContent>('site_content', DEFAULT_SITE_CONTENT);
+  return { ...DEFAULT_SITE_CONTENT, ...local };
+}
+
+export function getInitialUnits(): UnitItem[] {
+  const isNotPremiere = (u: UnitItem) => {
+    const n = (u.name || '').toLowerCase();
+    return !n.includes('premi') && u.id !== 'unit-1';
+  };
+  const local = getLocalItem<UnitItem[]>('units_list', DEFAULT_UNITS);
+  return (Array.isArray(local) && local.length > 0 ? local : DEFAULT_UNITS).filter(isNotPremiere);
+}
+
+export function getInitialRoles(): RoleItem[] {
+  const local = getLocalItem<RoleItem[]>('roles_list', DEFAULT_ROLES);
+  return Array.isArray(local) && local.length > 0 ? local : DEFAULT_ROLES;
+}
+
+export function getInitialStaff(): StaffMember[] {
+  const local = getLocalItem<StaffMember[]>('staff_list', DEFAULT_STAFF);
+  return Array.isArray(local) && local.length > 0 ? local : DEFAULT_STAFF;
+}
+
+export function getInitialTimeline(): TimelineItem[] {
+  const local = getLocalItem<TimelineItem[]>('timeline_list', DEFAULT_TIMELINE);
+  return Array.isArray(local) && local.length > 0 ? local : DEFAULT_TIMELINE;
+}
+
+export function getInitialPlayers(): Record<string, any> {
+  const deletedIds = new Set<string>(getDeletedPlayerIds());
+  const local = getLocalItem<Record<string, any>>('players_custom', playersDB);
+  const source = local && Object.keys(local).length > 0 ? local : playersDB;
+  const result: Record<string, any> = {};
+  for (const [id, p] of Object.entries(source)) {
+    const strId = String(id);
+    if (!deletedIds.has(strId) && p) {
+      result[strId] = p;
+    }
+  }
+  return result;
+}
+
+export function getInitialMatch(): MatchConfig {
+  const local = getLocalItem<MatchConfig>('current_match', DEFAULT_MATCH);
+  return local && local.opponent ? local : DEFAULT_MATCH;
+}
+
+export function getInitialNews(): any[] {
+  const local = getLocalItem<any[]>('news_list', DEFAULT_NEWS);
+  return (Array.isArray(local) ? local : DEFAULT_NEWS).filter(isRealNews);
+}
+
+export function getInitialVideos(): VideoItem[] {
+  const local = getLocalItem<VideoItem[]>('videos_list', DEFAULT_VIDEOS);
+  return Array.isArray(local) ? local : DEFAULT_VIDEOS;
+}
+
+export function getInitialProducts(): ShopProduct[] {
+  const local = getLocalItem<ShopProduct[]>('products_list', DEFAULT_PRODUCTS);
+  return Array.isArray(local) && local.length > 0 ? local : DEFAULT_PRODUCTS;
+}
+
+export function getInitialStages(): StageSession[] {
+  return getLocalItem<StageSession[]>('stages_list', []);
+}
+
+export function getInitialTrophies(): TrophyItem[] {
+  const local = getLocalItem<TrophyItem[]>('trophies_list', DEFAULT_TROPHIES);
+  return Array.isArray(local) && local.length > 0 ? local : DEFAULT_TROPHIES;
+}
+
 
 

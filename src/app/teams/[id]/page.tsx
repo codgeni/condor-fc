@@ -8,12 +8,19 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { ChaleChaleTripleCup, FlagDaySilverCup, RealMadridStarShield } from '@/components/Trophies';
-import { fetchMergedPlayers, getDeletedPlayerIds } from '@/lib/dataService';
+import { fetchMergedPlayers, getDeletedPlayerIds, getInitialPlayers } from '@/lib/dataService';
 
 export default function PlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params);
-  const [player, setPlayer] = useState<any>(null);
-  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false);
+  const [player, setPlayer] = useState<any>(() => {
+    const init = getInitialPlayers()[String(unwrappedParams.id)];
+    if (!init) return null;
+    return {
+      ...init,
+      detailImg: init.detail_img || init.detailImg || init.img
+    };
+  });
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useState<boolean>(() => Boolean(getInitialPlayers()[String(unwrappedParams.id)]));
 
   useEffect(() => {
     const fetchPlayer = async () => {

@@ -11,7 +11,9 @@ import {
   fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
   fetchMergedPlayers, fetchNews,
   fetchTrophies, TrophyItem, DEFAULT_TROPHIES,
-  parseMatchDateTime
+  parseMatchDateTime,
+  getInitialTrophies, getInitialSiteContent, getInitialMatch,
+  getInitialVideos, getInitialNews, getInitialPlayers
 } from '@/lib/dataService';
 import { supabase } from '@/lib/supabaseClient';
 import { formatRelativeTime } from '@/lib/timeUtils';
@@ -42,21 +44,12 @@ function renderTrophy(id: string, size = 155, withReflection = false) {
 
 export default function Home() {
   const [activeTrophyIndex, setActiveTrophyIndex] = useState(0);
-  const [trophies, setTrophies] = useState<TrophyItem[]>(DEFAULT_TROPHIES);
-  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
-  const [matchConfig, setMatchConfig] = useState<MatchConfig>({
-    opponent: '',
-    home_team: 'Condor FC',
-    match_date: '',
-    match_time: '',
-    location: 'Parc Sportif Delmas',
-    competition: 'Prochain Match Officiel',
-    no_matches_now: true,
-    is_active: true
-  });
+  const [trophies, setTrophies] = useState<TrophyItem[]>(() => getInitialTrophies());
+  const [siteContent, setSiteContent] = useState<SiteContent>(() => getInitialSiteContent());
+  const [matchConfig, setMatchConfig] = useState<MatchConfig>(() => getInitialMatch());
 
-  const [videos, setVideos] = useState<VideoItem[]>([]);
-  const [latestNews, setLatestNews] = useState<any[]>([]);
+  const [videos, setVideos] = useState<VideoItem[]>(() => getInitialVideos());
+  const [latestNews, setLatestNews] = useState<any[]>(() => getInitialNews().slice(0, 3));
   const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
   const modalOverlayRef = useRef<HTMLDivElement | null>(null);
 
@@ -81,7 +74,7 @@ export default function Home() {
 
   const [nowTick, setNowTick] = useState<number>(() => Date.now());
   const [playerIndex, setPlayerIndex] = useState(0);
-  const [allPlayers, setAllPlayers] = useState<Record<string, any>>(playersDB);
+  const [allPlayers, setAllPlayers] = useState<Record<string, any>>(() => getInitialPlayers());
 
   const spotlightPlayers = useMemo(() => {
     return Object.values(allPlayers).filter(p => Boolean(p.is_spotlight || p.spotlight));
@@ -1095,7 +1088,7 @@ export default function Home() {
       <section style={{ position: 'relative', padding: '6rem 0', color: 'white', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: -1 }}>
           <img 
-            src={siteContent.terrain_img || "/stadium_hero_1780681869623.png"} 
+            src={siteContent.terrain_img || "/uploads/site-terrain_img.webp"} 
             style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.3)' }} 
             alt="Terrain Delmas 77" 
           />

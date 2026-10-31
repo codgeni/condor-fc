@@ -10,7 +10,7 @@ import {
   MessageCircle,
   FileText
 } from 'lucide-react';
-import { fetchProducts, fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
+import { fetchProducts, fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT, getInitialSiteContent } from '@/lib/dataService';
 
 interface Product {
   id: string;
@@ -267,7 +267,7 @@ export default function Shop() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
   const [selectedSize, setSelectedSize] = useState<string>('');
-  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+  const [siteContent, setSiteContent] = useState<SiteContent>(() => getInitialSiteContent());
 
   useEffect(() => {
     fetchProducts().then(data => {
@@ -312,7 +312,7 @@ export default function Shop() {
       {/* 1. Shop Hero */}
       <section 
         style={{ 
-          background: `linear-gradient(rgba(17,17,17,0.78), rgba(17,17,17,0.95)), url(${siteContent.shop_hero_bg || '/shop_hero.png'}) center/cover no-repeat`, 
+          background: `linear-gradient(rgba(17,17,17,0.78), rgba(17,17,17,0.95)), url(${siteContent.shop_hero_bg || '/uploads/site-data-shop_hero_bg.webp'}) center/cover no-repeat`, 
           color: 'white', 
           padding: '7rem 0 5rem', 
           position: 'relative' 

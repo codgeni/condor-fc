@@ -13,11 +13,11 @@ import {
   validateRequired 
 } from '@/lib/security';
 import { useConfirmPoster } from '@/components/ui/ConfirmPosterModal';
-import { fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT } from '@/lib/dataService';
+import { fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT, getInitialSiteContent } from '@/lib/dataService';
 
 export default function Contact() {
   const { showConfirmed } = useConfirmPoster();
-  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+  const [siteContent, setSiteContent] = useState<SiteContent>(() => getInitialSiteContent());
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const errorBannerRef = useRef<HTMLDivElement>(null);

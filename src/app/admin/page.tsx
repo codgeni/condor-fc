@@ -27,7 +27,10 @@ import {
   fetchTimeline, TimelineItem, DEFAULT_TIMELINE,
   fetchSiteContent, saveSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
   fetchMergedPlayers, fetchNews, isRealNews,
-  parseMatchDateTime, getLocalItem
+  parseMatchDateTime, getLocalItem,
+  getInitialMatch, getInitialVideos, getInitialStages, getInitialProducts,
+  getInitialNews, getInitialPlayers, getInitialUnits, getInitialRoles,
+  getInitialStaff, getInitialTimeline, getInitialSiteContent
 } from '@/lib/dataService';
 import { validateUploadFile, sanitizeFormRecord, compressAndOptimizeImage } from '@/lib/security';
 
@@ -81,41 +84,32 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
 
   // 1. Matches & Slider State (Accueil)
-  const [matchConfig, setMatchConfig] = useState<MatchConfig>({
-    opponent: '',
-    home_team: 'Condor FC',
-    match_date: '',
-    match_time: '',
-    location: 'Parc Sportif Delmas',
-    competition: 'Prochain Match Officiel',
-    no_matches_now: true,
-    is_active: true
-  });
+  const [matchConfig, setMatchConfig] = useState<MatchConfig>(() => getInitialMatch());
   const [slides, setSlides] = useState<any[]>([]);
   const [newSlideUrl, setNewSlideUrl] = useState('');
 
   // 2. Condor TV (Videos) State
-  const [videos, setVideos] = useState<VideoItem[]>([]);
+  const [videos, setVideos] = useState<VideoItem[]>(() => getInitialVideos());
   const [editingVideo, setEditingVideo] = useState<any>(null);
 
   // 3. Stages State
-  const [stages, setStages] = useState<StageSession[]>([]);
+  const [stages, setStages] = useState<StageSession[]>(() => getInitialStages());
   const [editingStage, setEditingStage] = useState<any>(null);
   const [stageRegistrations, setStageRegistrations] = useState<any[]>([]);
   const [selectedStageRegistration, setSelectedStageRegistration] = useState<any>(null);
   const [appointments, setAppointments] = useState<any[]>([]);
 
   // 4. Boutique / Products State
-  const [products, setProducts] = useState<ShopProduct[]>(DEFAULT_PRODUCTS);
+  const [products, setProducts] = useState<ShopProduct[]>(() => getInitialProducts());
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [shopOrders, setShopOrders] = useState<ShopOrder[]>([]);
 
   // 5. News State
-  const [newsList, setNewsList] = useState<any[]>([]);
+  const [newsList, setNewsList] = useState<any[]>(() => getInitialNews());
   const [editingNews, setEditingNews] = useState<any>(null);
 
-  // 6. Players State (hydrated immediately from playersDB for 0ms render)
-  const [players, setPlayers] = useState<Record<string, any>>(playersDB);
+  // 6. Players State (hydrated immediately from getInitialPlayers for 0ms render)
+  const [players, setPlayers] = useState<Record<string, any>>(() => getInitialPlayers());
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
   const [creatingPlayer, setCreatingPlayer] = useState(false);
 
@@ -126,11 +120,11 @@ export default function AdminPanel() {
   const [supporters, setSupporters] = useState<any[]>([]);
 
   // 8. Units, Roles, Staff, Timeline, Site Content States
-  const [units, setUnits] = useState<UnitItem[]>(DEFAULT_UNITS);
-  const [roles, setRoles] = useState<RoleItem[]>(DEFAULT_ROLES);
-  const [staff, setStaff] = useState<StaffMember[]>(DEFAULT_STAFF);
-  const [timeline, setTimeline] = useState<TimelineItem[]>(DEFAULT_TIMELINE);
-  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+  const [units, setUnits] = useState<UnitItem[]>(() => getInitialUnits());
+  const [roles, setRoles] = useState<RoleItem[]>(() => getInitialRoles());
+  const [staff, setStaff] = useState<StaffMember[]>(() => getInitialStaff());
+  const [timeline, setTimeline] = useState<TimelineItem[]>(() => getInitialTimeline());
+  const [siteContent, setSiteContent] = useState<SiteContent>(() => getInitialSiteContent());
 
   const showToast = (msg: string) => {
     showConfirmed(msg);
@@ -184,14 +178,9 @@ export default function AdminPanel() {
   // Load all data in parallel (non-blocking)
   const fetchData = async () => {
     // Hydrate from local cache first for instant display
-    const cachedPlayers = getLocalItem<Record<string, any>>('players_custom', {});
-    if (cachedPlayers && Object.keys(cachedPlayers).length > 0) {
-      setPlayers({ ...playersDB, ...cachedPlayers });
-    }
-    const cachedNews = getLocalItem<any[]>('news_list', []);
-    if (cachedNews && cachedNews.length > 0) setNewsList(cachedNews);
-    const cachedUnits = getLocalItem<UnitItem[]>('units_list', DEFAULT_UNITS);
-    if (cachedUnits && cachedUnits.length > 0) setUnits(cachedUnits);
+    setPlayers(getInitialPlayers());
+    setNewsList(getInitialNews());
+    setUnits(getInitialUnits());
 
     // Fetch all tables in parallel — each updates its state as soon as it resolves
     fetchMergedPlayers().then(p => { if (p) setPlayers(p); });

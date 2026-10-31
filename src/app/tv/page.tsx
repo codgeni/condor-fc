@@ -5,13 +5,14 @@ import { Play, Tv, Clock, ExternalLink } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { 
   fetchVideos, VideoItem, parseVideoUrl,
-  fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT 
+  fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT,
+  getInitialVideos, getInitialSiteContent
 } from '@/lib/dataService';
 import { formatRelativeTime } from '@/lib/timeUtils';
 
 export default function CondorTV() {
-  const [videos, setVideos] = useState<VideoItem[]>([]);
-  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
+  const [videos, setVideos] = useState<VideoItem[]>(() => getInitialVideos());
+  const [siteContent, setSiteContent] = useState<SiteContent>(() => getInitialSiteContent());
   const [activeCategory, setActiveCategory] = useState<string>('Tous');
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function CondorTV() {
         className="section-padding" 
         style={{ 
           padding: '80px 0 50px',
-          background: `linear-gradient(rgba(17,17,17,0.8), rgba(17,17,17,0.98)), url(${siteContent.tv_hero_bg || '/stadium_hero_1780681869623.png'}) center/cover no-repeat`,
+          background: `linear-gradient(rgba(17,17,17,0.8), rgba(17,17,17,0.98)), url(${siteContent.tv_hero_bg || '/uploads/site-data-tv_hero_bg.webp'}) center/cover no-repeat`,
           borderBottom: '2px solid rgba(202, 2, 79, 0.4)'
         }}
       >

@@ -4,15 +4,15 @@ import { motion } from 'framer-motion';
 import { ArrowRight, BookOpen, X, Calendar, Layers, Eye } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT, fetchNews } from '@/lib/dataService';
+import { fetchSiteContent, SiteContent, DEFAULT_SITE_CONTENT, fetchNews, getInitialNews, getInitialSiteContent } from '@/lib/dataService';
 import { formatRelativeTime } from '@/lib/timeUtils';
 
 export default function News() {
-  const [allNews, setAllNews] = useState<any[]>([]);
+  const [allNews, setAllNews] = useState<any[]>(() => getInitialNews());
   const [selectedCategory, setSelectedCategory] = useState<string>('Tous');
   const [selectedArticle, setSelectedArticle] = useState<any | null>(null);
-  const [siteContent, setSiteContent] = useState<SiteContent>(DEFAULT_SITE_CONTENT);
-  const [loading, setLoading] = useState(true);
+  const [siteContent, setSiteContent] = useState<SiteContent>(() => getInitialSiteContent());
+  const [loading, setLoading] = useState(false);
   const modalOverlayRef = useRef<HTMLDivElement | null>(null);
 
   // Lock background scrolling on PC and Mobile when article modal is open
@@ -63,7 +63,7 @@ export default function News() {
     ? allNews
     : allNews.filter(n => (n.cat || '').trim().toLowerCase() === selectedCategory.trim().toLowerCase());
 
-  const heroBg = siteContent.news_hero_bg || '/news_hero.png';
+  const heroBg = siteContent.news_hero_bg || '/uploads/site-data-news_hero_bg.webp';
 
   return (
     <div style={{ flex: 1, marginTop: '80px', overflowX: 'hidden', minHeight: '100vh', background: '#f8f9fa' }}>
